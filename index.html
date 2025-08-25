@@ -3,33 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <title>言霊のプロトコル</title>
+    <head>
+        <meta charset="UTF-8">
+        <title>言霊のプロトコル</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            /* ... */
+        </style>
+    </head>
     <style>
+        /* CSSは長いので、ここでは一部省略しています。実際には変更ありません。 */
         body { background-color: #1a1a1a; color: #f0f0f0; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        #game-container { width: 80%; max-width: 800px; height: 90%; border: 1px solid #444; display: flex; flex-direction: column; background-color: #2b2b2b; }
+        #game-wrapper { display: flex; width: 95%; height: 95%; max-width: 1200px; }
+        #game-container { width: 70%; height: 100%; display: flex; flex-direction: column; background-color: #2b2b2b; border: 1px solid #444; }
         #game-log { flex-grow: 1; padding: 20px; overflow-y: auto; border-bottom: 1px solid #444; white-space: pre-wrap; }
         .ai-response { color: #a5d6a7; }
         .user-command { color: #81d4fa; }
         #input-area { display: flex; padding: 10px; }
         #user-input { flex-grow: 1; background-color: #333; color: #f0f0f0; border: 1px solid #555; padding: 10px; font-size: 16px; }
         #send-button { background-color: #4CAF50; color: white; border: none; padding: 10px 20px; cursor: pointer; font-size: 16px; }
+        /* ▼▼▼ 新しく追加したスタイル ▼▼▼ */
+        #status-container { width: 30%; height: 100%; padding: 20px; margin-left: 20px; background-color: #2b2b2b; border: 1px solid #444; color: #f0f0f0; overflow-y: auto; }
+        #status-container h2 { color: #4CAF50; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        #status-container p { margin: 10px 0; font-size: 16px; }
+        #status-container span { color: #81d4fa; font-weight: bold; }
+        /* ▼▼▼ 新しく追加したスタイル ▼▼▼ */
+        #system-menu {
+            width: 30%;
+            margin-left: 20px;
+            margin-top: 10px; /* 上の要素との間に少し隙間を空ける */
+        }
+        #reset-button {
+            width: 100%;
+            padding: 15px;
+            background-color: #c9302c; /* 少し危険な感じの赤色 */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        #reset-button:hover {
+            background-color: #a92824; /* マウスを乗せたら少し暗くする */
+        }
+        /* ▼▼▼ メディアクエリを追加 ▼▼▼ */
+        @media (max-width: 800px) {
+            /* flexboxの並び方向を縦にする */
+            #game-wrapper {
+                flex-direction: column;
+                height: auto; /* 高さを自動調整 */
+                width: 100%;  /* 全幅を使う */
+            }
+
+            /* 各コンテナの幅を100%に */
+            #game-container, #status-container, #system-menu {
+                width: 100%;
+                margin-left: 0; /* 左マージンをリセット */
+                box-sizing: border-box; /* paddingを含めて幅を計算 */
+            }
+
+            /* ステータスとシステムメニューの上に余白を追加 */
+            #status-container {
+                margin-top: 20px;
+                height: 50vh; /* 高さを画面の半分程度に */
+            }
+            #system-menu {
+                margin-top: 0;
+            }
+        }
     </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="game-log"></div>
-        <div id="input-area">
-            <input type="text" id="user-input" placeholder="どうする？">
-            <button id="send-button">送信</button>
+    <div id="game-wrapper">
+        <div id="game-container">
+            <div id="game-log"></div>
+            <div id="input-area">
+                <input type="text" id="user-input" placeholder="どうする？">
+                <button id="send-button">送信</button>
+            </div>
         </div>
+        <div id="status-container">
+            <h2>ステータス</h2>
+            <div id="status-display"></div>
+            <h2>本日の行動回数</h2>
+            <p id="action-count-display">0 / 20</p>
+        </div>
+        <div id="status-container">
+            <h2>ステータス</h2>
+            <div id="status-display"></div>
+            <h2>本日の行動回数</h2>
+            <p id="action-count-display">0 / 20</p>
+        </div>
+        
+        <div id="system-menu">
+            <button id="reset-button">はじめからやり直す</button>
+        </div>
+        </div>
+</body>
     </div>
 
 <script>
+    // ▼▼▼ JavaScript 全体を新機能対応版に書き換え ▼▼▼
+
     const API_URL = '/.netlify/functions/callai';
-    const RULEBOOK = `あなたは「言霊のプロトコル」というテキストRPGの優秀なゲームマスターです。以下はゲームの世界設定とルールです。これを厳守し、プレイヤーとの対話を行ってください。# 世界設定\n舞台は剣と魔法の世界「アシ ラ」。古代文明の遺跡や魔物が出るダンジョンが点在し、神秘的な雰囲気が漂っている。また、様々な概念に神が宿るとされています。人の気配のない魔物の巣窟もあれば、とても栄えた人の街もある世界です。プレイヤーのスタート地点の「囁きの森」の夜です。とても静かで、比較的安全な森ですが、低いレベルのままでは危険な森です。# ルール\n- 最初の文言は固定です。『あなたは深い闇に包まれた、囁きの森に倒れている。冷たい地面の感触が、頬に伝わる。満月の光が、木々の間からこぼれ落ち、あなたの顔に淡く照らされる。頭はズキズキと痛む。あなたは何も思い出せない。自分の名前すら…。 古びた石碑が、すぐそばに立っている。その表面には、苔むした文字が刻まれているが、読めない。静寂が森全体を覆い、時折、遠くから聞こえる獣の鳴き声が、不気味な雰囲気をさらに強めている。あなたは、記憶を失った旅人だ。 まずは、あなたの名前を決めてください。』\n- 名前はプレイヤーが自分で決めます。\n- プレイヤーの最初の場所は「囁きの森」の古い石碑の前で倒れてます。\n- プレイヤーは記憶喪失の旅人です。\n- 最初にプレイヤーの名前を確定させてください。\n- 名前が決まったらそのまま持ち物判定をすること。1つから3つ、ランダムで確定します。\n- そしてどのように行動するか聞いてください。\n- プレイヤーを理不尽に殺してはいけません。\n- プレイヤーの面白い行動には、面白い結果を返してください。\n- 状況説明は『』で、NPCのセリフは「」で囲んでください。\n- 最終的な目的は、世界のどこかにある『失われた記憶のコア』を見つけることです。\n- あなたはテキストベースの RPG の優れたゲームマスターです。単なる AI アシスタントとして行動しないでください。\n- あなたはゲームマスターとして、情景を描写してください。\n- 全ての応答は、必ず日本語で行ってください。`;
+    const DAILY_ACTION_LIMIT = 20; // 1日の最大行動回数
+
+    const RULEBOOK = `あなたは「言霊のプロトコル」というテキストRPGの優秀なゲームマスターです。以下はゲームの世界設定とルールです。これを厳守し、プレイヤーとの対話を行ってください。# 世界設定\n舞台は剣と魔法の世界「アシハラ」。古代文明の遺跡や魔物が出るダンジョンが点在し、神秘的な雰囲気が漂っている。また、様々な概念に神が宿るとされています。人の気配のない魔物の巣窟もあれば、とても栄えた人の街もある世界です。プレイヤーのスタート地点の「囁きの森」の夜です。とても静かで、比較的安全な森ですが、低いレベルのままでは危険な森です。# ルール\n- 最初の文言は固定です。『あなたは深い闇に包まれた、囁きの森に倒れている。冷たい地面の感触が、頬に伝わる。満月の光が、木々の間からこぼれ落ち、あなたの顔に淡く照らされる。頭はズキズキと痛む。あなたは何も思い出せない。自分の名前すら…。 古びた石碑が、すぐそばに立っている。その表面には、苔むした文字が刻まれているが、読めない。静寂が森全体を覆い、時折、遠くから聞こえる獣の鳴き声が、不気味な雰囲気をさらに強めている。あなたは、記憶を失った旅人だ。 まずは、あなたの名前を決めてください。』\n- 名前はプレイヤーが自分で決めます。\n- プレイヤーは記憶喪失の旅人です。\n- 最初にプレイヤーの名前を確定させてください。\n- 名前が決まったらそのまま持ち物判定をすること。1つから3つ、ランダムで確定します。\n- そしてどのように行動するか聞いてください。\n- プレイヤーを理不尽に殺してはいけません。\n- プレイヤーの面白い行動には、面白い結果を返してください。\n- 状況説明は『』で、NPCのセリフは「」で囲んでください。\n- 最終的な目的は、世界のどこかにある『失われた記憶のコア』を見つけることです。\n- あなたはテキストベースの RPG の優れたゲームマスターです。単なる AI アシスタントとして行動しないでください。\n- あなたはゲームマスターとして、情景を描写してください。\n- 全ての応答は、必ず日本語で行ってください。`;
+
     const gameLog = document.getElementById('game-log');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
+    const statusDisplay = document.getElementById('status-display');
+    const actionCountDisplay = document.getElementById('action-count-display');
+
     let conversationHistory = [];
+    let playerStats = {};
+    let dailyActions = { date: '', count: 0 };
+
+    // ▼▼▼ 新しい関数 ▼▼▼
+
+    // ゲームデータをローカルストレージに保存する関数
+    function saveGame() {
+        const saveData = {
+            history: conversationHistory,
+            stats: playerStats,
+            actions: dailyActions
+        };
+        localStorage.setItem('rpgSaveData', JSON.stringify(saveData));
+    }
+
+    // パラメーターをランダムで生成する関数
+    function generateStats() {
+        const rollDice = () => Math.floor(Math.random() * 16) + 3; // 3〜18のランダムな値
+        return {
+            "STR": rollDice(), // 筋力
+            "DEX": rollDice(), // 素早さ
+            "CON": rollDice(), // 体力
+            "INT": rollDice(), // 知力
+            "WIS": rollDice(), // 判断力
+            "CHA": rollDice()  // 魅力
+        };
+    }
+
+    // ステータスを表示に反映させる関数
+    function updateStatusDisplay() {
+        statusDisplay.innerHTML = ''; // 表示を一旦クリア
+        for (const [key, value] of Object.entries(playerStats)) {
+            const p = document.createElement('p');
+            p.innerHTML = `${key}: <span>${value}</span>`;
+            statusDisplay.appendChild(p);
+        }
+    }
+    
+    // 行動回数を表示に反映させる関数
+    function updateActionCountDisplay() {
+        actionCountDisplay.textContent = `${dailyActions.count} / ${DAILY_ACTION_LIMIT}`;
+    }
+
+    // ▼▼▼ 既存の関数を改造 ▼▼▼
 
     async function callAI() {
         addLog('考え中...', 'ai-response');
@@ -46,7 +178,10 @@
             }
             const data = await response.json();
             const aiText = data.candidates[0]?.content?.parts[0]?.text || "（応答がありませんでした）";
+            
             conversationHistory.push({ role: 'model', parts: [{ text: aiText }] });
+            saveGame(); // AIからの返信があったらセーブ
+
             const thinkingElement = gameLog.lastChild;
             thinkingElement.textContent = aiText;
         } catch (error) {
@@ -66,11 +201,28 @@
     }
 
     function handleUserCommand() {
+        // --- 1日の行動回数チェック ---
+        const today = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'形式
+        if (dailyActions.date !== today) {
+            dailyActions.date = today;
+            dailyActions.count = 0;
+        }
+        if (dailyActions.count >= DAILY_ACTION_LIMIT) {
+            addLog('本日の行動回数上限に達しました。また明日、冒険を続けてください。', 'ai-response');
+            return;
+        }
+        // --- チェックここまで ---
+
         const command = userInput.value;
         if (command === '') return;
+
         addLog('> ' + command, 'user-command');
         userInput.value = '';
+
+        dailyActions.count++; // 行動回数を1増やす
+        updateActionCountDisplay(); // 表示を更新
         conversationHistory.push({ role: 'user', parts: [{ text: command }] });
+        
         callAI();
     }
     
@@ -81,13 +233,54 @@
         }
     });
 
-    async function startGame() {
-        gameLog.innerHTML = ''; 
-        conversationHistory = [
-            { role: 'user', parts: [{ text: RULEBOOK + "\n\nゲームマスターとして、ルールに厳密に従ってゲームを開始してください。" }] }
-        ];
-        await callAI();
+    // --- ゲーム開始処理を大幅に改造 ---
+    function startGame() {
+        const savedData = localStorage.getItem('rpgSaveData');
+
+        if (savedData) {
+            // セーブデータがある場合
+            const data = JSON.parse(savedData);
+            conversationHistory = data.history;
+            playerStats = data.stats;
+            dailyActions = data.actions || { date: '', count: 0 };
+
+            // ログを復元
+            gameLog.innerHTML = '';
+            conversationHistory.forEach(turn => {
+                if (turn.role === 'user') {
+                    addLog('> ' + turn.parts[0].text, 'user-command');
+                } else {
+                    addLog(turn.parts[0].text, 'ai-response');
+                }
+            });
+
+        } else {
+            // セーブデータがない（初回起動の）場合
+            playerStats = generateStats(); // パラメーターを生成
+            conversationHistory = [
+                { role: 'user', parts: [{ text: RULEBOOK + `\n\nあなたの能力値は ${JSON.stringify(playerStats)} です。この情報も踏まえて、ゲームマスターとして、ルールに厳密に従ってゲームを開始してください。` }] }
+            ];
+            callAI(); // AIを呼び出してゲーム開始
+        }
+        
+        // 表示を更新
+        updateStatusDisplay();
+        updateActionCountDisplay();
     }
+
+    // ▼▼▼ 新しく追加したリセット機能 ▼▼▼
+    const resetButton = document.getElementById('reset-button');
+
+    resetButton.addEventListener('click', () => {
+        // 確認メッセージを表示
+        if (confirm('本当にすべてのデータをリセットして、はじめからやり直しますか？')) {
+            // セーブデータを消去
+            localStorage.removeItem('rpgSaveData');
+            // ページを再読み込みしてゲームをリスタート
+            window.location.reload();
+        }
+    });
+    // ▲▲▲ ここまで追加 ▲▲▲
 
     startGame();
 </script>
