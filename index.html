@@ -28,12 +28,12 @@
         #status-container { flex-grow: 1; padding: 20px; background-color: var(--container-bg); border: 1px solid var(--border-color); overflow-y: auto; margin-bottom: 20px; }
         #status-container h2 { color: var(--accent-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 20px; }
         #status-container h2:first-child { margin-top: 0; }
-        #player-name-display { font-size: 1.5em; color: var(--accent-color); text-align: center; margin-bottom: 20px; }
+        #player-name-display { font-size: 1.5em; color: var(--accent-color); text-align: center; margin-bottom: 20px; word-break: break-all; }
         #status-display p { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
         #status-display span { font-weight: bold; }
         .stat-value { color: var(--user-text); }
         .stat-change { margin-left: 10px; color: var(--ai-text); animation: fadeInAndOut 2s ease-in-out forwards; }
-        #inventory-display p { color: var(--text-color); font-size: 15px; }
+        #inventory-display p { color: var(--text-color); font-size: 15px; margin: 5px 0; }
         #system-menu { flex-shrink: 0; }
         .system-button { width: 100%; padding: 15px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; text-align: center; text-decoration: none; display: block; box-sizing: border-box; }
         .system-button.reset { background-color: var(--danger-color); }
@@ -80,7 +80,6 @@
         </div>
     </div>
 <script>
-    // ... (定数とDOM要素の取得) ...
     const API_URL = '/.netlify/functions/callai';
     const DAILY_ACTION_LIMIT = 20;
     const MAX_INVENTORY_SIZE = 5;
@@ -152,7 +151,7 @@
                 changeSpan.className = 'stat-change';
                 changeSpan.textContent = `(${changes[key]})`;
                 valueContainer.appendChild(changeSpan);
-                setTimeout(() => changeSpan.remove(), 2000); // 2秒後に演出を消す
+                setTimeout(() => { if(changeSpan) changeSpan.remove(); }, 2000);
             }
             
             p.appendChild(label);
@@ -161,16 +160,42 @@
         }
     }
     
-    // ... (updateActionCountDisplay, displayActions, toggleInput は変更なし) ...
-    function updateActionCountDisplay() { actionCountDisplay.textContent = `${dailyActions.count} / ${DAILY_ACTION_LIMIT}`; }
-    function displayActions(actions) { /* ... */ }
-    function toggleInput(disabled) { /* ... */ }
+    function updateActionCountDisplay() {
+        actionCountDisplay.textContent = `${dailyActions.count} / ${DAILY_ACTION_LIMIT}`;
+    }
+
+    function displayActions(actions) {
+        actionsContainer.innerHTML = '';
+        if (actions.length > 0) {
+            actions.forEach(actionText => {
+                const button = document.createElement('button');
+                button.textContent = actionText;
+                button.className = 'action-button';
+                button.addEventListener('click', () => {
+                    actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true);
+                    button.classList.add('fade-out');
+                    setTimeout(() => {
+                        handleUserCommand(actionText);
+                    }, 500);
+                });
+                actionsContainer.appendChild(button);
+            });
+            toggleInput(true);
+        } else {
+            toggleInput(false);
+        }
+    }
+    
+    function toggleInput(disabled) {
+        userInput.disabled = disabled;
+        sendButton.disabled = disabled;
+        userInput.placeholder = disabled ? '[ACTION] ボタンから選択してください' : 'どうする？';
+    }
 
     async function callAI() {
         addLog('考え中...', 'ai-response');
         toggleInput(true);
         try {
-            // ... (fetch処理は変更なし) ...
             const requestData = { contents: conversationHistory };
             const response = await fetch(API_URL, {
                 method: 'POST',
@@ -187,8 +212,6 @@
             let storyText = fullAiText;
             const statChanges = {};
 
-            // --- ▼▼▼ 新しいタグの処理を追加 ▼▼▼ ---
-            // [NAME] タグ
             const nameMatch = storyText.match(/\[NAME\]\s*(.+)/);
             if (nameMatch) {
                 playerName = nameMatch[1].trim();
@@ -196,20 +219,19 @@
                 storyText = storyText.replace(/\[NAME\].+/, '').trim();
             }
 
-            // [STAT] タグ (複数対応)
             const statRegex = /\[STAT\]\s*(\w+)\s*([+\-])\s*(\d+)/g;
             let statMatch;
             while ((statMatch = statRegex.exec(storyText)) !== null) {
                 const [fullMatch, stat, operator, valueStr] = statMatch;
                 const value = parseInt(valueStr, 10);
-                if (operator === '+') playerStats[stat] += value;
-                else playerStats[stat] -= value;
-                statChanges[stat] = `${operator}${value}`;
+                if (playerStats[stat] !== undefined) {
+                    if (operator === '+') playerStats[stat] += value;
+                    else playerStats[stat] -= value;
+                    statChanges[stat] = `${operator}${value}`;
+                }
             }
             storyText = storyText.replace(statRegex, '').trim();
-            if (Object.keys(statChanges).length > 0) updateStatusDisplay(statChanges);
 
-            // [ITEM_ADD] タグ
             const itemAddMatch = storyText.match(/\[ITEM_ADD\]\s*(.+)/);
             if (itemAddMatch && inventory.length < MAX_INVENTORY_SIZE) {
                 inventory.push(itemAddMatch[1].trim());
@@ -217,7 +239,6 @@
                 storyText = storyText.replace(/\[ITEM_ADD\].+/, '').trim();
             }
 
-            // [ITEM_REMOVE] タグ
             const itemRemoveMatch = storyText.match(/\[ITEM_REMOVE\]\s*(.+)/);
             if (itemRemoveMatch) {
                 inventory = inventory.filter(item => item !== itemRemoveMatch[1].trim());
@@ -225,16 +246,17 @@
                 storyText = storyText.replace(/\[ITEM_REMOVE\].+/, '').trim();
             }
 
-            // [DAMAGE] タグ
             const damageMatch = storyText.match(/\[DAMAGE\]\s*(\d+)/);
             if (damageMatch) {
                 const damage = parseInt(damageMatch[1], 10);
                 playerStats.HP.current -= damage;
                 if (playerStats.HP.current < 0) playerStats.HP.current = 0;
-                updateStatusDisplay();
                 storyText = storyText.replace(/\[DAMAGE\]\s*\d+/, '').trim();
             }
-            // --- ▲▲▲ ここまで追加 ▲▲▲ ---
+            
+            if (Object.keys(statChanges).length > 0 || damageMatch) {
+                updateStatusDisplay(statChanges);
+            }
 
             const lines = storyText.split('\n');
             const storyLogText = lines.filter(line => !line.startsWith('[ACTION]')).join('\n');
@@ -247,13 +269,61 @@
             thinkingElement.textContent = storyLogText;
             displayActions(actions);
         } catch (error) {
-            // ... (catch処理は変更なし) ...
+            const thinkingElement = gameLog.lastChild;
+            thinkingElement.textContent = 'エラーが発生しました: ' + error.message;
+            toggleInput(false);
         }
     }
 
-    // ... (handleUserCommand, イベントリスナーはほぼ変更なし) ...
+    function addLog(text, className) {
+        const newLine = document.createElement('p');
+        newLine.textContent = text;
+        if (className) { newLine.classList.add(className); }
+        gameLog.appendChild(newLine);
+        gameLog.scrollTop = gameLog.scrollHeight;
+        return newLine;
+    }
+
+    function handleUserCommand(commandFromButton = null) {
+        const command = commandFromButton || userInput.value;
+        if (command === '') return;
+
+        const today = new Date().toISOString().slice(0, 10);
+        if (dailyActions.date !== today) {
+            dailyActions.date = today;
+            dailyActions.count = 0;
+        }
+        if (dailyActions.count >= DAILY_ACTION_LIMIT) {
+            addLog('本日の行動回数上限に達しました。また明日、冒険を続けてください。', 'ai-response');
+            return;
+        }
+
+        addLog('> ' + command, 'user-command');
+        userInput.value = '';
+        actionsContainer.innerHTML = '';
+
+        dailyActions.count++;
+        updateActionCountDisplay();
+        conversationHistory.push({ role: 'user', parts: [{ text: command }] });
+        
+        callAI();
+    }
     
-    // --- startGameを改造して新機能の読み込みに対応 ---
+    sendButton.addEventListener('click', () => handleUserCommand());
+    userInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleUserCommand();
+        }
+    });
+
+    resetButton.addEventListener('click', () => {
+        if (confirm('本当にすべてのデータをリセットして、はじめからやり直しますか？')) {
+            localStorage.removeItem('rpgSaveData');
+            window.location.reload();
+        }
+    });
+    
     function startGame() {
         const savedData = localStorage.getItem('rpgSaveData');
         if (savedData) {
@@ -264,31 +334,46 @@
             playerName = data.name || '';
             inventory = data.inventory || [];
             
-            // 旧セーブデータ互換性対応
             if (!playerStats.HP) {
                 const initialHP = 100;
                 playerStats = { "HP": { current: initialHP, max: initialHP }, ...playerStats };
             }
 
-            // ... (ログ復元処理) ...
+            gameLog.innerHTML = '';
+            const lastTurn = conversationHistory[conversationHistory.length - 1];
+            
+            if(lastTurn && lastTurn.role === 'model') {
+                const fullAiText = lastTurn.parts[0].text;
+                const lines = fullAiText.split('\n');
+                const actions = lines.filter(line => line.startsWith('[ACTION]')).map(line => line.replace('[ACTION] ', ''));
+                displayActions(actions);
+            } else {
+                toggleInput(false);
+            }
 
+            conversationHistory.slice(1).forEach(turn => {
+                const text = turn.parts[0].text;
+                if (turn.role === 'user') {
+                    addLog('> ' + text, 'user-command');
+                } else {
+                    const storyText = text.split('\n').filter(line => !line.startsWith('[ACTION]') && !line.startsWith('[DAMAGE]') && !line.startsWith('[STAT]') && !line.startsWith('[NAME]') && !line.startsWith('[ITEM_ADD]') && !line.startsWith('[ITEM_REMOVE]')).join('\n');
+                    addLog(storyText, 'ai-response');
+                }
+            });
         } else {
-            // ... (新規ゲーム開始処理) ...
+            playerStats = generateStats();
+            conversationHistory = [
+                { role: 'user', parts: [{ text: RULEBOOK + `\n\nあなたの能力値は ${JSON.stringify(playerStats)} です。この情報も踏まえて、ゲームマスターとして、ルールに厳密に従ってゲームを開始してください。` }] }
+            ];
+            callAI();
         }
-
-        // 全てのUIを初期表示
         updatePlayerNameDisplay();
         updateStatusDisplay();
         updateActionCountDisplay();
         updateInventoryDisplay();
     }
 
-    // ページ読み込み時にゲーム開始
     startGame();
-
-    // handleUserCommand, displayActions などの関数定義は省略していますが、
-    // 実際にはここに前のコードと同じものが入ります。
-    // 上記の完全なコードブロックを使用してください。
 </script>
 </body>
 </html>
