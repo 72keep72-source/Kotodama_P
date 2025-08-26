@@ -40,6 +40,9 @@
         .system-button.reset:hover { background-color: #a92824; }
         .system-button.share { background-color: var(--twitter-color); margin-top: 10px; }
         .system-button.share:hover { background-color: #0c85d0; }
+        #slot-selector-container { display: flex; margin-bottom: 10px; }
+        #slot-selector { flex-grow: 1; background-color: #333; color: var(--text-color); border: 1px solid #555; padding: 10px; font-size: 16px; }
+        #delete-slot-button { background-color: var(--danger-color); color: white; border: none; margin-left: 10px; padding: 10px 15px; cursor: pointer; font-size: 16px; border-radius: 5px; }
         @keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.95); } }
         @keyframes fadeInAndOut { 0% { opacity: 0; transform: translateY(5px); } 20% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; } 100% { opacity: 0; } }
         @media (max-width: 800px) {
@@ -65,6 +68,10 @@
         </div>
         <div id="sidebar">
             <div id="status-container">
+                <div id="slot-selector-container">
+                    <select id="slot-selector"></select>
+                    <button id="delete-slot-button">削除</button>
+                </div>
                 <div id="player-name-display"></div>
                 <h2>ステータス</h2>
                 <div id="status-display"></div>
@@ -74,7 +81,6 @@
                 <div id="inventory-display"></div>
             </div>
             <div id="system-menu">
-                <button id="reset-button" class="system-button reset">はじめからやり直す</button>
                 <a id="share-button" class="system-button share" href="https://twitter.com/intent/tweet?text=%E2%96%BCAI%E3%81%A8%E4%BD%9C%E3%82%8BRPG%E3%80%8E%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB%E3%80%8F%0Ahttps%3A%2F%2Fhelpful-bavarois-b141f3.netlify.app%2F%0A%23%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB" target="_blank" rel="noopener noreferrer">Xにシェアする</a>
             </div>
         </div>
@@ -83,187 +89,188 @@
     const API_URL = '/.netlify/functions/callai';
     const DAILY_ACTION_LIMIT = 20;
     const MAX_INVENTORY_SIZE = 5;
+    const MAX_SAVE_SLOTS = 3; 
 
     const gameLog = document.getElementById('game-log');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
     const statusDisplay = document.getElementById('status-display');
     const actionCountDisplay = document.getElementById('action-count-display');
-    const resetButton = document.getElementById('reset-button');
     const actionsContainer = document.getElementById('actions-container');
     const playerNameDisplay = document.getElementById('player-name-display');
     const inventoryDisplay = document.getElementById('inventory-display');
+    const slotSelector = document.getElementById('slot-selector');
+    const deleteSlotButton = document.getElementById('delete-slot-button');
 
-    let conversationHistory = [];
-    let playerStats = {};
-    let dailyActions = { date: '', count: 0 };
-    let playerName = '';
-    let inventory = [];
+    let gameSlots = [];
+    let activeSlotId = null;
 
-    function saveGame() {
-        const saveData = { history: conversationHistory, stats: playerStats, actions: dailyActions, name: playerName, inventory: inventory };
-        localStorage.setItem('rpgSaveData', JSON.stringify(saveData));
+    // --- セーブ/ロードシステムの全体的な書き換え ---
+    function loadGameSlots() {
+        gameSlots = JSON.parse(localStorage.getItem('rpgGameSlots')) || [];
+        activeSlotId = localStorage.getItem('rpgActiveSlotId');
+        updateSlotSelector();
+        loadGame(activeSlotId);
     }
 
-    function generateStats() {
-        const rollDice = () => Math.floor(Math.random() * 16) + 3;
-        const initialHP = 100;
-        return { "HP": { current: initialHP, max: initialHP }, "STR": rollDice(), "DEX": rollDice(), "CON": rollDice(), "INT": rollDice(), "WIS": rollDice(), "CHA": rollDice() };
-    }
-
-    function updatePlayerNameDisplay() {
-        playerNameDisplay.textContent = playerName || 'ななしの旅人';
-    }
-
-    function updateInventoryDisplay() {
-        inventoryDisplay.innerHTML = '';
-        if (inventory.length === 0) {
-            inventoryDisplay.innerHTML = '<p>何も持っていない</p>';
-        } else {
-            inventory.forEach(item => {
-                const p = document.createElement('p');
-                p.textContent = `・${item}`;
-                inventoryDisplay.appendChild(p);
-            });
+    function saveGameSlots() {
+        const activeSlot = gameSlots.find(slot => slot.id === activeSlotId);
+        if (activeSlot) {
+            activeSlot.history = conversationHistory;
+            activeSlot.stats = playerStats;
+            activeSlot.actions = dailyActions;
+            activeSlot.name = playerName;
+            activeSlot.inventory = inventory;
         }
-    }
-
-    function updateStatusDisplay(changes = {}) {
-        statusDisplay.innerHTML = '';
-        for (const [key, value] of Object.entries(playerStats)) {
-            const p = document.createElement('p');
-            const label = document.createElement('span');
-            label.textContent = `${key}:`;
-            
-            const valueContainer = document.createElement('span');
-            const valueSpan = document.createElement('span');
-            valueSpan.className = 'stat-value';
-            
-            if (key === 'HP') {
-                valueSpan.textContent = `${value.current} / ${value.max}`;
-            } else {
-                valueSpan.textContent = value;
-            }
-            valueContainer.appendChild(valueSpan);
-
-            if (changes[key]) {
-                const changeSpan = document.createElement('span');
-                changeSpan.className = 'stat-change';
-                changeSpan.textContent = `(${changes[key]})`;
-                valueContainer.appendChild(changeSpan);
-                setTimeout(() => { if(changeSpan) changeSpan.remove(); }, 2000);
-            }
-            
-            p.appendChild(label);
-            p.appendChild(valueContainer);
-            statusDisplay.appendChild(p);
-        }
+        localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
+        localStorage.setItem('rpgActiveSlotId', activeSlotId);
     }
     
-    function updateActionCountDisplay() {
-        actionCountDisplay.textContent = `${dailyActions.count} / ${DAILY_ACTION_LIMIT}`;
+    function loadGame(slotId) {
+        clearGameScreen();
+        const slot = gameSlots.find(s => s.id == slotId);
+        if (slot) {
+            activeSlotId = slot.id;
+            conversationHistory = slot.history;
+            playerStats = slot.stats;
+            dailyActions = slot.actions;
+            playerName = slot.name;
+            inventory = slot.inventory;
+            
+            // UIを復元
+            conversationHistory.slice(1).forEach(turn => {
+                const text = turn.parts[0].text;
+                if (turn.role === 'user') {
+                    addLog('> ' + text, 'user-command');
+                } else {
+                    const storyText = text.split('\n').filter(line => !line.startsWith('[ACTION]')).join('\n');
+                    addLog(storyText, 'ai-response');
+                }
+            });
+            const lastTurn = conversationHistory[conversationHistory.length - 1];
+            if(lastTurn && lastTurn.role === 'model') {
+                const lines = lastTurn.parts[0].text.split('\n');
+                const actions = lines.filter(line => line.startsWith('[ACTION]')).map(line => line.replace('[ACTION] ', ''));
+                displayActions(actions);
+            }
+        } else {
+            activeSlotId = null;
+        }
+        updateAllDisplays();
     }
 
-    function displayActions(actions) {
+    function createNewGame() {
+        if (gameSlots.length >= MAX_SAVE_SLOTS) {
+            alert(`セーブスロットは${MAX_SAVE_SLOTS}つまでです。新しい冒険を始めるには、既存のデータを削除してください。`);
+            return; // 処理を中断
+        }
+        const newSlot = {
+            id: Date.now(),
+            name: 'ななしの旅人',
+            stats: generateStats(),
+            history: [],
+            inventory: [],
+            actions: { date: new Date().toISOString().slice(0, 10), count: 0 }
+        };
+        newSlot.history.push({ role: 'user', parts: [{ text: RULEBOOK + `\n\nあなたの能力値は ${JSON.stringify(newSlot.stats)} です。この情報も踏まえて、ゲームマスターとして、ルールに厳密に従ってゲームを開始してください。` }] });
+        
+        gameSlots.push(newSlot);
+        activeSlotId = newSlot.id;
+        
+        loadGame(activeSlotId);
+        callAI();
+        updateSlotSelector();
+    }
+
+    function deleteSelectedSlot() {
+        const selectedId = slotSelector.value;
+        if (selectedId && selectedId !== 'new') {
+            if (confirm(`本当にセーブデータ「${gameSlots.find(s => s.id == selectedId).name}」を削除しますか？`)) {
+                gameSlots = gameSlots.filter(s => s.id != selectedId);
+                activeSlotId = null;
+                localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
+                localStorage.removeItem('rpgActiveSlotId');
+                window.location.reload();
+            }
+        }
+    }
+
+    function updateSlotSelector() {
+        slotSelector.innerHTML = '';
+        gameSlots.forEach((slot, index) => {
+            const option = document.createElement('option');
+            option.value = slot.id;
+            option.textContent = `データ${index + 1}: ${slot.name}`;
+            slotSelector.appendChild(option);
+        });
+        const newGameOption = document.createElement('option');
+        newGameOption.value = 'new';
+        newGameOption.textContent = '--- はじめから ---';
+        slotSelector.appendChild(newGameOption);
+
+        if (activeSlotId) {
+            slotSelector.value = activeSlotId;
+        } else {
+            slotSelector.value = 'new';
+        }
+    }
+
+    function clearGameScreen() {
+        gameLog.innerHTML = '';
         actionsContainer.innerHTML = '';
-        if (actions.length > 0) {
-            actions.forEach(actionText => {
-                const button = document.createElement('button');
-                button.textContent = actionText;
-                button.className = 'action-button';
-                button.addEventListener('click', () => {
-                    actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true);
-                    button.classList.add('fade-out');
-                    setTimeout(() => {
-                        handleUserCommand(actionText);
-                    }, 500);
-                });
-                actionsContainer.appendChild(button);
-            });
-            toggleInput(true);
-        } else {
-            toggleInput(false);
-        }
+        conversationHistory = [];
+        playerStats = {};
+        playerName = '';
+        inventory = [];
+        dailyActions = { date: '', count: 0 };
+    }
+
+    function updateAllDisplays() {
+        updatePlayerNameDisplay();
+        updateStatusDisplay();
+        updateActionCountDisplay();
+        updateInventoryDisplay();
     }
     
-    function toggleInput(disabled) {
-        userInput.disabled = disabled;
-        sendButton.disabled = disabled;
-        userInput.placeholder = disabled ? '[ACTION] ボタンから選択してください' : 'どうする？';
-    }
+    // ... (generateStats, updatePlayerNameDisplay などのUI更新関数は変更なし) ...
+    function generateStats() { const rollDice = () => Math.floor(Math.random() * 16) + 3; const initialHP = 100; return { "HP": { current: initialHP, max: initialHP }, "STR": rollDice(), "DEX": rollDice(), "CON": rollDice(), "INT": rollDice(), "WIS": rollDice(), "CHA": rollDice() }; }
+    function updatePlayerNameDisplay() { playerNameDisplay.textContent = playerName || 'ななしの旅人'; }
+    function updateInventoryDisplay() { inventoryDisplay.innerHTML = ''; if (inventory.length === 0) { inventoryDisplay.innerHTML = '<p>何も持っていない</p>'; } else { inventory.forEach(item => { const p = document.createElement('p'); p.textContent = `・${item}`; inventoryDisplay.appendChild(p); }); } }
+    function updateStatusDisplay(changes = {}) { statusDisplay.innerHTML = ''; for (const [key, value] of Object.entries(playerStats)) { const p = document.createElement('p'); const label = document.createElement('span'); label.textContent = `${key}:`; const valueContainer = document.createElement('span'); const valueSpan = document.createElement('span'); valueSpan.className = 'stat-value'; if (key === 'HP') { valueSpan.textContent = `${value.current} / ${value.max}`; } else { valueSpan.textContent = value; } valueContainer.appendChild(valueSpan); if (changes[key]) { const changeSpan = document.createElement('span'); changeSpan.className = 'stat-change'; changeSpan.textContent = `(${changes[key]})`; valueContainer.appendChild(changeSpan); setTimeout(() => { if(changeSpan) changeSpan.remove(); }, 2000); } p.appendChild(label); p.appendChild(valueContainer); statusDisplay.appendChild(p); } }
+    function updateActionCountDisplay() { actionCountDisplay.textContent = `${dailyActions.count} / ${DAILY_ACTION_LIMIT}`; }
+    function displayActions(actions) { actionsContainer.innerHTML = ''; if (actions.length > 0) { actions.forEach(actionText => { const button = document.createElement('button'); button.textContent = actionText; button.className = 'action-button'; button.addEventListener('click', () => { actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true); button.classList.add('fade-out'); setTimeout(() => { handleUserCommand(actionText); }, 500); }); actionsContainer.appendChild(button); }); toggleInput(true); } else { toggleInput(false); } }
+    function toggleInput(disabled) { userInput.disabled = disabled; sendButton.disabled = disabled; userInput.placeholder = disabled ? '[ACTION] ボタンから選択してください' : 'どうする？'; }
+
 
     async function callAI() {
+        if (!activeSlotId) return;
         addLog('考え中...', 'ai-response');
         toggleInput(true);
         try {
+            // ... (fetch処理は変更なし) ...
             const requestData = { contents: conversationHistory };
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestData)
-            });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error.message || 'APIからの応答がありませんでした。');
-            }
+            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestData) });
+            if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error.message || 'APIからの応答がありませんでした。'); }
             const data = await response.json();
             const fullAiText = data.candidates[0]?.content?.parts[0]?.text || "（応答がありませんでした）";
             
             let storyText = fullAiText;
             const statChanges = {};
 
-            const nameMatch = storyText.match(/\[NAME\]\s*(.+)/);
-            if (nameMatch) {
-                playerName = nameMatch[1].trim();
-                updatePlayerNameDisplay();
-                storyText = storyText.replace(/\[NAME\].+/, '').trim();
-            }
-
-            const statRegex = /\[STAT\]\s*(\w+)\s*([+\-])\s*(\d+)/g;
-            let statMatch;
-            while ((statMatch = statRegex.exec(storyText)) !== null) {
-                const [fullMatch, stat, operator, valueStr] = statMatch;
-                const value = parseInt(valueStr, 10);
-                if (playerStats[stat] !== undefined) {
-                    if (operator === '+') playerStats[stat] += value;
-                    else playerStats[stat] -= value;
-                    statChanges[stat] = `${operator}${value}`;
-                }
-            }
-            storyText = storyText.replace(statRegex, '').trim();
-
-            const itemAddMatch = storyText.match(/\[ITEM_ADD\]\s*(.+)/);
-            if (itemAddMatch && inventory.length < MAX_INVENTORY_SIZE) {
-                inventory.push(itemAddMatch[1].trim());
-                updateInventoryDisplay();
-                storyText = storyText.replace(/\[ITEM_ADD\].+/, '').trim();
-            }
-
-            const itemRemoveMatch = storyText.match(/\[ITEM_REMOVE\]\s*(.+)/);
-            if (itemRemoveMatch) {
-                inventory = inventory.filter(item => item !== itemRemoveMatch[1].trim());
-                updateInventoryDisplay();
-                storyText = storyText.replace(/\[ITEM_REMOVE\].+/, '').trim();
-            }
-
-            const damageMatch = storyText.match(/\[DAMAGE\]\s*(\d+)/);
-            if (damageMatch) {
-                const damage = parseInt(damageMatch[1], 10);
-                playerStats.HP.current -= damage;
-                if (playerStats.HP.current < 0) playerStats.HP.current = 0;
-                storyText = storyText.replace(/\[DAMAGE\]\s*\d+/, '').trim();
-            }
-            
-            if (Object.keys(statChanges).length > 0 || damageMatch) {
-                updateStatusDisplay(statChanges);
-            }
+            // ... (各種タグの処理は変更なし) ...
+            const nameMatch = storyText.match(/\[NAME\]\s*(.+)/); if (nameMatch) { playerName = nameMatch[1].trim(); updatePlayerNameDisplay(); storyText = storyText.replace(/\[NAME\].+/, '').trim(); }
+            const statRegex = /\[STAT\]\s*(\w+)\s*([+\-])\s*(\d+)/g; let statMatch; while ((statMatch = statRegex.exec(storyText)) !== null) { const [fullMatch, stat, operator, valueStr] = statMatch; const value = parseInt(valueStr, 10); if (playerStats[stat] !== undefined) { if (operator === '+') playerStats[stat] += value; else playerStats[stat] -= value; statChanges[stat] = `${operator}${value}`; } } storyText = storyText.replace(statRegex, '').trim();
+            const itemAddMatch = storyText.match(/\[ITEM_ADD\]\s*(.+)/); if (itemAddMatch && inventory.length < MAX_INVENTORY_SIZE) { inventory.push(itemAddMatch[1].trim()); updateInventoryDisplay(); storyText = storyText.replace(/\[ITEM_ADD\].+/, '').trim(); }
+            const itemRemoveMatch = storyText.match(/\[ITEM_REMOVE\]\s*(.+)/); if (itemRemoveMatch) { inventory = inventory.filter(item => item !== itemRemoveMatch[1].trim()); updateInventoryDisplay(); storyText = storyText.replace(/\[ITEM_REMOVE\].+/, '').trim(); }
+            const damageMatch = storyText.match(/\[DAMAGE\]\s*(\d+)/); if (damageMatch) { const damage = parseInt(damageMatch[1], 10); playerStats.HP.current -= damage; if (playerStats.HP.current < 0) playerStats.HP.current = 0; storyText = storyText.replace(/\[DAMAGE\]\s*\d+/, '').trim(); }
+            if (Object.keys(statChanges).length > 0 || damageMatch) { updateStatusDisplay(statChanges); }
 
             const lines = storyText.split('\n');
             const storyLogText = lines.filter(line => !line.startsWith('[ACTION]')).join('\n');
             const actions = lines.filter(line => line.startsWith('[ACTION]')).map(line => line.replace('[ACTION] ', ''));
 
             conversationHistory.push({ role: 'model', parts: [{ text: fullAiText }] });
-            saveGame();
+            saveGameSlots(); // 変更されたデータをスロットに保存
 
             const thinkingElement = gameLog.lastChild;
             thinkingElement.textContent = storyLogText;
@@ -275,16 +282,8 @@
         }
     }
 
-    function addLog(text, className) {
-        const newLine = document.createElement('p');
-        newLine.textContent = text;
-        if (className) { newLine.classList.add(className); }
-        gameLog.appendChild(newLine);
-        gameLog.scrollTop = gameLog.scrollHeight;
-        return newLine;
-    }
-
     function handleUserCommand(commandFromButton = null) {
+        if (!activeSlotId) { addLog('まず「はじめから」を選んで、新しい冒険を開始してください。', 'ai-response'); return; }
         const command = commandFromButton || userInput.value;
         if (command === '') return;
 
@@ -309,6 +308,7 @@
         callAI();
     }
     
+    // --- イベントリスナー ---
     sendButton.addEventListener('click', () => handleUserCommand());
     userInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
@@ -317,63 +317,19 @@
         }
     });
 
-    resetButton.addEventListener('click', () => {
-        if (confirm('本当にすべてのデータをリセットして、はじめからやり直しますか？')) {
-            localStorage.removeItem('rpgSaveData');
-            window.location.reload();
+    slotSelector.addEventListener('change', (event) => {
+        const selectedId = event.target.value;
+        if (selectedId === 'new') {
+            createNewGame();
+        } else {
+            loadGame(selectedId);
         }
     });
+
+    deleteSlotButton.addEventListener('click', deleteSelectedSlot);
     
-    function startGame() {
-        const savedData = localStorage.getItem('rpgSaveData');
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            conversationHistory = data.history || [];
-            playerStats = data.stats || generateStats();
-            dailyActions = data.actions || { date: '', count: 0 };
-            playerName = data.name || '';
-            inventory = data.inventory || [];
-            
-            if (!playerStats.HP) {
-                const initialHP = 100;
-                playerStats = { "HP": { current: initialHP, max: initialHP }, ...playerStats };
-            }
-
-            gameLog.innerHTML = '';
-            const lastTurn = conversationHistory[conversationHistory.length - 1];
-            
-            if(lastTurn && lastTurn.role === 'model') {
-                const fullAiText = lastTurn.parts[0].text;
-                const lines = fullAiText.split('\n');
-                const actions = lines.filter(line => line.startsWith('[ACTION]')).map(line => line.replace('[ACTION] ', ''));
-                displayActions(actions);
-            } else {
-                toggleInput(false);
-            }
-
-            conversationHistory.slice(1).forEach(turn => {
-                const text = turn.parts[0].text;
-                if (turn.role === 'user') {
-                    addLog('> ' + text, 'user-command');
-                } else {
-                    const storyText = text.split('\n').filter(line => !line.startsWith('[ACTION]') && !line.startsWith('[DAMAGE]') && !line.startsWith('[STAT]') && !line.startsWith('[NAME]') && !line.startsWith('[ITEM_ADD]') && !line.startsWith('[ITEM_REMOVE]')).join('\n');
-                    addLog(storyText, 'ai-response');
-                }
-            });
-        } else {
-            playerStats = generateStats();
-            conversationHistory = [
-                { role: 'user', parts: [{ text: RULEBOOK + `\n\nあなたの能力値は ${JSON.stringify(playerStats)} です。この情報も踏まえて、ゲームマスターとして、ルールに厳密に従ってゲームを開始してください。` }] }
-            ];
-            callAI();
-        }
-        updatePlayerNameDisplay();
-        updateStatusDisplay();
-        updateActionCountDisplay();
-        updateInventoryDisplay();
-    }
-
-    startGame();
+    // --- ページ読み込み時にゲーム開始 ---
+    loadGameSlots();
 </script>
 </body>
 </html>
