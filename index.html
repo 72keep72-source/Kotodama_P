@@ -112,6 +112,7 @@ let playerStats = {};
 let dailyActions = { date: '', count: 0 };
 let playerName = '';
 let inventory = [];
+let modifiedStats = new Set();
 
 /** ステータス値から修正値を計算する (D&D 5e準拠) */
 function calculateModifier(statValue) {
@@ -140,6 +141,7 @@ function saveCurrentSlotToStorage() {
         activeSlot.actions = dailyActions;
         activeSlot.name = playerName;
         activeSlot.inventory = inventory;
+        activeSlot.modified = Array.from(modifiedStats);
     }
     localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
     if (activeSlotId) {
@@ -163,6 +165,7 @@ function loadGame(slotId) {
     dailyActions = slot.actions || { date: '', count: 0 };
     playerName = slot.name || 'ななしの旅人';
     inventory = slot.inventory || [];
+    modifiedStats = new Set(slot.modified || []); 
     
     rebuildLog();
     const lastTurn = conversationHistory[conversationHistory.length - 1];
@@ -189,7 +192,8 @@ function createNewGame() {
         stats: generateStats(),
         history: [],
         inventory: [],
-        actions: { date: new Date().toISOString().slice(0, 10), count: 0 }
+        actions: { date: new Date().toISOString().slice(0, 10), count: 0 },
+        modified: []
     };
     newSlot.history.push({ 
         role: 'user', 
@@ -428,6 +432,9 @@ function updateInventoryDisplay() {
 }
 
 function updateStatusDisplay(changes = {}) {
+    // ステータス変更があった場合、そのキーを記録リストに追加
+    Object.keys(changes).forEach(key => modifiedStats.add(key));
+
     statusDisplay.innerHTML = '';
     if (!playerStats || Object.keys(playerStats).length === 0) return;
 
@@ -440,13 +447,18 @@ function updateStatusDisplay(changes = {}) {
         const valueSpan = document.createElement('span');
         valueSpan.className = 'stat-value';
 
-        // HPとそれ以外のステータスで表示を分岐
         if (key === 'HP') {
             valueSpan.textContent = `${value.current} / ${value.max}`;
         } else {
-            // ここが変更点！修正値を計算して表示に含める
-            const modifier = calculateModifier(value);
-            valueSpan.textContent = `${value} (${modifier})`;
+            // このステータスが、過去に変更されたことがあるかチェック
+            if (modifiedStats.has(key)) {
+                // 変更されたことがある場合、修正値を表示
+                const modifier = calculateModifier(value);
+                valueSpan.textContent = `${value} (${modifier})`;
+            } else {
+                // 変更されたことがない場合、値のみ表示
+                valueSpan.textContent = value;
+            }
         }
         
         valueContainer.appendChild(valueSpan);
