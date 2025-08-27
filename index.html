@@ -69,7 +69,8 @@
             <div id="status-container">
                 <div id="slot-selector-container">
                     <select id="slot-selector"></select>
-                    <button id="start-button">開始</button>
+                    <button id="load-slot-button">ロード</button>
+                    <button id="new-game-button">新規開始</button>
                     <button id="delete-slot-button">削除</button>
                 </div>
                 <div id="player-name-display"></div>
@@ -100,8 +101,8 @@ const actionCountDisplay = document.getElementById('action-count-display');
 const actionsContainer = document.getElementById('actions-container');
 const playerNameDisplay = document.getElementById('player-name-display');
 const inventoryDisplay = document.getElementById('inventory-display');
-const slotSelector = document.getElementById('slot-selector');
-const startButton = document.getElementById('start-button');
+const loadSlotButton = document.getElementById('load-slot-button'); // start-buttonから変更
+const newGameButton = document.getElementById('new-game-button');   // この行を追加
 const deleteSlotButton = document.getElementById('delete-slot-button');
 
 // --- ゲーム状態変数 ---
@@ -542,12 +543,7 @@ function showWelcomeScreen() {
 function initializeGame() {
     loadGameSlotsFromStorage();
     updateSlotSelector();
-    
-    if (activeSlotId) {
-        loadGame(activeSlotId);
-    } else {
-        showWelcomeScreen();
-    }
+    showWelcomeScreen(); // ★変更点: 常にウェルカム画面から開始する
 }
 
 // --- イベントリスナー ---
@@ -559,6 +555,33 @@ userInput.addEventListener('keydown', (event) => {
         handleUserCommand();
     }
 });
+
+userInput.addEventListener('input', () => {
+    userInput.style.height = 'auto';
+    userInput.style.height = (userInput.scrollHeight) + 'px';
+});
+
+// ★変更点: 「新規開始」ボタンにcreateNewGameを割り当て
+newGameButton.addEventListener('click', createNewGame); 
+
+// ★変更点: 「ロード」ボタンに、選択されたスロットを読み込む処理を割り当て
+loadSlotButton.addEventListener('click', () => {
+    const selectedId = slotSelector.value;
+    if (selectedId && gameSlots.some(s => s.id == selectedId)) {
+        activeSlotId = selectedId;
+        localStorage.setItem('rpgActiveSlotId', activeSlotId);
+        loadGame(selectedId);
+    } else {
+        alert('ロードするセーブデータを選択してください。');
+    }
+});
+
+// ★変更点: プルダウンのイベントリスナーは不要になったので削除
+
+deleteSlotButton.addEventListener('click', deleteSelectedSlot);
+
+// DOMの読み込みが完了したらゲームを初期化
+document.addEventListener('DOMContentLoaded', initializeGame);
 
 userInput.addEventListener('input', () => {
     userInput.style.height = 'auto';
