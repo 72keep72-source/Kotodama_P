@@ -34,19 +34,14 @@
         .stat-value { color: var(--user-text); }
         .stat-change { margin-left: 10px; color: var(--ai-text); animation: fadeInAndOut 2s ease-in-out forwards; }
         #inventory-display p { color: var(--text-color); font-size: 15px; margin: 5px 0; }
-        #inventory-display {
-            max-height: 120px; /* 持ち物欄の最大高さを設定 */
-            overflow-y: auto;  /* 縦方向に内容がはみ出たら、自動でスクロールバーを表示 */
-            padding-right: 10px; /* スクロールバーと文字が重ならないように隙間を空ける */
-        }
         #system-menu { flex-shrink: 0; }
         .system-button { width: 100%; padding: 15px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; text-align: center; text-decoration: none; display: block; box-sizing: border-box; }
         .system-button.share { background-color: var(--twitter-color); }
         .system-button.share:hover { background-color: #0c85d0; }
         #slot-selector-container { display: flex; margin-bottom: 10px; }
         #slot-selector { flex-grow: 1; background-color: #333; color: var(--text-color); border: 1px solid #555; padding: 10px; font-size: 16px; }
-        #new-game-button, #delete-slot-button { color: white; border: none; margin-left: 10px; padding: 10px 15px; cursor: pointer; font-size: 16px; border-radius: 5px; }
-        #new-game-button { background-color: var(--accent-color); }
+        #start-button, #delete-slot-button { color: white; border: none; margin-left: 10px; padding: 10px 15px; cursor: pointer; font-size: 16px; border-radius: 5px; }
+        #start-button { background-color: var(--accent-color); }
         #delete-slot-button { background-color: var(--danger-color); }
         @keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.95); } }
         @keyframes fadeInAndOut { 0% { opacity: 0; transform: translateY(5px); } 20% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; } 100% { opacity: 0; } }
@@ -65,7 +60,7 @@
             <div id="game-log"></div>
             <div id="actions-container"></div>
             <div id="input-area">
-                <textarea id="user-input" rows="1" placeholder="[ACTION] ボタンを押すか、自由に入力してください"></textarea>
+                <input type="text" id="user-input" placeholder="セーブデータを選択してください">
                 <button id="send-button">送信</button>
             </div>
         </div>
@@ -73,7 +68,7 @@
             <div id="status-container">
                 <div id="slot-selector-container">
                     <select id="slot-selector"></select>
-                    <button id="new-game-button">開始</button>
+                    <button id="start-button">開始</button>
                     <button id="delete-slot-button">削除</button>
                 </div>
                 <div id="player-name-display"></div>
@@ -104,7 +99,7 @@
     const playerNameDisplay = document.getElementById('player-name-display');
     const inventoryDisplay = document.getElementById('inventory-display');
     const slotSelector = document.getElementById('slot-selector');
-    const newGameButton = document.getElementById('new-game-button');
+    const startButton = document.getElementById('start-button');
     const deleteSlotButton = document.getElementById('delete-slot-button');
 
     let gameSlots = [];
@@ -143,7 +138,9 @@
             dailyActions = slot.actions || { date: '', count: 0 };
             playerName = slot.name || 'ななしの旅人';
             inventory = slot.inventory || [];
+            
             rebuildLog();
+
             const lastTurn = conversationHistory[conversationHistory.length - 1];
             if (lastTurn && lastTurn.role === 'model') {
                 const lines = lastTurn.parts[0].text.split('\n');
@@ -198,34 +195,33 @@
                 window.location.reload();
             }
         } else {
-            alert('削除するデータが選択されていません。');
+            alert('削除するデータがありません。');
         }
     }
 
     function updateSlotSelector() {
-        slotSelector.innerHTML = ''; // プルダウンメニューを一旦空にする
-    
-        // 既存のセーブデータをプルダウンに追加
-        gameSlots.forEach((slot, index) => {
-            const option = document.createElement('option');
-            option.value = slot.id;
-            option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
-            slotSelector.appendChild(option);
-        });
-    
-        // ▼▼▼ ここからが新しいロジック ▼▼▼
-        // セーブスロットに空きがある（3つ未満）場合のみ、「はじめから」を追加
+        slotSelector.innerHTML = '';
+        if (gameSlots.length === 0) {
+            // セーブデータがない場合は選択肢を表示しない
+        } else {
+            gameSlots.forEach((slot, index) => {
+                const option = document.createElement('option');
+                option.value = slot.id;
+                option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
+                slotSelector.appendChild(option);
+            });
+        }
+        
         if (gameSlots.length < MAX_SAVE_SLOTS) {
             const newGameOption = document.createElement('option');
-            newGameOption.value = 'new'; // 特別な値 'new' を設定
+            newGameOption.value = 'new';
             newGameOption.textContent = '--- 新しく冒険を始める ---';
             slotSelector.appendChild(newGameOption);
         }
-        // ▲▲▲ ここまで ▲▲▲
-    
-        // 現在アクティブなスロットを選択状態にする
+        
         slotSelector.value = activeSlotId ? activeSlotId : 'new';
     }
+
     function clearGameScreen() {
         gameLog.innerHTML = '';
         actionsContainer.innerHTML = '';
@@ -354,22 +350,24 @@
             handleUserCommand();
         }
     });
-    slotSelector.addEventListener('change', (event) => {
-        const selectedId = event.target.value;
-        activeSlotId = selectedId;
-        localStorage.setItem('rpgActiveSlotId', activeSlotId);
-        loadGame(selectedId);
-    });
-    // ▼▼▼ ボタンの役割を変更 ▼▼▼
-    newGameButton.addEventListener('click', () => {
+
+    startButton.addEventListener('click', () => {
         const selectedId = slotSelector.value;
-        if (selectedId) {
-            loadGame(selectedId);
-        } else {
-            // セーブデータがない場合は新規作成する
+        if (selectedId === 'new') {
             createNewGame();
+        } else if (selectedId) {
+            loadGame(selectedId);
         }
     });
+    
+    slotSelector.addEventListener('change', () => {
+        const selectedId = slotSelector.value;
+        if (selectedId !== 'new') {
+            activeSlotId = selectedId;
+            localStorage.setItem('rpgActiveSlotId', activeSlotId);
+        }
+    });
+
     deleteSlotButton.addEventListener('click', deleteSelectedSlot);
     
     document.addEventListener('DOMContentLoaded', startGame);
