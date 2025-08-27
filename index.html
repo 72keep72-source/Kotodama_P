@@ -34,6 +34,11 @@
         .stat-value { color: var(--user-text); }
         .stat-change { margin-left: 10px; color: var(--ai-text); animation: fadeInAndOut 2s ease-in-out forwards; }
         #inventory-display p { color: var(--text-color); font-size: 15px; margin: 5px 0; }
+        #inventory-display {
+            max-height: 120px; /* 持ち物欄の最大高さを設定 */
+            overflow-y: auto;  /* 縦方向に内容がはみ出たら、自動でスクロールバーを表示 */
+            padding-right: 10px; /* スクロールバーと文字が重ならないように隙間を空ける */
+        }
         #system-menu { flex-shrink: 0; }
         .system-button { width: 100%; padding: 15px; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; text-align: center; text-decoration: none; display: block; box-sizing: border-box; }
         .system-button.share { background-color: var(--twitter-color); }
