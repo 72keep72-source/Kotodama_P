@@ -33,7 +33,7 @@ exports.handler = async (event) => {
     }
 
     // Google AIモデルを取得してチャットセッションを開始
-    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest"});
     const chat = model.startChat({
       history: conversationHistory.slice(0, -1), // 最後のユーザー入力を除く
     });
