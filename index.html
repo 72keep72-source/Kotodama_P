@@ -113,6 +113,13 @@ let dailyActions = { date: '', count: 0 };
 let playerName = '';
 let inventory = [];
 
+/** ステータス値から修正値を計算する (D&D 5e準拠) */
+function calculateModifier(statValue) {
+    const modifier = Math.floor((statValue - 10) / 2);
+    // プラスの場合は "+" をつけて返す
+    return modifier >= 0 ? `+${modifier}` : `${modifier}`;
+}
+
 // --- 主要関数 ---
 
 /** localStorageから全セーブデータを読み込む */
@@ -432,7 +439,15 @@ function updateStatusDisplay(changes = {}) {
         const valueContainer = document.createElement('span');
         const valueSpan = document.createElement('span');
         valueSpan.className = 'stat-value';
-        valueSpan.textContent = (key === 'HP') ? `${value.current} / ${value.max}` : value;
+
+        // HPとそれ以外のステータスで表示を分岐
+        if (key === 'HP') {
+            valueSpan.textContent = `${value.current} / ${value.max}`;
+        } else {
+            // ここが変更点！修正値を計算して表示に含める
+            const modifier = calculateModifier(value);
+            valueSpan.textContent = `${value} (${modifier})`;
+        }
         
         valueContainer.appendChild(valueSpan);
 
