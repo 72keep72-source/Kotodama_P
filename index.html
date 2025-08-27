@@ -264,18 +264,34 @@ async function callAI() {
             updateSlotSelector(); // プルダウンの名前を更新
         }
         // ステータス変動
-        const statRegex = /\[STAT\]\s*(\w+)\s*([+\-])\s*(\d+)/g;
-        let statMatch;
-        while ((statMatch = statRegex.exec(storyText)) !== null) {
-            const [_, stat, operator, valueStr] = statMatch;
-            const value = parseInt(valueStr, 10);
-            if (playerStats && typeof playerStats[stat] === 'number') {
-                if (operator === '+') playerStats[stat] += value;
-                else playerStats[stat] -= value;
-                statChanges[stat] = `${operator}${value}`;
+    // 変更点1: [+/-]記号が「あってもなくても」数字を読み取れるように正規表現を修正
+    const statRegex = /\[STAT\]\s*(\w+)\s*([+\-]?)\s*(\d+)/g;
+    let statMatch;
+    while ((statMatch = statRegex.exec(storyText)) !== null) {
+    const [_, stat, operator, valueStr] = statMatch;
+    const value = parseInt(valueStr, 10);
+
+    if (playerStats && (typeof playerStats[stat] === 'number' || key === 'HP')) {
+        // 変更点2: [+/-]記号があるかないかで処理を分岐させる
+        if (operator === '+') {
+            // 足し算の場合
+            playerStats[stat] += value;
+            statChanges[stat] = `+${value}`;
+        } else if (operator === '-') {
+            // 引き算の場合
+            playerStats[stat] -= value;
+            statChanges[stat] = `-${value}`;
+        } else {
+            // 記号がない場合（値をそのまま設定）
+            const oldValue = playerStats[stat];
+            playerStats[stat] = value;
+            const diff = value - oldValue;
+            if (diff > 0) statChanges[stat] = `+${diff}`;
+            else if (diff < 0) statChanges[stat] = `${diff}`;
             }
         }
-        storyText = storyText.replace(statRegex, '').trim();
+    }
+storyText = storyText.replace(statRegex, '').trim();
         // アイテム追加
         const itemAddRegex = /\[ITEM_ADD\]\s*(.+)/g;
         let itemAddMatch;
