@@ -203,24 +203,29 @@
     }
 
     function updateSlotSelector() {
-        slotSelector.innerHTML = '';
-        if (gameSlots.length === 0) {
+        slotSelector.innerHTML = ''; // プルダウンメニューを一旦空にする
+    
+        // 既存のセーブデータをプルダウンに追加
+        gameSlots.forEach((slot, index) => {
             const option = document.createElement('option');
-            option.textContent = 'セーブデータがありません';
-            option.disabled = true;
+            option.value = slot.id;
+            option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
             slotSelector.appendChild(option);
-        } else {
-            gameSlots.forEach((slot, index) => {
-                const option = document.createElement('option');
-                option.value = slot.id;
-                option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
-                slotSelector.appendChild(option);
-            });
+        });
+    
+        // ▼▼▼ ここからが新しいロジック ▼▼▼
+        // セーブスロットに空きがある（3つ未満）場合のみ、「はじめから」を追加
+        if (gameSlots.length < MAX_SAVE_SLOTS) {
+            const newGameOption = document.createElement('option');
+            newGameOption.value = 'new'; // 特別な値 'new' を設定
+            newGameOption.textContent = '--- 新しく冒険を始める ---';
+            slotSelector.appendChild(newGameOption);
         }
-        slotSelector.value = activeSlotId;
-        newGameButton.disabled = gameSlots.length >= MAX_SAVE_SLOTS;
+        // ▲▲▲ ここまで ▲▲▲
+    
+        // 現在アクティブなスロットを選択状態にする
+        slotSelector.value = activeSlotId ? activeSlotId : 'new';
     }
-
     function clearGameScreen() {
         gameLog.innerHTML = '';
         actionsContainer.innerHTML = '';
