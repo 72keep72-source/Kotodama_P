@@ -88,11 +88,11 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // --- 定数とDOM要素の取得 ---
     const API_URL = '/.netlify/functions/callai';
     const DAILY_ACTION_LIMIT = 20;
     const MAX_INVENTORY_SIZE = 5;
     const MAX_SAVE_SLOTS = 3;
-
     const gameLog = document.getElementById('game-log');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const startButton = document.getElementById('start-button');
     const deleteSlotButton = document.getElementById('delete-slot-button');
 
+    // --- ゲームの状態を管理する変数 ---
     let gameSlots = [];
     let activeSlotId = null;
     let conversationHistory = [];
@@ -113,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let playerName = '';
     let inventory = [];
 
+    // --- セーブデータ管理 ---
     function saveGameSlots() {
         const activeSlot = gameSlots.find(slot => slot.id == activeSlotId);
         if (activeSlot) {
@@ -130,6 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // --- ゲーム進行のコアロジック ---
     function loadGame(slotId) {
         clearGameScreen();
         const slot = gameSlots.find(s => s.id == slotId);
@@ -255,7 +258,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function updateSlotSelector() {
         slotSelector.innerHTML = '';
-        if (gameSlots.length > 0) {
+        if (gameSlots.length === 0) {
+            const option = document.createElement('option');
+            option.textContent = 'セーブデータがありません';
+            option.disabled = true;
+            slotSelector.appendChild(option);
+        } else {
             gameSlots.forEach((slot, index) => {
                 const option = document.createElement('option');
                 option.value = slot.id;
@@ -308,21 +316,27 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayActions(actions) { actionsContainer.innerHTML = ''; if (actions && actions.length > 0) { actions.forEach(actionText => { const button = document.createElement('button'); button.textContent = actionText; button.className = 'action-button'; button.addEventListener('click', () => { actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true); button.classList.add('fade-out'); setTimeout(() => { handleUserCommand(actionText); }, 500); }); actionsContainer.appendChild(button); }); } }
     function toggleInput(disabled) { userInput.disabled = disabled; sendButton.disabled = disabled; userInput.placeholder = disabled ? 'AIが応答を考えています…' : 'どうする？ (Ctrl+Enterで送信)'; }
     
-    // --- ゲーム起動処理 ---
+    // --- ▼▼▼ ここからが変更箇所 ▼▼▼ ---
+    function showWelcomeScreen() {
+        clearGameScreen();
+        addLog('ステータス上のプルダウンメニューから、続きを遊ぶデータを選択するか、「開始」ボタンで新しい冒険を開始してください。', 'ai-response');
+        toggleInput(true);
+    }
+
     function startGame() {
         gameSlots = JSON.parse(localStorage.getItem('rpgGameSlots')) || [];
         activeSlotId = localStorage.getItem('rpgActiveSlotId');
-        const activeSlotExists = gameSlots.some(slot => slot.id == activeSlotId);
-        if (!activeSlotExists) { activeSlotId = null; }
+        
+        if (activeSlotId && !gameSlots.some(slot => slot.id == activeSlotId)) {
+            activeSlotId = null;
+        }
         
         updateSlotSelector();
         
         if (activeSlotId) {
             loadGame(activeSlotId);
         } else {
-            clearGameScreen();
-            addLog('ステータス上のプルダウンメニューから、続きを遊ぶデータを選択するか、「開始」ボタンで新しい冒険を開始してください。', 'ai-response');
-            toggleInput(true);
+            showWelcomeScreen();
         }
     }
     
