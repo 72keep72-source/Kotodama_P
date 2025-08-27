@@ -350,7 +350,16 @@
         localStorage.setItem('rpgActiveSlotId', activeSlotId);
         loadGame(selectedId);
     });
-    newGameButton.addEventListener('click', createNewGame);
+    // ▼▼▼ ボタンの役割を変更 ▼▼▼
+    newGameButton.addEventListener('click', () => {
+        const selectedId = slotSelector.value;
+        if (selectedId) {
+            loadGame(selectedId);
+        } else {
+            // セーブデータがない場合は新規作成する
+            createNewGame();
+        }
+    });
     deleteSlotButton.addEventListener('click', deleteSelectedSlot);
     
     document.addEventListener('DOMContentLoaded', startGame);
