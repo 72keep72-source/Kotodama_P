@@ -6,12 +6,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="scenarios/rulebook_1st.js"></script>
     <style>
-        /* CSSは変更ありません */
         :root { --main-bg: #1a1a1a; --container-bg: #2b2b2b; --border-color: #444; --text-color: #f0f0f0; --accent-color: #4CAF50; --ai-text: #a5d6a7; --user-text: #81d4fa; --danger-color: #c9302c; --twitter-color: #1DA1F2; }
         html, body { height: 100%; }
         body { background-color: var(--main-bg); color: var(--text-color); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; }
         header { background-color: var(--container-bg); padding: 10px 20px; text-align: center; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
         header h1 { margin: 0; font-size: 1.2em; }
+        /* --- Tooltip Styles --- */
+/* --- Tooltip Styles --- */
+.tooltip {
+    position: relative; /* ツールチップの位置の基準にする */
+    cursor: help; /* マウスカーソルを「？」にする */
+    /* border-bottom: 1px dotted var(--text-color); */ /* 好みで下線を残すか削除してください */
+  }
+  
+  .tooltip::after {
+    content: attr(data-tooltip); /* data-tooltip属性のテキストを表示 */
+    position: fixed; /* ★ここをfixedに変更：画面全体を基準にする */
+    /* bottom: 100%; */ /* bottomとtopはどちらか一方に調整 */
+    top: auto; /* bottom:100% と併用できないため */
+    bottom: 20px; /* ★下から少し浮かせる */
+    /* left: 50%; */ /* leftは不要になるか、調整が必要 */
+    right: 20px; /* ★右端から20pxの位置に固定 */
+    /* transform: translateX(-50%); */ /* 中央寄せのtransformは不要になる */
+    transform: none; /* transformをリセット */
+    
+    margin-bottom: 0; /* 不要になる */
+    
+    background-color: var(--main-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 8px 12px;
+    
+    width: auto; /* ★幅は自動調整に変更 */
+    max-width: 300px; /* ★最大幅を設定して長すぎないように */
+    min-width: 150px; /* ★最小幅を設定して短すぎないように */
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: left;
+    
+    opacity: 0; /* 最初は非表示 */
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    z-index: 1000; /* ★他の要素の上に確実に表示されるようにz-indexを高くする */
+  }
+  
+  .tooltip:hover::after {
+    opacity: 1; /* マウスオーバーで表示 */
+    visibility: visible;
+  }
         #game-wrapper { display: flex; width: 100%; max-width: 1200px; margin: 0 auto; padding: 20px; box-sizing: border-box; flex-grow: 1; overflow: hidden; }
         #game-container { width: 70%; height: 100%; display: flex; flex-direction: column; background-color: var(--container-bg); border: 1px solid var(--border-color); }
         #game-log { flex-grow: 1; padding: 20px; overflow-y: auto; white-space: pre-wrap; }
@@ -22,7 +65,21 @@
         .action-button:hover { filter: brightness(1.2); }
         .action-button.fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
         #input-area { display: flex; padding: 10px; }
-        textarea#user-input { flex-grow: 1; background-color: #333; color: var(--text-color); border: 1px solid #555; padding: 10px; font-size: 16px; font-family: sans-serif; resize: vertical; line-height: 1.5; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; }
+        #export-log-button {
+            background-color: var(--border-color); /* 背景色を少し暗めに */
+            color: var(--text-color);
+            border: 1px solid #555;
+            padding: 10px 15px; /* 横幅を少し狭く */
+            margin: 0 10px; /* 右側に余白を追加 */
+            cursor: pointer;
+            font-size: 14px; /* 文字を少し小さく */
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+        }
+        #export-log-button:hover {
+            background-color: #555;
+        }
+        textarea#user-input { flex-grow: 1; background-color: #333; color: var(--text-color); border: 1px solid #555; padding: 10px; font-size: 16px; font-family: sans-serif; resize: none; line-height: 1.5; max-height: 150px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; }
         #user-input:disabled { background-color: #444; cursor: not-allowed; }
         #send-button { background-color: var(--accent-color); color: white; border: none; padding: 10px 20px; cursor: pointer; font-size: 16px; }
         #sidebar { width: 30%; height: 100%; margin-left: 20px; display: flex; flex-direction: column; }
@@ -41,9 +98,8 @@
         .system-button.share:hover { background-color: #0c85d0; }
         #slot-selector-container { display: flex; margin-bottom: 10px; }
         #slot-selector { flex-grow: 1; background-color: #333; color: var(--text-color); border: 1px solid #555; padding: 10px; font-size: 16px; }
-        #start-button, #delete-slot-button { color: white; border: none; margin-left: 10px; padding: 10px 15px; cursor: pointer; font-size: 16px; border-radius: 5px; }
-        #start-button { background-color: var(--accent-color); }
-        #start-button:disabled { background-color: #555; cursor: not-allowed; }
+        #confirm-button, #delete-slot-button { color: white; border: none; margin-left: 10px; padding: 10px 15px; cursor: pointer; font-size: 16px; border-radius: 5px; }
+        #confirm-button { background-color: var(--accent-color); }
         #delete-slot-button { background-color: var(--danger-color); }
         @keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.95); } }
         @keyframes fadeInAndOut { 0% { opacity: 0; transform: translateY(5px); } 20% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; } 100% { opacity: 0; } }
@@ -62,15 +118,15 @@
             <div id="game-log"></div>
             <div id="actions-container"></div>
             <div id="input-area">
-                <textarea id="user-input" placeholder="セーブデータを選択してください"></textarea>
-                <button id="send-button">送信</button>
+                <textarea id="user-input"></textarea>
+                <button id="export-log-button">exp</button> <button id="send-button">送信</button>
             </div>
         </div>
         <div id="sidebar">
             <div id="status-container">
                 <div id="slot-selector-container">
                     <select id="slot-selector"></select>
-                    <button id="start-button">開始</button>
+                    <button id="confirm-button">決定</button>
                     <button id="delete-slot-button">削除</button>
                 </div>
                 <div id="player-name-display"></div>
@@ -82,345 +138,516 @@
                 <div id="inventory-display"></div>
             </div>
             <div id="system-menu">
-                <a class="system-button share" href="https://twitter.com/intent/tweet?text=%E2%96%BCAI%E3%81%A8%E4%BD%9C%E3%82%8BRPG%E3%80%8E%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB%E3%80%8F%0Ahttps%3A%2F%2Fhelpful-bavarois-b141f3.netlify.app%2F%0A%23%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB" target="_blank" rel="noopener noreferrer">Xにシェアする</a>
+                <a class="system-button share" href="https://twitter.com/intent/tweet?text=%E2%96%BCAI%E3%81%A8%E4%BD%9C%E3%82%8BRPG%E3%80%8E%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%RO%E3%83%88%E3%82%B3%E3%83%AB%E3%80%8F%0Ahttps%3A%2F%2Fhelpful-bavarois-b141f3.netlify.app%2F%0A%23%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%RO%E3%83%88%E3%82%B3%E3%83%AB" target="_blank" rel="noopener noreferrer">Xにシェアする</a>
             </div>
         </div>
     </div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const API_URL = '/.netlify/functions/callai';
-    const DAILY_ACTION_LIMIT = 20;
-    const MAX_INVENTORY_SIZE = 5;
-    const MAX_SAVE_SLOTS = 3;
+// --- グローバル定数とDOM要素 ---
+const API_URL = '/.netlify/functions/callai';
+const DAILY_ACTION_LIMIT = 20;
+const MAX_INVENTORY_SIZE = 5;
+const MAX_SAVE_SLOTS = 3;
+const gameLog = document.getElementById('game-log');
+const userInput = document.getElementById('user-input');
+const sendButton = document.getElementById('send-button');
+const exportLogButton = document.getElementById('export-log-button');
+const statusDisplay = document.getElementById('status-display');
+const actionCountDisplay = document.getElementById('action-count-display');
+const actionsContainer = document.getElementById('actions-container');
+const playerNameDisplay = document.getElementById('player-name-display');
+const inventoryDisplay = document.getElementById('inventory-display');
+const slotSelector = document.getElementById('slot-selector'); // ★修正点1: この行を追加
+const confirmButton = document.getElementById('confirm-button');
+const deleteSlotButton = document.getElementById('delete-slot-button');
 
-    const gameLog = document.getElementById('game-log');
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
-    const statusDisplay = document.getElementById('status-display');
-    const actionCountDisplay = document.getElementById('action-count-display');
-    const actionsContainer = document.getElementById('actions-container');
-    const playerNameDisplay = document.getElementById('player-name-display');
-    const inventoryDisplay = document.getElementById('inventory-display');
-    const slotSelector = document.getElementById('slot-selector');
-    const startButton = document.getElementById('start-button');
-    const deleteSlotButton = document.getElementById('delete-slot-button');
+// --- ゲーム状態変数 ---
+let gameSlots = [];
+let activeSlotId = null;
+let conversationHistory = [];
+let playerStats = {};
+let dailyActions = { date: '', count: 0 };
+let playerName = '';
+let inventory = [];
+let modifiedStats = new Set();
 
-    let gameSlots = [];
-    let activeSlotId = null;
-    let conversationHistory = [];
-    let playerStats = {};
-    let dailyActions = { date: '', count: 0 };
-    let playerName = '';
-    let inventory = [];
+/** ステータス値から修正値を計算する (D&D 5e準拠) */
+function calculateModifier(statValue) {
+    const modifier = Math.floor((statValue - 10) / 2);
+    if (modifier === 0) return "";
+    return modifier > 0 ? `+${modifier}` : `${modifier}`;
+}
 
-    function saveGameSlots() {
-        const activeSlot = gameSlots.find(slot => slot.id == activeSlotId);
-        if (activeSlot) {
-            activeSlot.history = conversationHistory;
-            activeSlot.stats = playerStats;
-            activeSlot.actions = dailyActions;
-            activeSlot.name = playerName;
-            activeSlot.inventory = inventory;
-        }
-        localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
-        if (activeSlotId) {
-            localStorage.setItem('rpgActiveSlotId', activeSlotId);
-        } else {
-            localStorage.removeItem('rpgActiveSlotId');
-        }
+// --- 主要関数 ---
+function loadGameSlotsFromStorage() {
+    gameSlots = JSON.parse(localStorage.getItem('rpgGameSlots')) || [];
+}
+
+function saveCurrentSlotToStorage() {
+    const activeSlot = gameSlots.find(slot => slot.id == activeSlotId);
+    if (activeSlot) {
+        activeSlot.history = conversationHistory;
+        activeSlot.stats = playerStats;
+        activeSlot.actions = dailyActions;
+        activeSlot.name = playerName;
+        activeSlot.inventory = inventory;
+        activeSlot.modified = Array.from(modifiedStats);
     }
-
-    function loadGame(slotId) {
-        clearGameScreen();
-        const slot = gameSlots.find(s => s.id == slotId);
-
-        if (slot) {
-            activeSlotId = slot.id;
-            conversationHistory = slot.history || [];
-            playerStats = slot.stats || {};
-            dailyActions = slot.actions || { date: '', count: 0 };
-            playerName = slot.name || 'ななしの旅人';
-            inventory = slot.inventory || [];
-            
-            rebuildLog();
-
-            const lastTurn = conversationHistory[conversationHistory.length - 1];
-            if (lastTurn && lastTurn.role === 'model') {
-                const lines = lastTurn.parts[0].text.split('\n');
-                const actions = lines.filter(line => line.startsWith('[ACTION]')).map(line => line.replace('[ACTION] ', ''));
-                displayActions(actions);
-            }
-        } else {
-            activeSlotId = null;
-            addLog('← 上のプルダウンメニューから続きを遊ぶデータを選択するか、「開始」ボタンで新しい冒険を開始してください。', 'ai-response');
-            toggleInput(true);
-        }
-        updateAllDisplays();
+    localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
+    if (activeSlotId) {
+        localStorage.setItem('rpgActiveSlotId', activeSlotId);
+    } else {
+        localStorage.removeItem('rpgActiveSlotId');
     }
+}
 
-    function createNewGame() {
-        if (gameSlots.length >= MAX_SAVE_SLOTS) {
-            alert(`セーブスロットは${MAX_SAVE_SLOTS}つまでです。`);
-            return;
-        }
-        clearGameScreen();
-        playerStats = generateStats();
-        playerName = 'ななしの旅人';
-        inventory = [];
-        dailyActions = { date: new Date().toISOString().slice(0, 10), count: 0 };
-        conversationHistory = [];
-        const newSlot = {
-            id: Date.now(),
-            name: playerName,
-            stats: playerStats,
-            history: conversationHistory,
-            inventory: inventory,
-            actions: dailyActions
-        };
-        newSlot.history.push({ role: 'user', parts: [{ text: RULEBOOK + `\n\nあなたの能力値は ${JSON.stringify(newSlot.stats)} です。この情報も踏まえて、ゲームマスターとして、ルールに厳密に従ってゲームを開始してください。` }] });
-        gameSlots.push(newSlot);
-        activeSlotId = newSlot.id;
-        updateSlotSelector();
-        updateAllDisplays();
-        callAI();
+function loadGame(slotId) {
+    clearGameScreen();
+    const slot = gameSlots.find(s => s.id == slotId);
+    if (!slot) {
+        showWelcomeScreen();
+        return;
     }
-
-    function deleteSelectedSlot() {
-        const selectedId = slotSelector.value;
-        if (!selectedId) {
-            alert('削除するデータがありません。');
-            return;
-        }
-        const slotToDelete = gameSlots.find(s => s.id == selectedId);
-        if (confirm(`本当にセーブデータ「${slotToDelete.name}」を削除しますか？`)) {
-            gameSlots = gameSlots.filter(s => s.id != selectedId);
-            activeSlotId = null;
-            saveGameSlots();
-            window.location.reload();
-        }
+    activeSlotId = slot.id;
+    conversationHistory = slot.history || [];
+    playerStats = slot.stats || {};
+    dailyActions = slot.actions || { date: '', count: 0 };
+    playerName = slot.name || '（名前未設定）';
+    inventory = slot.inventory || [];
+    modifiedStats = new Set(slot.modified || []); 
+    
+    rebuildLog();
+    const lastTurn = conversationHistory[conversationHistory.length - 1];
+    if (lastTurn && lastTurn.role === 'model') {
+        const lines = lastTurn.parts[0].text.split('\n');
+        const actions = lines.filter(line => line.startsWith('[ACTION]')).map(line => line.replace('[ACTION] ', ''));
+        displayActions(actions);
     }
+    updateAllDisplays();
+    toggleInput(false);
+}
 
-    // --- ▼▼▼ ここからが変更箇所 ▼▼▼ ---
-    function updateSlotSelector() {
-        const hasSlots = gameSlots.length > 0;
-        slotSelector.innerHTML = '';
+function createNewGame() {
+    if (gameSlots.length >= MAX_SAVE_SLOTS) {
+        alert(`セーブスロットは${MAX_SAVE_SLOTS}つまでです。`);
+        return;
+    }
+    clearGameScreen();
+    
+    const newSlot = {
+        id: Date.now(),
+        name: '（名前未設定）',
+        stats: generateStats(),
+        history: [],
+        inventory: [],
+        actions: { date: new Date().toISOString().slice(0, 10), count: 0 },
+        modified: []
+    };
+    newSlot.history.push({ 
+        role: 'user', 
+        parts: [{ text: RULEBOOK + `\n\nあなたの能力値は ${JSON.stringify(newSlot.stats)} です。この情報も踏まえて、ゲームマスターとして、ルールに厳密に従ってゲームを開始してください。` }] 
+    });
 
-        if (hasSlots) {
-            gameSlots.forEach((slot, index) => {
-                const option = document.createElement('option');
-                option.value = slot.id;
-                option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
-                slotSelector.appendChild(option);
-            });
-        } else {
-            const option = document.createElement('option');
-            option.textContent = 'セーブデータがありません';
-            option.disabled = true;
-            slotSelector.appendChild(option);
+    gameSlots.push(newSlot);
+    activeSlotId = newSlot.id;
+    
+    loadGame(activeSlotId);
+    updateSlotSelector();
+    callAI();
+}
+
+function deleteSelectedSlot() {
+    const selectedId = slotSelector.value;
+    if (!selectedId || selectedId === "new_game" || !gameSlots.some(s => s.id == selectedId)) {
+        alert('削除するセーブデータを選択してください。');
+        return;
+    }
+    const slotToDelete = gameSlots.find(s => s.id == selectedId);
+    if (confirm(`本当にセーブデータ「${slotToDelete.name}」を削除しますか？`)) {
+        gameSlots = gameSlots.filter(s => s.id != selectedId);
+        activeSlotId = null;
+        saveCurrentSlotToStorage();
+        window.location.reload();
+    }
+}
+
+async function callAI() {
+    if (!activeSlotId) return;
+    addLog('考え中...', 'ai-response');
+    toggleInput(true, 'AIが応答を考えています…');
+    
+    const requestData = { history: conversationHistory };
+
+    try {
+        const response = await fetch(API_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(requestData) 
+        });
+
+        if (!response.ok) {
+            let errorMsg = `サーバーエラー (ステータス: ${response.status})。`;
+            try {
+                const errorData = await response.json();
+                errorMsg = errorData.error?.message || errorMsg;
+            } catch (e) {}
+            throw new Error(errorMsg);
         }
 
-        if (activeSlotId) {
-            slotSelector.value = activeSlotId;
+        const data = await response.json();
+        const fullAiText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!fullAiText) {
+            throw new Error("AIから有効な応答がありませんでした。");
         }
         
-        startButton.textContent = hasSlots ? 'ロード' : '開始';
-        startButton.disabled = false;
-        if (!hasSlots && gameSlots.length >= MAX_SAVE_SLOTS) {
-            startButton.disabled = true;
-        }
-    }
-    // --- ▲▲▲ ここまでが変更箇所 ▲▲▲ ---
+        conversationHistory.push({ role: 'model', parts: [{ text: fullAiText }] });
+        
+        const parsedData = parseAIResponse(fullAiText);
+        
+        const thinkingElement = gameLog.lastChild;
+        thinkingElement.textContent = parsedData.storyLogText;
+        
+        displayActions(parsedData.actions);
+        updateAllDisplays(parsedData.statChanges);
+        saveCurrentSlotToStorage();
 
-    function clearGameScreen() {
-        gameLog.innerHTML = '';
-        actionsContainer.innerHTML = '';
-        playerStats = {};
-        playerName = '';
-        inventory = [];
-        dailyActions = { date: '', count: 0 };
-        updateAllDisplays();
+    } catch (error) {
+        const thinkingElement = gameLog.lastChild;
+        thinkingElement.textContent = 'エラーが発生しました: ' + error.message;
+    } finally {
         toggleInput(false);
     }
-    
-    function updateAllDisplays() {
-        updatePlayerNameDisplay();
-        updateStatusDisplay();
-        updateActionCountDisplay();
-        updateInventoryDisplay();
+}
+
+function parseAIResponse(fullAiText) {
+    let storyText = fullAiText;
+    const statChanges = {};
+
+    const nameMatch = storyText.match(/\[NAME\]\s*(.+)/);
+    if (nameMatch) {
+        playerName = nameMatch[1].trim();
+        storyText = storyText.replace(/\[NAME\].+/, '').trim();
+        updateSlotSelector();
     }
 
-    function rebuildLog() {
-        gameLog.innerHTML = '';
-        (conversationHistory || []).slice(1).forEach(turn => {
-            const text = turn.parts[0].text;
-            if (turn.role === 'user') {
-                addLog('> ' + text, 'user-command');
+    const statRegex = /\[STAT\]\s*(\w+)\s*([+\-]?)\s*(\d+)/g;
+    let statMatch;
+    while ((statMatch = statRegex.exec(storyText)) !== null) {
+        const [_, stat, operator, valueStr] = statMatch;
+        const value = parseInt(valueStr, 10);
+        
+        if (stat === 'HP' && playerStats.HP) {
+            if (!operator) playerStats.HP.current = value;
+            else if (operator === '+') playerStats.HP.current += value;
+            else if (operator === '-') playerStats.HP.current -= value;
+            
+            if(playerStats.HP.current > playerStats.HP.max) playerStats.HP.current = playerStats.HP.max;
+            if(playerStats.HP.current < 0) playerStats.HP.current = 0;
+        } 
+        else if (playerStats && typeof playerStats[stat] === 'number') {
+            if (operator === '+') {
+                playerStats[stat] += value;
+                statChanges[stat] = `+${value}`;
+            } else if (operator === '-') {
+                playerStats[stat] -= value;
+                statChanges[stat] = `-${value}`;
             } else {
-                const storyText = text.split('\n').filter(line => !line.startsWith('[')).join('\n');
-                addLog(storyText, 'ai-response');
+                const oldValue = playerStats[stat];
+                playerStats[stat] = value;
+                const diff = value - oldValue;
+                if (diff !== 0) statChanges[stat] = diff > 0 ? `+${diff}` : `${diff}`;
             }
+        }
+    }
+    storyText = storyText.replace(statRegex, '').trim();
+
+    const itemAddRegex = /\[ITEM_ADD\]\s*(.+)/g;
+    let itemAddMatch;
+    while((itemAddMatch = itemAddRegex.exec(storyText)) !== null) {
+        if (inventory.length < MAX_INVENTORY_SIZE) inventory.push(itemAddMatch[1].trim());
+    }
+    storyText = storyText.replace(itemAddRegex, '').trim();
+    
+    const itemRemoveRegex = /\[ITEM_REMOVE\]\s*(.+)/g;
+    let itemRemoveMatch;
+    while((itemRemoveMatch = itemRemoveRegex.exec(storyText)) !== null) {
+        inventory = inventory.filter(item => item !== itemRemoveMatch[1].trim());
+    }
+    storyText = storyText.replace(itemRemoveRegex, '').trim();
+
+    const lines = storyText.split('\n');
+    const storyLogText = lines.filter(line => !line.startsWith('[ACTION]')).join('\n').trim();
+    const actions = lines.filter(line => line.startsWith('[ACTION]')).map(line => line.replace('[ACTION] ', ''));
+
+    return { storyLogText, actions, statChanges };
+}
+
+function handleUserCommand(commandFromButton = null) {
+    if (!activeSlotId) {
+        alert('「決定」ボタンで新しい冒険を開始するか、続きを遊ぶデータを選択してください。');
+        return;
+    }
+    const command = commandFromButton || userInput.value.trim();
+    if (command === '') return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    if (dailyActions && dailyActions.date !== today) {
+        dailyActions.date = today;
+        dailyActions.count = 0;
+    }
+
+    if (dailyActions && dailyActions.count >= DAILY_ACTION_LIMIT) {
+        addLog('本日の行動回数上限に達しました。また明日、冒険を続けてください。', 'ai-response');
+        return;
+    }
+
+    addLog('> ' + command, 'user-command');
+    userInput.value = '';
+    userInput.style.height = 'auto';
+    actionsContainer.innerHTML = '';
+    dailyActions.count++;
+    conversationHistory.push({ role: 'user', parts: [{ text: command }] });
+    updateActionCountDisplay();
+    callAI();
+}
+
+// --- UI更新・補助関数 ---
+
+function addLog(text, className) {
+    const newLine = document.createElement('p');
+    newLine.textContent = text;
+    if (className) newLine.classList.add(className);
+    gameLog.appendChild(newLine);
+    gameLog.scrollTop = gameLog.scrollHeight;
+}
+
+function updateSlotSelector() {
+    slotSelector.innerHTML = '';
+
+    const placeholder = document.createElement('option');
+    placeholder.textContent = 'データを選択してください';
+    placeholder.value = '';
+    slotSelector.appendChild(placeholder);
+    
+    const newGameOption = document.createElement('option');
+    newGameOption.textContent = '新規ゲーム';
+    newGameOption.value = 'new_game';
+    slotSelector.appendChild(newGameOption);
+
+    gameSlots.forEach((slot, index) => {
+        const option = document.createElement('option');
+        option.value = slot.id;
+        option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
+        slotSelector.appendChild(option);
+    });
+
+    const lastSelectedId = localStorage.getItem('rpgActiveSlotId');
+    if (lastSelectedId && gameSlots.some(s => s.id == lastSelectedId)) {
+        slotSelector.value = lastSelectedId;
+    }
+}
+
+function clearGameScreen() {
+    gameLog.innerHTML = '';
+    actionsContainer.innerHTML = '';
+    playerStats = {};
+    playerName = '';
+    inventory = [];
+    dailyActions = { date: '', count: 0 };
+    updateAllDisplays();
+}
+
+function updateAllDisplays(statChanges = {}) {
+    updatePlayerNameDisplay();
+    updateStatusDisplay(statChanges);
+    updateActionCountDisplay();
+    updateInventoryDisplay();
+}
+
+function rebuildLog() {
+    gameLog.innerHTML = '';
+    (conversationHistory || []).slice(1).forEach(turn => {
+        const text = turn.parts[0].text;
+        if (turn.role === 'user') {
+            addLog('> ' + text, 'user-command');
+        } else {
+            const storyText = text.split('\n').filter(line => !line.startsWith('[')).join('\n');
+            addLog(storyText, 'ai-response');
+        }
+    });
+}
+
+function generateStats() {
+    const rollDice = () => Math.floor(Math.random() * 16) + 3;
+    const initialHP = 100;
+    return { "HP": { current: initialHP, max: initialHP }, "STR": rollDice(), "DEX": rollDice(), "CON": rollDice(), "INT": rollDice(), "WIS": rollDice(), "CHA": rollDice() };
+}
+
+function updatePlayerNameDisplay() { playerNameDisplay.textContent = playerName; }
+
+function updateInventoryDisplay() {
+    inventoryDisplay.innerHTML = '';
+    if (!inventory || inventory.length === 0) {
+        inventoryDisplay.innerHTML = '<p>何も持っていない</p>';
+    } else {
+        inventory.forEach(item => {
+            const p = document.createElement('p');
+            p.textContent = `・${item}`;
+            inventoryDisplay.appendChild(p);
         });
     }
+}
 
-    function generateStats() { const rollDice = () => Math.floor(Math.random() * 16) + 3; const initialHP = 100; return { "HP": { current: initialHP, max: initialHP }, "STR": rollDice(), "DEX": rollDice(), "CON": rollDice(), "INT": rollDice(), "WIS": rollDice(), "CHA": rollDice() }; }
-    function updatePlayerNameDisplay() { playerNameDisplay.textContent = playerName; }
-    function updateInventoryDisplay() { inventoryDisplay.innerHTML = ''; if (!inventory || inventory.length === 0) { inventoryDisplay.innerHTML = '<p>何も持っていない</p>'; } else { inventory.forEach(item => { const p = document.createElement('p'); p.textContent = `・${item}`; inventoryDisplay.appendChild(p); }); } }
-    function updateStatusDisplay(changes = {}) { statusDisplay.innerHTML = ''; if (!playerStats || Object.keys(playerStats).length === 0) { return; } for (const [key, value] of Object.entries(playerStats)) { const p = document.createElement('p'); const label = document.createElement('span'); label.textContent = `${key}:`; const valueContainer = document.createElement('span'); const valueSpan = document.createElement('span'); valueSpan.className = 'stat-value'; if (key === 'HP') { valueSpan.textContent = `${value.current} / ${value.max}`; } else { valueSpan.textContent = value; } valueContainer.appendChild(valueSpan); if (changes[key]) { const changeSpan = document.createElement('span'); changeSpan.className = 'stat-change'; changeSpan.textContent = `(${changes[key]})`; valueContainer.appendChild(changeSpan); setTimeout(() => { if(changeSpan) changeSpan.remove(); }, 2000); } p.appendChild(label); p.appendChild(valueContainer); statusDisplay.appendChild(p); } }
-    function updateActionCountDisplay() { actionCountDisplay.textContent = `${dailyActions?.count || 0} / ${DAILY_ACTION_LIMIT}`; }
-    
-    // --- ▼▼▼ ここからが変更箇所 ▼▼▼ ---
-    function displayActions(actions) {
-        actionsContainer.innerHTML = '';
-        
-        // 最初の名前決定フェーズかどうかを判定
-        const isNameDecisionPhase = conversationHistory.length === 1;
+function updateStatusDisplay(changes = {}) {
+    const statDescriptions = {
+        HP: "ヒットポイント：キャラクターの生命力。0になると倒れる。",
+        STR: "筋力 (Strength)：腕力や、物理的な攻撃の強さに影響する。",
+        DEX: "敏捷性 (Dexterity)：素早さや、身のこなしの器用さに影響する。",
+        CON: "耐久力 (Constitution)：体力や、打たれ強さに影響する。",
+        INT: "知力 (Intelligence)：知識の量や、論理的な思考力に影響する。",
+        WIS: "判断力 (Wisdom)：直感や、知恵の深さに影響する。",
+        CHA: "魅力 (Charisma)：人を惹きつける力や、交渉能力に影響する。"
+    };
 
-        if (isNameDecisionPhase) {
-            userInput.placeholder = 'ボタンの名前を選ぶか、好きな名前を入力 (Ctrl+Enterで決定)';
+    Object.keys(changes).forEach(key => modifiedStats.add(key));
+    statusDisplay.innerHTML = '';
+    if (!playerStats || Object.keys(playerStats).length === 0) return;
+
+    for (const [key, value] of Object.entries(playerStats)) {
+        const p = document.createElement('p');
+        const label = document.createElement('span');
+        label.textContent = `${key}:`;
+        label.className = 'tooltip'; // <-- tooltipクラスを追加
+        label.setAttribute('data-tooltip', statDescriptions[key] || ''); // <-- ツールチップのテキストを設定
+
+        // ... (これ以降の関数の内容は以前と同じです) ...
+        const valueContainer = document.createElement('span');
+        const valueSpan = document.createElement('span');
+        valueSpan.className = 'stat-value';
+        if (key === 'HP') {
+            valueSpan.textContent = `${value.current} / ${value.max}`;
         } else {
-            userInput.placeholder = 'どうする？ (Ctrl+Enterで送信)';
+            if (modifiedStats.has(key)) {
+                const modifierString = calculateModifier(value);
+                valueSpan.textContent = modifierString ? `${value} (${modifierString})` : `${value}`;
+            } else {
+                valueSpan.textContent = value;
+            }
         }
-        
-        if (actions && actions.length > 0) {
-            actions.forEach(actionText => {
-                const button = document.createElement('button');
-                button.textContent = actionText;
-                button.className = 'action-button';
-                button.addEventListener('click', () => {
-                    actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true);
-                    button.classList.add('fade-out');
-                    setTimeout(() => { handleUserCommand(actionText); }, 500);
-                });
-                actionsContainer.appendChild(button);
+        valueContainer.appendChild(valueSpan);
+        if (changes[key]) {
+            const changeSpan = document.createElement('span');
+            changeSpan.className = 'stat-change';
+            changeSpan.textContent = `(${changes[key]})`;
+            valueContainer.appendChild(changeSpan);
+            setTimeout(() => { if(changeSpan.isConnected) changeSpan.remove(); }, 2000);
+        }
+        p.appendChild(label);
+        p.appendChild(valueContainer);
+        statusDisplay.appendChild(p);
+    }
+}
+
+function updateActionCountDisplay() { actionCountDisplay.textContent = `${dailyActions?.count || 0} / ${DAILY_ACTION_LIMIT}`; }
+
+function displayActions(actions) {
+    actionsContainer.innerHTML = '';
+    if (actions && actions.length > 0) {
+        actions.forEach(actionText => {
+            const button = document.createElement('button');
+            button.textContent = actionText;
+            button.className = 'action-button';
+            button.addEventListener('click', () => {
+                actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true);
+                button.classList.add('fade-out');
+                setTimeout(() => handleUserCommand(actionText), 500);
             });
-        }
+            actionsContainer.appendChild(button);
+        });
     }
-    // --- ▲▲▲ ここまでが変更箇所 ▲▲▲ ---
+}
 
-    function addLog(text, className) { const newLine = document.createElement('p'); newLine.textContent = text; if (className) { newLine.classList.add(className); } gameLog.appendChild(newLine); gameLog.scrollTop = gameLog.scrollHeight; return newLine; }
-    function toggleInput(disabled) { userInput.disabled = disabled; sendButton.disabled = disabled; userInput.placeholder = disabled ? 'AIが応答を考えています…' : 'どうする？ (Ctrl+Enterで送信)'; }
+function toggleInput(disabled, placeholderText = '') {
+    userInput.disabled = disabled;
+    sendButton.disabled = disabled;
+    userInput.placeholder = placeholderText || (disabled ? '' : 'どうする？ (Ctrl+Enterで送信)');
+}
 
-    async function callAI() {
-        if (!activeSlotId) return;
-        addLog('考え中...', 'ai-response');
-        toggleInput(true);
-        try {
-            const requestData = { contents: conversationHistory };
-            const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestData) });
-            if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.error.message || 'APIからの応答がありませんでした。'); }
-            const data = await response.json();
-            const fullAiText = data.candidates[0]?.content?.parts[0]?.text || "（応答がありませんでした）";
-            
-            conversationHistory.push({ role: 'model', parts: [{ text: fullAiText }] });
-            let storyText = fullAiText;
-            const statChanges = {};
-            const nameMatch = storyText.match(/\[NAME\]\s*(.+)/); if (nameMatch) { playerName = nameMatch[1].trim(); storyText = storyText.replace(/\[NAME\].+/, '').trim(); updateSlotSelector(); }
-            const statRegex = /\[STAT\]\s*(\w+)\s*([+\-])\s*(\d+)/g; let statMatch; while ((statMatch = statRegex.exec(storyText)) !== null) { const [fullMatch, stat, operator, valueStr] = statMatch; const value = parseInt(valueStr, 10); if (playerStats && playerStats[stat] !== undefined) { if (operator === '+') playerStats[stat] += value; else playerStats[stat] -= value; statChanges[stat] = `${operator}${value}`; } } storyText = storyText.replace(statRegex, '').trim();
-            const itemAddMatch = storyText.match(/\[ITEM_ADD\]\s*(.+)/); if (itemAddMatch && inventory.length < MAX_INVENTORY_SIZE) { inventory.push(itemAddMatch[1].trim()); storyText = storyText.replace(/\[ITEM_ADD\].+/, '').trim(); }
-            const itemRemoveMatch = storyText.match(/\[ITEM_REMOVE\]\s*(.+)/); if (itemRemoveMatch) { inventory = inventory.filter(item => item !== itemRemoveMatch[1].trim()); storyText = storyText.replace(/\[ITEM_REMOVE\].+/, '').trim(); }
-            const damageMatch = storyText.match(/\[DAMAGE\]\s*(\d+)/); if (damageMatch) { const damage = parseInt(damageMatch[1], 10); if(playerStats.HP) { playerStats.HP.current -= damage; if (playerStats.HP.current < 0) playerStats.HP.current = 0; } storyText = storyText.replace(/\[DAMAGE\]\s*\d+/, '').trim(); }
-            
-            const lines = storyText.split('\n');
-            const storyLogText = lines.filter(line => !line.startsWith('[ACTION]')).join('\n');
-            const actions = lines.filter(line => line.startsWith('[ACTION]')).map(line => line.replace('[ACTION] ', ''));
-            const thinkingElement = gameLog.lastChild;
-            thinkingElement.textContent = storyLogText;
-            displayActions(actions);
-            updateAllDisplays();
-            if (Object.keys(statChanges).length > 0 || damageMatch) { updateStatusDisplay(statChanges); }
-            saveGameSlots();
-        } catch (error) {
-            const thinkingElement = gameLog.lastChild;
-            thinkingElement.textContent = 'エラーが発生しました: ' + error.message;
-        } finally {
-            toggleInput(false);
-        }
+function showWelcomeScreen() {
+    clearGameScreen();
+    addLog('▼ ステータス欄のプルダウンからロードするデータを選択するか、「新規ゲーム」を選択して「決定」ボタンで冒険を始めてください。', 'ai-response');
+    toggleInput(true, 'データを選択して「決定」してください');
+}
+
+function initializeGame() {
+    loadGameSlotsFromStorage();
+    updateSlotSelector();
+    showWelcomeScreen();
+}
+
+// --- イベントリスナー ---
+sendButton.addEventListener('click', () => handleUserCommand());
+
+userInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && event.ctrlKey) {
+        event.preventDefault();
+        handleUserCommand();
     }
-
-    function handleUserCommand(commandFromButton = null) {
-        if (!activeSlotId) { addLog('「開始」ボタンで新しい冒険を開始するか、プルダウンから既存のデータを選んでロードしてください。', 'ai-response'); return; }
-        const command = commandFromButton || userInput.value;
-        if (command === '') return;
-        const today = new Date().toISOString().slice(0, 10);
-        if (dailyActions.date !== today) {
-            dailyActions.date = today;
-            dailyActions.count = 0;
-        }
-        if (dailyActions.count >= DAILY_ACTION_LIMIT) {
-            addLog('本日の行動回数上限に達しました。また明日、冒険を続けてください。', 'ai-response');
-            return;
-        }
-        addLog('> ' + command, 'user-command');
-        userInput.value = '';
-        actionsContainer.innerHTML = '';
-        dailyActions.count++;
-        conversationHistory.push({ role: 'user', parts: [{ text: command }] });
-        callAI();
-    }
-    
-    function startGame() {
-        gameSlots = JSON.parse(localStorage.getItem('rpgGameSlots')) || [];
-        activeSlotId = localStorage.getItem('rpgActiveSlotId');
-        const activeSlotExists = gameSlots.some(slot => slot.id == activeSlotId);
-        if (!activeSlotExists) { activeSlotId = null; }
-        updateSlotSelector();
-        if (activeSlotId) {
-            loadGame(activeSlotId);
-        } else {
-            loadGame(null);
-        }
-    }
-    
-    // --- イベントリスナー ---
-    sendButton.addEventListener('click', () => handleUserCommand());
-    userInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' && event.ctrlKey) {
-            event.preventDefault();
-            handleUserCommand();
-        }
-    });
-    userInput.addEventListener('input', () => {
-        userInput.style.height = 'auto';
-        userInput.style.height = (userInput.scrollHeight) + 'px';
-    });
-    
-    // --- ▼▼▼ ここからが変更箇所 ▼▼▼ ---
-    startButton.addEventListener('click', () => {
-        // セーブデータが一つもなければ、必ず新規作成
-        if (gameSlots.length === 0) {
-            createNewGame();
-            return;
-        }
-        
-        const selectedId = slotSelector.value;
-        // 「あたらしい冒険」が選ばれていたら新規作成
-        if (selectedId === 'new') {
-            createNewGame();
-        } else if (selectedId) {
-            // 既存データが選ばれていたらロード
-            loadGame(selectedId);
-            activeSlotId = selectedId;
-            localStorage.setItem('rpgActiveSlotId', activeSlotId);
-        }
-    });
-    
-    slotSelector.addEventListener('change', (event) => {
-        // 選択を記憶するだけ。ロードは「開始」ボタンで行う
-        const selectedId = event.target.value;
-        if (selectedId !== 'new') {
-            activeSlotId = selectedId;
-            localStorage.setItem('rpgActiveSlotId', activeSlotId);
-        } else {
-            activeSlotId = null;
-            localStorage.removeItem('rpgActiveSlotId');
-        }
-    });
-    // --- ▲▲▲ ここまでが変更箇所 ▲▲▲ ---
-
-    deleteSlotButton.addEventListener('click', deleteSelectedSlot);
-    
-    document.addEventListener('DOMContentLoaded', startGame);
 });
+
+userInput.addEventListener('input', () => {
+    userInput.style.height = 'auto';
+    userInput.style.height = (userInput.scrollHeight) + 'px';
+});
+
+// ★ここから追加
+/** ログをテキストファイルとしてエクスポートする */
+function exportLogToFile() {
+    if (!activeSlotId) {
+        alert('エクスポートするゲームデータがありません。');
+        return;
+    }
+    // ログ要素からテキストだけを抽出
+    const logText = gameLog.innerText; 
+    // Blobオブジェクトを作成
+    const blob = new Blob([logText], { type: 'text/plain;charset=utf-8' });
+    // ダウンロード用のURLを生成
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    // ファイル名をキャラクター名と日付にする
+    const date = new Date();
+    const formattedDate = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+    a.download = `${playerName}_log_${formattedDate}.txt`; 
+    
+    document.body.appendChild(a);
+    a.click(); //擬似的にクリックしてダウンロードを開始
+    document.body.removeChild(a); // 後片付け
+    URL.revokeObjectURL(url); // URLを解放
+}
+
+exportLogButton.addEventListener('click', exportLogToFile);
+// ★ここまで追加
+
+confirmButton.addEventListener('click', () => {
+    const selectedValue = slotSelector.value;
+    if (selectedValue === 'new_game') {
+        createNewGame();
+    } else if (selectedValue && gameSlots.some(s => s.id == selectedValue)) {
+        activeSlotId = selectedValue;
+        localStorage.setItem('rpgActiveSlotId', activeSlotId);
+        loadGame(selectedValue);
+    } else {
+        alert('プルダウンからデータを選択してください。');
+    }
+});
+
+deleteSlotButton.addEventListener('click', deleteSelectedSlot);
+
+document.addEventListener('DOMContentLoaded', initializeGame);
 </script>
 </body>
 </html>
