@@ -258,7 +258,29 @@
     function updateInventoryDisplay() { inventoryDisplay.innerHTML = ''; if (!inventory || inventory.length === 0) { inventoryDisplay.innerHTML = '<p>何も持っていない</p>'; } else { inventory.forEach(item => { const p = document.createElement('p'); p.textContent = `・${item}`; inventoryDisplay.appendChild(p); }); } }
     function updateStatusDisplay(changes = {}) { statusDisplay.innerHTML = ''; if (!playerStats || Object.keys(playerStats).length === 0) { return; } for (const [key, value] of Object.entries(playerStats)) { const p = document.createElement('p'); const label = document.createElement('span'); label.textContent = `${key}:`; const valueContainer = document.createElement('span'); const valueSpan = document.createElement('span'); valueSpan.className = 'stat-value'; if (key === 'HP') { valueSpan.textContent = `${value.current} / ${value.max}`; } else { valueSpan.textContent = value; } valueContainer.appendChild(valueSpan); if (changes[key]) { const changeSpan = document.createElement('span'); changeSpan.className = 'stat-change'; changeSpan.textContent = `(${changes[key]})`; valueContainer.appendChild(changeSpan); setTimeout(() => { if(changeSpan) changeSpan.remove(); }, 2000); } p.appendChild(label); p.appendChild(valueContainer); statusDisplay.appendChild(p); } }
     function updateActionCountDisplay() { actionCountDisplay.textContent = `${dailyActions?.count || 0} / ${DAILY_ACTION_LIMIT}`; }
-    function displayActions(actions) { actionsContainer.innerHTML = ''; if (actions && actions.length > 0) { actions.forEach(actionText => { const button = document.createElement('button'); button.textContent = actionText; button.className = 'action-button'; button.addEventListener('click', () => { actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true); button.classList.add('fade-out'); setTimeout(() => { handleUserCommand(actionText); }, 500); }); actionsContainer.appendChild(button); }); toggleInput(true); } else { toggleInput(false); } }
+    function displayActions(actions) {
+        actionsContainer.innerHTML = '';
+        if (actions && actions.length > 0) {
+            // [ACTION]ボタンがAIから提供された場合
+            actions.forEach(actionText => {
+                const button = document.createElement('button');
+                button.textContent = actionText;
+                button.className = 'action-button';
+                button.addEventListener('click', () => {
+                    actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true);
+                    button.classList.add('fade-out');
+                    setTimeout(() => {
+                        handleUserCommand(actionText);
+                    }, 500);
+                });
+                actionsContainer.appendChild(button);
+            });
+            toggleInput(true); // ボタンがあるのでテキスト入力を無効化
+        } else {
+            // [ACTION]ボタンが提供されなかった場合
+            toggleInput(false); // テキスト入力を有効化
+        }
+    }
     function toggleInput(disabled) { userInput.disabled = disabled; sendButton.disabled = disabled; userInput.placeholder = disabled ? '[ACTION] ボタンから選択してください' : 'どうする？'; }
 
     async function callAI() {
