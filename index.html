@@ -68,7 +68,7 @@
             <div id="status-container">
                 <div id="slot-selector-container">
                     <select id="slot-selector"></select>
-                    <button id="new-game-button">はじめから</button>
+                    <button id="new-game-button">開始</button>
                     <button id="delete-slot-button">削除</button>
                 </div>
                 <div id="player-name-display"></div>
@@ -147,7 +147,7 @@
             }
         } else {
             activeSlotId = null;
-            addLog('ステータス上のプルダウンメニューから、続きを遊ぶデータを選択するか、「はじめから」ボタンで新しい冒険を開始してください。', 'ai-response');
+            addLog('ステータス上のプルダウンメニューから、続きを遊ぶデータを選択するか、「開始」ボタンで新しい冒険を開始してください。', 'ai-response');
             toggleInput(true);
         }
         updateAllDisplays();
@@ -292,7 +292,7 @@
     }
 
     function handleUserCommand(commandFromButton = null) {
-        if (!activeSlotId) { addLog('「はじめから」ボタンで、新しい冒険を開始してください。', 'ai-response'); return; }
+        if (!activeSlotId) { addLog('「開始」ボタンで、新しい冒険を開始してください。', 'ai-response'); return; }
         const command = commandFromButton || userInput.value;
         if (command === '') return;
         const today = new Date().toISOString().slice(0, 10);
