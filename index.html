@@ -117,8 +117,13 @@ let modifiedStats = new Set();
 /** ステータス値から修正値を計算する (D&D 5e準拠) */
 function calculateModifier(statValue) {
     const modifier = Math.floor((statValue - 10) / 2);
-    // プラスの場合は "+" をつけて返す
-    return modifier >= 0 ? `+${modifier}` : `${modifier}`;
+    
+    // 修正値が0の場合は、空の文字列を返す (何も表示しない)
+    if (modifier === 0) {
+        return "";
+    }
+    // 0より大きい場合は"+"をつけ、それ以外(マイナス)はそのまま返す
+    return modifier > 0 ? `+${modifier}` : `${modifier}`;
 }
 
 // --- 主要関数 ---
@@ -452,9 +457,16 @@ function updateStatusDisplay(changes = {}) {
         } else {
             // このステータスが、過去に変更されたことがあるかチェック
             if (modifiedStats.has(key)) {
-                // 変更されたことがある場合、修正値を表示
-                const modifier = calculateModifier(value);
-                valueSpan.textContent = `${value} (${modifier})`;
+                // 修正値を計算
+                const modifierString = calculateModifier(value);
+                
+                // 修正値が空でない場合のみ、括弧付きで表示する
+                if (modifierString) {
+                    valueSpan.textContent = `${value} (${modifierString})`;
+                } else {
+                    valueSpan.textContent = value; // 修正値が0なら値のみ
+                }
+
             } else {
                 // 変更されたことがない場合、値のみ表示
                 valueSpan.textContent = value;
