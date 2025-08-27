@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="scenarios/rulebook_1st.js"></script>
     <style>
+        /* CSSは変更ありません */
         :root { --main-bg: #1a1a1a; --container-bg: #2b2b2b; --border-color: #444; --text-color: #f0f0f0; --accent-color: #4CAF50; --ai-text: #a5d6a7; --user-text: #81d4fa; --danger-color: #c9302c; --twitter-color: #1DA1F2; }
         html, body { height: 100%; }
         body { background-color: var(--main-bg); color: var(--text-color); font-family: sans-serif; margin: 0; display: flex; flex-direction: column; }
@@ -81,7 +82,7 @@
                 <div id="inventory-display"></div>
             </div>
             <div id="system-menu">
-                <a class="system-button share" href="https://twitter.com/intent/tweet?text=%E2%96%BCAI%E3%81%A8%E4%BD%9C%E3%82%8BRPG%E3%80%8E%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%BCO%E3%83%AB%E3%80%8F%0Ahttps%3A%2F%2Fhelpful-bavarois-b141f3.netlify.app%2F%0A%23%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB" target="_blank" rel="noopener noreferrer">Xにシェアする</a>
+                <a class="system-button share" href="https://twitter.com/intent/tweet?text=%E2%96%BCAI%E3%81%A8%E4%BD%9C%E3%82%8BRPG%E3%80%8E%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB%E3%80%8F%0Ahttps%3A%2F%2Fhelpful-bavarois-b141f3.netlify.app%2F%0A%23%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB" target="_blank" rel="noopener noreferrer">Xにシェアする</a>
             </div>
         </div>
     </div>
@@ -199,27 +200,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // --- ▼▼▼ ここからが変更箇所 ▼▼▼ ---
     function updateSlotSelector() {
-        const currentSelection = slotSelector.value;
+        const hasSlots = gameSlots.length > 0;
         slotSelector.innerHTML = '';
-        if (gameSlots.length === 0) {
-            const option = document.createElement('option');
-            option.textContent = 'セーブデータがありません';
-            option.disabled = true;
-            slotSelector.appendChild(option);
-        } else {
+
+        if (hasSlots) {
             gameSlots.forEach((slot, index) => {
                 const option = document.createElement('option');
                 option.value = slot.id;
                 option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
                 slotSelector.appendChild(option);
             });
+        } else {
+            const option = document.createElement('option');
+            option.textContent = 'セーブデータがありません';
+            option.disabled = true;
+            slotSelector.appendChild(option);
         }
+
         if (activeSlotId) {
             slotSelector.value = activeSlotId;
         }
-        startButton.disabled = gameSlots.length >= MAX_SAVE_SLOTS;
+        
+        startButton.textContent = hasSlots ? 'ロード' : '開始';
+        startButton.disabled = false;
+        if (!hasSlots && gameSlots.length >= MAX_SAVE_SLOTS) {
+            startButton.disabled = true;
+        }
     }
+    // --- ▲▲▲ ここまでが変更箇所 ▲▲▲ ---
 
     function clearGameScreen() {
         gameLog.innerHTML = '';
@@ -257,9 +267,38 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateInventoryDisplay() { inventoryDisplay.innerHTML = ''; if (!inventory || inventory.length === 0) { inventoryDisplay.innerHTML = '<p>何も持っていない</p>'; } else { inventory.forEach(item => { const p = document.createElement('p'); p.textContent = `・${item}`; inventoryDisplay.appendChild(p); }); } }
     function updateStatusDisplay(changes = {}) { statusDisplay.innerHTML = ''; if (!playerStats || Object.keys(playerStats).length === 0) { return; } for (const [key, value] of Object.entries(playerStats)) { const p = document.createElement('p'); const label = document.createElement('span'); label.textContent = `${key}:`; const valueContainer = document.createElement('span'); const valueSpan = document.createElement('span'); valueSpan.className = 'stat-value'; if (key === 'HP') { valueSpan.textContent = `${value.current} / ${value.max}`; } else { valueSpan.textContent = value; } valueContainer.appendChild(valueSpan); if (changes[key]) { const changeSpan = document.createElement('span'); changeSpan.className = 'stat-change'; changeSpan.textContent = `(${changes[key]})`; valueContainer.appendChild(changeSpan); setTimeout(() => { if(changeSpan) changeSpan.remove(); }, 2000); } p.appendChild(label); p.appendChild(valueContainer); statusDisplay.appendChild(p); } }
     function updateActionCountDisplay() { actionCountDisplay.textContent = `${dailyActions?.count || 0} / ${DAILY_ACTION_LIMIT}`; }
-    function displayActions(actions) { actionsContainer.innerHTML = ''; if (actions && actions.length > 0) { actions.forEach(actionText => { const button = document.createElement('button'); button.textContent = actionText; button.className = 'action-button'; button.addEventListener('click', () => { actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true); button.classList.add('fade-out'); setTimeout(() => { handleUserCommand(actionText); }, 500); }); actionsContainer.appendChild(button); }); toggleInput(true); } else { toggleInput(false); } }
+    
+    // --- ▼▼▼ ここからが変更箇所 ▼▼▼ ---
+    function displayActions(actions) {
+        actionsContainer.innerHTML = '';
+        
+        // 最初の名前決定フェーズかどうかを判定
+        const isNameDecisionPhase = conversationHistory.length === 1;
+
+        if (isNameDecisionPhase) {
+            userInput.placeholder = 'ボタンの名前を選ぶか、好きな名前を入力 (Ctrl+Enterで決定)';
+        } else {
+            userInput.placeholder = 'どうする？ (Ctrl+Enterで送信)';
+        }
+        
+        if (actions && actions.length > 0) {
+            actions.forEach(actionText => {
+                const button = document.createElement('button');
+                button.textContent = actionText;
+                button.className = 'action-button';
+                button.addEventListener('click', () => {
+                    actionsContainer.querySelectorAll('.action-button').forEach(btn => btn.disabled = true);
+                    button.classList.add('fade-out');
+                    setTimeout(() => { handleUserCommand(actionText); }, 500);
+                });
+                actionsContainer.appendChild(button);
+            });
+        }
+    }
+    // --- ▲▲▲ ここまでが変更箇所 ▲▲▲ ---
+
     function addLog(text, className) { const newLine = document.createElement('p'); newLine.textContent = text; if (className) { newLine.classList.add(className); } gameLog.appendChild(newLine); gameLog.scrollTop = gameLog.scrollHeight; return newLine; }
-    function toggleInput(disabled) { userInput.disabled = disabled; sendButton.disabled = disabled; userInput.placeholder = disabled ? '[ACTION] ボタンから選択してください' : 'どうする？'; }
+    function toggleInput(disabled) { userInput.disabled = disabled; sendButton.disabled = disabled; userInput.placeholder = disabled ? 'AIが応答を考えています…' : 'どうする？ (Ctrl+Enterで送信)'; }
 
     async function callAI() {
         if (!activeSlotId) return;
@@ -275,7 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
             conversationHistory.push({ role: 'model', parts: [{ text: fullAiText }] });
             let storyText = fullAiText;
             const statChanges = {};
-            const nameMatch = storyText.match(/\[NAME\]\s*(.+)/); if (nameMatch) { playerName = nameMatch[1].trim(); storyText = storyText.replace(/\[NAME\].+/, '').trim(); }
+            const nameMatch = storyText.match(/\[NAME\]\s*(.+)/); if (nameMatch) { playerName = nameMatch[1].trim(); storyText = storyText.replace(/\[NAME\].+/, '').trim(); updateSlotSelector(); }
             const statRegex = /\[STAT\]\s*(\w+)\s*([+\-])\s*(\d+)/g; let statMatch; while ((statMatch = statRegex.exec(storyText)) !== null) { const [fullMatch, stat, operator, valueStr] = statMatch; const value = parseInt(valueStr, 10); if (playerStats && playerStats[stat] !== undefined) { if (operator === '+') playerStats[stat] += value; else playerStats[stat] -= value; statChanges[stat] = `${operator}${value}`; } } storyText = storyText.replace(statRegex, '').trim();
             const itemAddMatch = storyText.match(/\[ITEM_ADD\]\s*(.+)/); if (itemAddMatch && inventory.length < MAX_INVENTORY_SIZE) { inventory.push(itemAddMatch[1].trim()); storyText = storyText.replace(/\[ITEM_ADD\].+/, '').trim(); }
             const itemRemoveMatch = storyText.match(/\[ITEM_REMOVE\]\s*(.+)/); if (itemRemoveMatch) { inventory = inventory.filter(item => item !== itemRemoveMatch[1].trim()); storyText = storyText.replace(/\[ITEM_REMOVE\].+/, '').trim(); }
@@ -345,14 +384,38 @@ document.addEventListener('DOMContentLoaded', function() {
         userInput.style.height = (userInput.scrollHeight) + 'px';
     });
     
-    startButton.addEventListener('click', createNewGame);
+    // --- ▼▼▼ ここからが変更箇所 ▼▼▼ ---
+    startButton.addEventListener('click', () => {
+        // セーブデータが一つもなければ、必ず新規作成
+        if (gameSlots.length === 0) {
+            createNewGame();
+            return;
+        }
+        
+        const selectedId = slotSelector.value;
+        // 「あたらしい冒険」が選ばれていたら新規作成
+        if (selectedId === 'new') {
+            createNewGame();
+        } else if (selectedId) {
+            // 既存データが選ばれていたらロード
+            loadGame(selectedId);
+            activeSlotId = selectedId;
+            localStorage.setItem('rpgActiveSlotId', activeSlotId);
+        }
+    });
     
     slotSelector.addEventListener('change', (event) => {
+        // 選択を記憶するだけ。ロードは「開始」ボタンで行う
         const selectedId = event.target.value;
-        activeSlotId = selectedId;
-        localStorage.setItem('rpgActiveSlotId', activeSlotId);
-        loadGame(selectedId);
+        if (selectedId !== 'new') {
+            activeSlotId = selectedId;
+            localStorage.setItem('rpgActiveSlotId', activeSlotId);
+        } else {
+            activeSlotId = null;
+            localStorage.removeItem('rpgActiveSlotId');
+        }
     });
+    // --- ▲▲▲ ここまでが変更箇所 ▲▲▲ ---
 
     deleteSlotButton.addEventListener('click', deleteSelectedSlot);
     
