@@ -1,14 +1,14 @@
 {
-    "name": "kotodama-protocol",
-    "version": "1.0.0",
-    "description": "An interactive text RPG powered by AI.",
-    "main": "index.html",
-    "scripts": {
-      "test": "echo \"Error: no test specified\" && exit 1"
-    },
-    "author": "Natsumi Suzuki",
-    "license": "ISC",
-    "dependencies": {
-      "@google/generative-ai": "^0.14.1"
-    }
+  "name": "kotodama-protocol",
+  "version": "1.0.0",
+  "description": "An interactive text RPG powered by AI.",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Natsumi Suzuki",
+  "license": "ISC",
+  "dependencies": {
+    "@google/generative-ai": "^0.14.1"
   }
+}

@@ -6,18 +6,18 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // Netlify関数の本体
 exports.handler = async (event) => {
-  // ★改善点1: POSTリクエスト以外のアクセスを拒否
+  // POSTリクエスト以外のアクセスを拒否
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
 
   try {
-    // ★改善点2: リクエストのbodyが存在するかチェック
+    // リクエストのbodyが存在するかチェック
     if (!event.body) {
       throw new Error("リクエストのデータが空です。");
     }
 
-    // ★改善点3: JSONの解析自体もtry...catchで囲み、より安全に
+    // JSONの解析自体もtry...catchで囲み、より安全に
     let requestData;
     try {
       requestData = JSON.parse(event.body);
@@ -58,7 +58,6 @@ exports.handler = async (event) => {
     };
 
   } catch (error) {
-    // ★改善点4: 発生したエラーを詳細に返す
     console.error("エラーが発生しました:", error);
     return {
       statusCode: 500,
