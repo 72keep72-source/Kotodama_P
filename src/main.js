@@ -29,6 +29,7 @@ async function processAIturn() {
         ui.updateThinkingMessage(parsedData.storyLogText);
         ui.displayActions(parsedData.actions, handleUserCommand);
         ui.updateAllDisplays(state.getGameState(), parsedData.statChanges);
+        // セーブは全ての状態更新が終わった後に行う
         state.saveCurrentSlotToStorage();
     } catch (error) {
         ui.updateThinkingMessage('エラーが発生しました: ' + error.message);
@@ -47,17 +48,20 @@ async function handleUserCommand(commandFromButton = null) {
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
-    if (state.isActionLimitReached()) {
+    // 行動回数のチェックとリセット
+    if (state.checkAndResetActions()) {
         ui.addLog('本日の行動回数上限に達しました。また明日、冒険を続けてください。', 'ai-response');
         return;
     }
 
-    ui.addLog('> ' + command, 'user-command');
+    // ★カウントとUI更新を行ってからAIを呼び出す
+    state.incrementDailyActions();
+    ui.updateActionCountDisplay(state.getGameState().dailyActions);
+    
+    ui.addLog(`> ${command}`, 'user-command');
     ui.clearInput();
     ui.clearActions();
-    state.incrementDailyActions();
     state.addHistory({ role: 'user', parts: [{ text: command }] });
-    ui.updateActionCountDisplay(state.getGameState().dailyActions);
 
     await processAIturn();
 }
@@ -65,7 +69,6 @@ async function handleUserCommand(commandFromButton = null) {
 /** 新しいゲームを作成 */
 function createNewGame(selectedRulebook) {
     if (state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS) {
-        // このチェックはshowWelcomeScreenでも行われるが、念のため残す
         alert(`セーブスロットは${state.MAX_SAVE_SLOTS}つまでです。`);
         return;
     }
@@ -73,7 +76,7 @@ function createNewGame(selectedRulebook) {
     loadGame(newSlot.id);
     ui.updateSlotSelector(state.getGameState());
     
-    processAIturn(); // AIの最初の応答を待つ
+    processAIturn();
 }
 
 /** シナリオを選択して新しいゲームを開始するハンドラ */
@@ -87,9 +90,13 @@ function loadGame(slotId) {
     ui.clearGameScreen();
     const gameState = state.loadGame(slotId);
     if (!gameState) {
-        initializeGame(); // ロードに失敗したら初期画面へ
+        initializeGame();
         return;
     }
+    
+    // ロード時に行動回数をチェック・リセットしてUIに反映
+    state.checkAndResetActions();
+    ui.updateAllDisplays(gameState);
     
     ui.rebuildLog(gameState.conversationHistory);
     const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
@@ -97,7 +104,6 @@ function loadGame(slotId) {
         const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
         ui.displayActions(parsedData.actions, handleUserCommand);
     }
-    ui.updateAllDisplays(gameState);
     ui.toggleInput(false);
 }
 
@@ -123,7 +129,6 @@ function initializeGame() {
     const gameState = state.getGameState();
     ui.updateSlotSelector(gameState);
 
-    // セーブデータの有無とスロットの空き状況をUIに渡す
     const hasSaveData = gameState.gameSlots.length > 0;
     const isSlotFull = gameState.gameSlots.length >= state.MAX_SAVE_SLOTS;
     ui.showWelcomeScreen(hasSaveData, isSlotFull, handleScenarioSelection);
