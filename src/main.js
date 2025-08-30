@@ -94,9 +94,11 @@ function loadGame(slotId) {
     const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
     if (lastTurn && lastTurn.role === 'model') {
         const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
+        // ★ ロード時にもヒントボタン(アクションボタン)が表示されるように修正
         ui.displayActions(parsedData.actions, handleUserCommand);
     }
     ui.updateAllDisplays(gameState);
+    // ★ テキストボックスが有効になるように修正
     ui.toggleInput(false);
 }
 
@@ -140,8 +142,8 @@ userInput.addEventListener('input', () => {
 
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
-    // ★「新規ゲーム」はシナリオ選択画面に移行したため、ここでの処理は不要に
-    if (selectedValue) {
+    // ★ プルダウンで有効なセーブデータが選ばれている時だけロードするように修正
+    if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
         state.setActiveSlotId(selectedValue);
         loadGame(selectedValue);
     } else {
