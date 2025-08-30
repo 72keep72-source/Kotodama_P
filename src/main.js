@@ -65,6 +65,7 @@ async function handleUserCommand(commandFromButton = null) {
 /** 新しいゲームを作成 */
 function createNewGame(selectedRulebook) {
     if (state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS) {
+        // このチェックはshowWelcomeScreenでも行われるが、念のため残す
         alert(`セーブスロットは${state.MAX_SAVE_SLOTS}つまでです。`);
         return;
     }
@@ -75,7 +76,7 @@ function createNewGame(selectedRulebook) {
     processAIturn(); // AIの最初の応答を待つ
 }
 
-/** ★ シナリオを選択して新しいゲームを開始するハンドラ */
+/** シナリオを選択して新しいゲームを開始するハンドラ */
 function handleScenarioSelection(scenarioType) {
     const rulebook = scenarioType === 'sf' ? RULEBOOK_SF_AI : RULEBOOK_1ST;
     createNewGame(rulebook);
@@ -94,11 +95,9 @@ function loadGame(slotId) {
     const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
     if (lastTurn && lastTurn.role === 'model') {
         const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
-        // ★ ロード時にもヒントボタン(アクションボタン)が表示されるように修正
         ui.displayActions(parsedData.actions, handleUserCommand);
     }
     ui.updateAllDisplays(gameState);
-    // ★ テキストボックスが有効になるように修正
     ui.toggleInput(false);
 }
 
@@ -121,10 +120,15 @@ function deleteSelectedSlot() {
 /** ゲームの初期化 */
 function initializeGame() {
     state.loadGameSlotsFromStorage();
-    ui.updateSlotSelector(state.getGameState());
-    const isSlotFull = state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS;
-    ui.showWelcomeScreen(isSlotFull, handleScenarioSelection);
-    ui.initializeHintButton(); // ★ヒントボタンを初期化
+    const gameState = state.getGameState();
+    ui.updateSlotSelector(gameState);
+
+    // セーブデータの有無とスロットの空き状況をUIに渡す
+    const hasSaveData = gameState.gameSlots.length > 0;
+    const isSlotFull = gameState.gameSlots.length >= state.MAX_SAVE_SLOTS;
+    ui.showWelcomeScreen(hasSaveData, isSlotFull, handleScenarioSelection);
+    
+    ui.initializeHintButton();
 }
 
 // イベントリスナーを設定
@@ -140,14 +144,14 @@ userInput.addEventListener('input', () => {
     userInput.style.height = (userInput.scrollHeight) + 'px';
 });
 
+// 「決定」ボタンはロード専用
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
-    // ★ プルダウンで有効なセーブデータが選ばれている時だけロードするように修正
     if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
         state.setActiveSlotId(selectedValue);
         loadGame(selectedValue);
     } else {
-        alert('プルダウンからロードするデータを選択してください。');
+        alert('プルダウンからロードするセーブデータを選択してください。');
     }
 });
 

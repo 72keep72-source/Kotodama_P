@@ -11,14 +11,8 @@ const playerNameDisplay = document.getElementById('player-name-display');
 const inventoryDisplay = document.getElementById('inventory-display');
 const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
-// ★ヒント機能用のDOM要素を作成
-const hintButton = document.createElement('button');
-hintButton.id = 'hint-toggle-button';
-hintButton.textContent = 'ヒント';
+const inputArea = document.getElementById('input-area');
 
-// --- UI状態 ---
-// ページ読み込み時にlocalStorageからヒントの表示状態を取得。なければ非表示(false)がデフォルト
-let isHintVisible = localStorage.getItem('isHintVisible') === 'true';
 
 // 各ステータスの説明文を定義
 const statDescriptions = {
@@ -33,33 +27,9 @@ const statDescriptions = {
 
 // --- UI更新関数 ---
 
-/** ★ヒントボタンをページに追加し、イベントを設定する初期化関数 */
-export function initializeHintButton() {
-    const inputArea = document.getElementById('input-area');
-    // input-areaの上(前)にヒントボタンを挿入
-    inputArea.parentNode.insertBefore(hintButton, inputArea);
-    hintButton.addEventListener('click', toggleHintVisibility);
-    // 初期状態を反映
-    updateHintButtonAndActionsContainer();
-}
-
-/** ★ヒントボタンが押された時に状態を切り替える関数 */
-function toggleHintVisibility() {
-    isHintVisible = !isHintVisible;
-    localStorage.setItem('isHintVisible', isHintVisible); // 状態をlocalStorageに保存
-    updateHintButtonAndActionsContainer();
-}
-
-/** ★ヒントボタンの見た目と、アクションコンテナの表示/非表示を更新する関数 */
-function updateHintButtonAndActionsContainer() {
-    hintButton.classList.toggle('active', isHintVisible);
-    actionsContainer.style.display = isHintVisible ? 'block' : 'none';
-}
-
-
 export function addLog(text, className) {
     const p = document.createElement('p');
-    p.textContent = text;
+    p.innerHTML = text; // innerHTMLに変更して改行を反映
     if (className) p.classList.add(className);
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
@@ -82,25 +52,23 @@ export function clearActions() {
 
 export function updateSlotSelector({ gameSlots }) {
     slotSelector.innerHTML = '';
-    const placeholder = document.createElement('option');
-    placeholder.textContent = 'セーブデータを選択';
-    placeholder.value = '';
-    slotSelector.appendChild(placeholder);
-
-    if (gameSlots.length === 0) {
-        placeholder.textContent = 'セーブデータがありません';
-    }
-
-    gameSlots.forEach((slot, index) => {
+    if (gameSlots.length > 0) {
+        gameSlots.forEach((slot, index) => {
+            const option = document.createElement('option');
+            option.value = slot.id;
+            option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
+            slotSelector.appendChild(option);
+        });
+        // 最後に選択していたスロットをデフォルトで選択状態にする
+        const lastSelectedId = localStorage.getItem('rpgActiveSlotId');
+        if (lastSelectedId && gameSlots.some(s => s.id == lastSelectedId)) {
+            slotSelector.value = lastSelectedId;
+        }
+    } else {
         const option = document.createElement('option');
-        option.value = slot.id;
-        option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
+        option.textContent = 'セーブデータがありません';
+        option.disabled = true;
         slotSelector.appendChild(option);
-    });
-
-    const lastSelectedId = localStorage.getItem('rpgActiveSlotId');
-    if (lastSelectedId && gameSlots.some(s => s.id == lastSelectedId)) {
-        slotSelector.value = lastSelectedId;
     }
 }
 
@@ -111,7 +79,7 @@ export function updatePlayerNameDisplay(name) {
 export function updateStatusDisplay({ playerStats, modifiedStats }, changes = {}) {
     statusDisplay.innerHTML = '';
     if (!playerStats || Object.keys(playerStats).length === 0) return;
-    
+
     for (const [key, value] of Object.entries(playerStats)) {
         const p = document.createElement('p');
         const label = document.createElement('span');
@@ -140,7 +108,7 @@ export function updateStatusDisplay({ playerStats, modifiedStats }, changes = {}
             changeSpan.className = 'stat-change';
             changeSpan.textContent = `(${changes[key]})`;
             valueContainer.appendChild(changeSpan);
-            setTimeout(() => { if(changeSpan.isConnected) changeSpan.remove(); }, 2000);
+            setTimeout(() => { if (changeSpan.isConnected) changeSpan.remove(); }, 2000);
         }
         p.appendChild(label);
         p.appendChild(valueContainer);
@@ -167,7 +135,7 @@ export function updateInventoryDisplay(inventory) {
 }
 
 export function displayActions(actions, commandHandler) {
-    actionsContainer.innerHTML = '';
+    actionsContainer.innerHTML = ''; // 既存のヒントをクリア
     if (actions && actions.length > 0) {
         actions.forEach(actionText => {
             const button = document.createElement('button');
@@ -181,7 +149,6 @@ export function displayActions(actions, commandHandler) {
             actionsContainer.appendChild(button);
         });
     }
-    updateHintButtonAndActionsContainer(); // アクションボタンが表示されたらヒントの状態も更新
 }
 
 export function toggleInput(disabled, placeholderText = '') {
@@ -194,11 +161,11 @@ export function clearGameScreen() {
     gameLog.innerHTML = '';
     scenarioSelectionContainer.innerHTML = '';
     actionsContainer.innerHTML = '';
-    updateAllDisplays({ 
-        playerStats: {}, 
-        modifiedStats: new Set(), 
-        dailyActions: { count: 0 }, 
-        inventory: [] 
+    updateAllDisplays({
+        playerStats: {},
+        modifiedStats: new Set(),
+        dailyActions: { count: 0 },
+        inventory: []
     });
 }
 
@@ -207,58 +174,54 @@ export function rebuildLog(conversationHistory) {
     (conversationHistory || []).slice(1).forEach(turn => {
         const text = turn.parts[0].text;
         if (turn.role === 'user') {
-            addLog('> ' + text, 'user-command');
+            addLog(`> ${text}`, 'user-command');
         } else {
             const storyText = text.split('\n').filter(line => !line.startsWith('[')).join('\n');
-            addLog(storyText, 'ai-response');
+            addLog(storyText.replace(/\n/g, '<br>'), 'ai-response');
         }
     });
 }
 
-/** ★ ゲーム開始前のウェルカム画面（シナリオ選択）を表示する */
-export function showWelcomeScreen(isSlotFull, scenarioHandler) {
+export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
     clearGameScreen();
     
-    addLog('ようこそ、「言霊のプロトコル」へ。', 'ai-response');
+    let welcomeMessage = '';
+    if (hasSaveData) {
+        // パターンA：シンプルで分かりやすいver.
+        welcomeMessage = 'おかえりなさい、旅人よ。<br>冒険を再開するには、サイドバーのプルダウンからロードしてください。<br>新たな物語を始める場合は、下のシナリオから選択できます。';
+    } else {
+        // パターンA：選択を強調するver.
+        welcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
+    }
+    addLog(welcomeMessage, 'ai-response');
 
+    toggleInput(true, '物語を選択するか、データをロードしてください');
+    
+    // スロットが満杯の場合はシナリオ選択を表示しない
     if (isSlotFull) {
-        addLog('▼ セーブデータがいっぱいです。新しい冒険を始めるには、サイドバーからデータを削除してください。', 'user-command');
-        toggleInput(true, 'セーブデータがいっぱいです');
+        addLog('<br>セーブデータがいっぱいです。新しい冒険を始めるには、サイドバーからデータを削除してください。', 'ai-response');
         return;
     }
-    
-    addLog('▼ 始めたい物語を選択するか、サイドバーから既存のデータをロードしてください。', 'user-command');
-    toggleInput(true, 'プレイしたい世界を選択してください');
 
     scenarioSelectionContainer.innerHTML = '';
 
     const scenarios = [
-        { name: '剣と魔法の世界', type: 'fantasy', description: '呪われた森で失われた記憶の《コア》を探す、王道ダークファンタジー。' },
-        { name: 'AIが管理する未来的な世界', type: 'sf', description: 'AIに支配されたサイバー都市で、あなたは記憶媒体を取り戻せるか。' }
+        { name: '剣と魔法の世界', type: 'fantasy', description: '呪われた森で失われた記憶の《コア》を探す、王道ファンタジー。' },
+        { name: 'AIが管理する未来的な世界', type: 'sf', description: '巨大サイバー都市で失われた記憶《媒体》を探す、SFアドベンチャー。' }
     ];
 
     scenarios.forEach(scenario => {
         const button = document.createElement('button');
         button.className = 'scenario-button';
-        
-        const title = document.createElement('span');
-        title.className = 'scenario-title';
-        title.textContent = scenario.name;
-        
-        const desc = document.createElement('span');
-        desc.className = 'scenario-description';
-        desc.textContent = scenario.description;
-
-        button.appendChild(title);
-        button.appendChild(desc);
-        
+        button.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
         button.onclick = () => {
-            scenarioSelectionContainer.innerHTML = ''; // ボタンを消す
-            scenarioHandler(scenario.type); // main.jsのハンドラを呼び出す
+            scenarioSelectionContainer.innerHTML = '';
+            scenarioHandler(scenario.type);
         };
         scenarioSelectionContainer.appendChild(button);
     });
 }
+
 
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
@@ -278,11 +241,38 @@ export function exportLogToFile(activeSlotId, playerName) {
     const a = document.createElement('a');
     a.href = url;
     const date = new Date();
-    const formattedDate = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+    const formattedDate = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
     a.download = `${playerName || 'log'}_${formattedDate}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+// ヒント機能の初期化
+export function initializeHintButton() {
+    let hintsVisible = localStorage.getItem('hintsVisible') === 'true';
+    const hintButton = document.createElement('button');
+    hintButton.id = 'hint-toggle-button';
+    
+    const updateHintState = () => {
+        if (hintsVisible) {
+            hintButton.textContent = 'ヒントを隠す';
+            actionsContainer.style.display = 'block';
+        } else {
+            hintButton.textContent = 'ヒントを表示';
+            actionsContainer.style.display = 'none';
+        }
+    };
+    
+    hintButton.addEventListener('click', () => {
+        hintsVisible = !hintsVisible;
+        localStorage.setItem('hintsVisible', hintsVisible);
+        updateHintState();
+    });
+
+    // input-areaにヒントボタンを追加
+    inputArea.insertBefore(hintButton, userInput);
+    updateHintState();
 }
 
