@@ -71,16 +71,14 @@ function startNewGame(scenarioType) {
     }
     const rulebook = scenarioType === 'sf' ? RULEBOOK_SF_AI : RULEBOOK_1ST;
     
-    // 新しいゲームの状態を作成して読み込む
+    // ★ 修正: state.createNewGameを呼び出す
     const newGameState = state.createNewGame(rulebook);
     
-    // UIを新しい状態で更新
     ui.clearGameScreen();
     ui.updateAllDisplays(newGameState);
     ui.updateSlotSelector(state.getGameState());
     ui.toggleInput(false);
 
-    // AIの最初のターンを開始
     processAIturn();
 }
 
@@ -155,7 +153,6 @@ userInput.addEventListener('input', () => {
     userInput.style.height = (userInput.scrollHeight) + 'px';
 });
 
-// 「決定」ボタンはロード専用
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
     if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
@@ -173,6 +170,5 @@ exportLogButton.addEventListener('click', () => {
     ui.exportLogToFile(activeSlotId, playerName);
 });
 
-// DOMの読み込み完了時にゲームを初期化
 document.addEventListener('DOMContentLoaded', initializeGame);
 

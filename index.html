@@ -4,12 +4,8 @@
     <meta charset="UTF-8">
     <title>言霊のプロトコル</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6381227150520241"
      crossorigin="anonymous"></script>
-
-    <!-- Stylesheet -->
     <link rel="stylesheet" href="src/css/main.css">
     <link rel="manifest" href="manifest.json">
 </head>
@@ -19,7 +15,7 @@
         <div id="game-container">
             <div id="game-log"></div>
             <div id="scenario-selection-container"></div>
-             <!-- ★ 構造変更 ★ -->
+            <!-- ★ 構造を整理 -->
             <div id="input-container">
                  <div id="actions-container"></div>
                  <div id="input-area">
@@ -53,19 +49,19 @@
         </div>
     </div>
 
-    <!-- Ad Modal -->
-    <div id="ad-modal-overlay" class="modal-overlay" style="display: none;">
-        <div class="modal-content">
+    <!-- 広告モーダル -->
+    <div id="ad-modal-overlay" class="ad-modal-overlay">
+        <div class="ad-modal-content">
             <h3>行動回数を回復しますか？</h3>
             <p>動画広告を視聴すると、行動回数が5回回復します。</p>
-            <div class="modal-buttons">
-                <button id="ad-confirm-button" class="modal-button confirm">はい</button>
-                <button id="ad-cancel-button" class="modal-button cancel">いいえ</button>
+            <div id="ad-loading-spinner"></div>
+            <div class="ad-modal-buttons">
+                <button id="ad-confirm-button" class="ad-modal-button confirm">はい</button>
+                <button id="ad-cancel-button" class="ad-modal-button cancel">いいえ</button>
             </div>
         </div>
     </div>
 
-    <!-- JavaScript Modules -->
     <script type="module" src="src/main.js"></script>
     <script>
         if ('serviceWorker' in navigator) {

@@ -14,7 +14,8 @@ const scenarioSelectionContainer = document.getElementById('scenario-selection-c
 const adModalOverlay = document.getElementById('ad-modal-overlay');
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
-
+const adLoadingSpinner = document.getElementById('ad-loading-spinner');
+const inputContainer = document.getElementById('input-container'); // ★ 追加
 
 // 各ステータスの説明文を定義
 const statDescriptions = {
@@ -31,15 +32,16 @@ const statDescriptions = {
 
 export function addLog(text, className) {
     const p = document.createElement('p');
-    p.innerHTML = text; // innerHTMLに変更して改行を反映
+    p.innerHTML = text;
     if (className) p.classList.add(className);
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
 }
 
 export function updateThinkingMessage(newText) {
-    if (gameLog.lastChild && gameLog.lastChild.textContent === '考え中...') {
-        gameLog.lastChild.textContent = newText;
+    const thinkingElement = Array.from(gameLog.getElementsByTagName('p')).find(p => p.textContent === '考え中...');
+    if (thinkingElement) {
+        thinkingElement.innerHTML = newText.replace(/\n/g, '<br>');
     }
 }
 
@@ -54,7 +56,9 @@ export function clearActions() {
 
 export function updateSlotSelector({ gameSlots }) {
     slotSelector.innerHTML = '';
-    if (gameSlots.length > 0) {
+    const hasSaveData = gameSlots && gameSlots.length > 0;
+
+    if (hasSaveData) {
         gameSlots.forEach((slot, index) => {
             const option = document.createElement('option');
             option.value = slot.id;
@@ -67,7 +71,7 @@ export function updateSlotSelector({ gameSlots }) {
         }
     } else {
         const option = document.createElement('option');
-        option.textContent = 'セーブデータがありません';
+        option.textContent = 'セーブデータなし';
         option.disabled = true;
         slotSelector.appendChild(option);
     }
@@ -136,7 +140,7 @@ export function updateInventoryDisplay(inventory) {
 }
 
 export function displayActions(actions, commandHandler) {
-    actionsContainer.innerHTML = ''; // 既存のヒントをクリア
+    actionsContainer.innerHTML = '';
     if (actions && actions.length > 0) {
         actions.forEach(actionText => {
             const button = document.createElement('button');
@@ -186,14 +190,11 @@ export function rebuildLog(conversationHistory) {
 export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
     clearGameScreen();
     
-    let welcomeMessage = '';
-    if (hasSaveData) {
-        welcomeMessage = 'おかえりなさい、旅人よ。<br>冒険を再開するには、サイドバーのプルダウンからロードしてください。<br>新たな物語を始める場合は、下のシナリオから選択できます。';
-    } else {
-        welcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
-    }
+    let welcomeMessage = hasSaveData
+        ? 'おかえりなさい、旅人よ。<br>冒険を再開するには、サイドバーのプルダウンからロードしてください。<br>新たな物語を始める場合は、下のシナリオから選択できます。'
+        : '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
+    
     addLog(welcomeMessage, 'ai-response');
-
     toggleInput(true, '物語を選択するか、データをロードしてください');
     
     if (isSlotFull) {
@@ -202,7 +203,6 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
     }
 
     scenarioSelectionContainer.innerHTML = '';
-
     const scenarios = [
         { name: '剣と魔法の世界', type: 'fantasy', description: '呪われた森で失われた記憶の《コア》を探す、王道ファンタジー。' },
         { name: 'AIが管理する未来的な世界', type: 'sf', description: '巨大サイバー都市で失われた記憶《媒体》を探す、SFアドベンチャー。' }
@@ -210,7 +210,7 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
 
     scenarios.forEach(scenario => {
         const button = document.createElement('button');
-        button.className = 'scenario-card';
+        button.className = 'scenario-button';
         button.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
         button.onclick = () => {
             scenarioSelectionContainer.innerHTML = '';
@@ -219,7 +219,6 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
         scenarioSelectionContainer.appendChild(button);
     });
 }
-
 
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
@@ -247,15 +246,20 @@ export function exportLogToFile(activeSlotId, playerName) {
     URL.revokeObjectURL(url);
 }
 
+// ★ 修正箇所
 export function initializeHintButton() {
     let hintsVisible = localStorage.getItem('hintsVisible') === 'true';
     const hintButton = document.createElement('button');
     hintButton.id = 'hint-toggle-button';
     
     const updateHintState = () => {
-        hintButton.classList.toggle('active', hintsVisible);
-        hintButton.textContent = hintsVisible ? 'ヒントを隠す' : 'ヒントを表示';
-        actionsContainer.classList.toggle('visible', hintsVisible);
+        if (hintsVisible) {
+            hintButton.textContent = 'ヒントを隠す';
+            actionsContainer.style.display = 'block';
+        } else {
+            hintButton.textContent = 'ヒントを表示';
+            actionsContainer.style.display = 'none';
+        }
     };
     
     hintButton.addEventListener('click', () => {
@@ -263,26 +267,27 @@ export function initializeHintButton() {
         localStorage.setItem('hintsVisible', hintsVisible);
         updateHintState();
     });
-    
-    // ★★★ 修正箇所 ★★★
-    const inputContainer = document.getElementById('input-container');
-    if (inputContainer) {
-        inputContainer.insertBefore(hintButton, inputContainer.firstChild);
-    }
+
+    inputContainer.insertBefore(hintButton, actionsContainer); // ★ inputAreaからinputContainerに変更
     updateHintState();
 }
 
 export function initializeAdModal(onConfirm) {
-    adConfirmButton.onclick = () => {
-        adModalOverlay.style.display = 'none';
-        onConfirm();
-    };
-    adCancelButton.onclick = () => {
-        adModalOverlay.style.display = 'none';
-    };
+    adCancelButton.addEventListener('click', () => adModalOverlay.classList.remove('visible'));
+    adConfirmButton.addEventListener('click', () => {
+        adLoadingSpinner.style.display = 'block';
+        adConfirmButton.style.display = 'none';
+        adCancelButton.style.display = 'none';
+        onConfirm(() => { // 成功時のコールバック
+            adModalOverlay.classList.remove('visible');
+            adLoadingSpinner.style.display = 'none';
+            adConfirmButton.style.display = 'block';
+            adCancelButton.style.display = 'block';
+        });
+    });
 }
 
 export function showAdModal() {
-    adModalOverlay.style.display = 'flex';
+    adModalOverlay.classList.add('visible');
 }
 

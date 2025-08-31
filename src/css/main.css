@@ -12,10 +12,7 @@
     --subtle-text-color: #888;
 }
 
-html, body {
-    height: 100%;
-}
-
+html, body { height: 100%; }
 body {
     background-color: var(--main-bg);
     color: var(--text-color);
@@ -24,7 +21,6 @@ body {
     display: flex;
     flex-direction: column;
 }
-
 header {
     background-color: var(--container-bg);
     padding: 10px 20px;
@@ -32,12 +28,7 @@ header {
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
 }
-
-header h1 {
-    margin: 0;
-    font-size: 1.2em;
-}
-
+header h1 { margin: 0; font-size: 1.2em; }
 #game-wrapper {
     display: flex;
     width: 100%;
@@ -48,7 +39,6 @@ header h1 {
     flex-grow: 1;
     overflow: hidden;
 }
-
 #game-container {
     width: 70%;
     height: 100%;
@@ -57,25 +47,16 @@ header h1 {
     background-color: var(--container-bg);
     border: 1px solid var(--border-color);
 }
-
 #game-log {
     flex-grow: 1;
     padding: 20px;
     overflow-y: auto;
     white-space: pre-wrap;
 }
+.ai-response { color: var(--ai-text); }
+.user-command { color: var(--user-text); }
 
-.ai-response {
-    color: var(--ai-text);
-}
-
-.user-command {
-    color: var(--user-text);
-}
-
-/* --- ★ここからが新しいスタイル --- */
-
-/* シナリオ選択画面のコンテナ */
+/* --- シナリオ選択 --- */
 #scenario-selection-container {
     display: flex;
     flex-direction: column;
@@ -83,11 +64,9 @@ header h1 {
     align-items: center;
     padding: 40px 20px;
     box-sizing: border-box;
-    flex-grow: 1; /* 画面の高さいっぱいに広げる */
+    flex-grow: 1;
 }
-
-/* シナリオ選択ボタン（カード風デザイン） */
-.scenario-card {
+.scenario-button {
     background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color);
     padding: 20px 30px;
@@ -99,33 +78,27 @@ header h1 {
     max-width: 400px;
     text-align: center;
 }
-
-.scenario-card:hover {
+.scenario-button:hover {
     background-color: var(--border-color);
     transform: translateY(-5px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
-
-.scenario-card h3 {
+.scenario-button h3 {
     margin: 0 0 10px 0;
     font-size: 1.2em;
     color: var(--accent-color);
 }
-
-.scenario-card p {
+.scenario-button p {
     margin: 0;
     color: var(--subtle-text-color);
     font-size: 0.9em;
 }
 
-
-/* 入力エリア全体のコンテナ */
+/* --- ★ 入力エリア関連のスタイル ★ --- */
 #input-container {
     padding: 10px;
     border-top: 1px solid var(--border-color);
 }
-
-/* ヒントボタン */
 #hint-toggle-button {
     background-color: var(--container-bg);
     color: var(--subtle-text-color);
@@ -137,31 +110,15 @@ header h1 {
     border-radius: 5px;
     transition: all 0.2s ease;
 }
-
 #hint-toggle-button:hover {
     background-color: var(--border-color);
     color: var(--text-color);
 }
-
-#hint-toggle-button.active {
-    background-color: var(--accent-color-dark);
-    border-color: var(--accent-color);
-    color: white;
-}
-
-
-/* アクションボタン（ヒント）のコンテナ */
 #actions-container {
-    padding: 0 0 10px 0;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 10px;
-    display: none; /* デフォルトは非表示 */
 }
-
-#actions-container.visible {
-    display: block; /* 表示状態 */
-}
-
 .action-button {
     background-color: var(--accent-color);
     color: white;
@@ -173,21 +130,9 @@ header h1 {
     border-radius: 5px;
     transition: all 0.2s ease;
 }
-
-.action-button:hover {
-    filter: brightness(1.2);
-}
-
-.action-button.fade-out {
-    animation: fadeOut 0.5s ease-in-out forwards;
-}
-
-/* --- ★ここまでが新しいスタイル --- */
-
-#input-area {
-    display: flex;
-    padding: 0; /* input-containerがpaddingを持つので0に */
-}
+.action-button:hover { filter: brightness(1.2); }
+.action-button.fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
+#input-area { display: flex; }
 
 textarea#user-input {
     flex-grow: 1;
@@ -204,12 +149,7 @@ textarea#user-input {
     white-space: pre-wrap;
     word-wrap: break-word;
 }
-
-#user-input:disabled {
-    background-color: #444;
-    cursor: not-allowed;
-}
-
+#user-input:disabled { background-color: #444; cursor: not-allowed; }
 #export-log-button {
     background-color: var(--border-color);
     color: var(--text-color);
@@ -221,11 +161,7 @@ textarea#user-input {
     border-radius: 5px;
     transition: background-color 0.2s ease;
 }
-#export-log-button:hover {
-    background-color: #555;
-}
-
-
+#export-log-button:hover { background-color: #555; }
 #send-button {
     background-color: var(--accent-color);
     color: white;
@@ -234,7 +170,7 @@ textarea#user-input {
     cursor: pointer;
     font-size: 16px;
 }
-
+/* --- サイドバー --- */
 #sidebar {
     width: 30%;
     height: 100%;
@@ -242,7 +178,6 @@ textarea#user-input {
     display: flex;
     flex-direction: column;
 }
-
 #status-container {
     flex-grow: 1;
     padding: 20px;
@@ -251,18 +186,13 @@ textarea#user-input {
     overflow-y: auto;
     margin-bottom: 20px;
 }
-
 #status-container h2 {
     color: var(--accent-color);
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
     margin-top: 20px;
 }
-
-#status-container h2:first-child {
-    margin-top: 0;
-}
-
+#status-container h2:first-child { margin-top: 0; }
 #player-name-display {
     font-size: 1.5em;
     color: var(--accent-color);
@@ -270,33 +200,20 @@ textarea#user-input {
     margin-bottom: 20px;
     word-break: break-all;
 }
-
 #status-display p {
     display: flex;
     justify-content: space-between;
     margin: 10px 0;
     font-size: 16px;
 }
-
-#status-display span {
-    font-weight: bold;
-}
-
-.stat-value {
-    color: var(--user-text);
-}
-
+#status-display span { font-weight: bold; }
+.stat-value { color: var(--user-text); }
 .stat-change {
     margin-left: 10px;
     color: var(--ai-text);
     animation: fadeInAndOut 2s ease-in-out forwards;
 }
-
-.tooltip {
-    position: relative;
-    cursor: help;
-}
-  
+.tooltip { position: relative; cursor: help; }
 .tooltip::after {
     content: attr(data-tooltip);
     position: fixed;
@@ -304,217 +221,82 @@ textarea#user-input {
     bottom: 20px;
     right: 20px;
     transform: none;
-    
     background-color: var(--main-bg);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-radius: 5px;
     padding: 8px 12px;
-    
     width: auto;
     max-width: 300px;
     min-width: 150px;
     font-size: 14px;
     line-height: 1.4;
     text-align: left;
-    
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s, visibility 0.2s;
     z-index: 1000;
 }
-  
-.tooltip:hover::after {
-    opacity: 1;
-    visibility: visible;
-}
-
-#inventory-display p {
-    color: var(--text-color);
-    font-size: 15px;
-    margin: 5px 0;
-}
-
-#system-menu {
-    flex-shrink: 0;
-}
-
+.tooltip:hover::after { opacity: 1; visibility: visible; }
+#inventory-display p { color: var(--text-color); font-size: 15px; margin: 5px 0; }
+#system-menu { flex-shrink: 0; }
 .system-button {
-    width: 100%;
-    padding: 15px;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    text-align: center;
-    text-decoration: none;
-    display: block;
-    box-sizing: border-box;
+    width: 100%; padding: 15px; color: white; border: none;
+    border-radius: 5px; cursor: pointer; font-size: 16px;
+    font-weight: bold; text-align: center; text-decoration: none;
+    display: block; box-sizing: border-box;
 }
-
-.system-button.share {
-    background-color: var(--twitter-color);
-}
-
-.system-button.share:hover {
-    background-color: #0c85d0;
-}
-
-#slot-selector-container {
-    display: flex;
-    margin-bottom: 10px;
-}
-
+.system-button.share { background-color: var(--twitter-color); }
+.system-button.share:hover { background-color: #0c85d0; }
+#slot-selector-container { display: flex; margin-bottom: 10px; }
 #slot-selector {
-    flex-grow: 1;
-    background-color: #333;
-    color: var(--text-color);
-    border: 1px solid #555;
-    padding: 10px;
-    font-size: 16px;
+    flex-grow: 1; background-color: #333; color: var(--text-color);
+    border: 1px solid #555; padding: 10px; font-size: 16px;
 }
-
 #confirm-button, #delete-slot-button {
-    color: white;
-    border: none;
-    margin-left: 10px;
-    padding: 10px 15px;
-    cursor: pointer;
-    font-size: 16px;
-    border-radius: 5px;
+    color: white; border: none; margin-left: 10px;
+    padding: 10px 15px; cursor: pointer; font-size: 16px; border-radius: 5px;
 }
+#confirm-button { background-color: var(--accent-color); }
+#delete-slot-button { background-color: var(--danger-color); }
 
-#confirm-button {
-    background-color: var(--accent-color);
+/* --- 広告モーダル --- */
+.ad-modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); display: none;
+    justify-content: center; align-items: center; z-index: 2000;
 }
-
-#delete-slot-button {
-    background-color: var(--danger-color);
+.ad-modal-overlay.visible { display: flex; }
+.ad-modal-content {
+    background-color: var(--container-bg); padding: 30px;
+    border-radius: 8px; border: 1px solid var(--border-color);
+    text-align: center; width: 90%; max-width: 400px;
 }
-
-
-/* 広告モーダルのスタイル */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: none; /* デフォルトは非表示 */
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
+.ad-modal-content h3 { margin-top: 0; color: var(--accent-color); }
+.ad-modal-buttons { margin-top: 20px; display: flex; justify-content: center; gap: 15px; }
+.ad-modal-button {
+    padding: 10px 20px; border: none; border-radius: 5px;
+    font-size: 16px; cursor: pointer; transition: background-color 0.2s;
 }
-
-.modal-content {
-    background-color: var(--container-bg);
-    padding: 30px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-    text-align: center;
-    width: 90%;
-    max-width: 400px;
-}
-
-.modal-content h3 {
-    margin-top: 0;
-    color: var(--accent-color);
-}
-
-.modal-buttons {
-    margin-top: 20px;
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-}
-
-.modal-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-}
-.modal-button.confirm {
-    background-color: var(--accent-color);
-    color: white;
-}
-.modal-button.confirm:hover {
-    background-color: var(--accent-color-dark);
-}
-.modal-button.cancel {
-    background-color: var(--border-color);
-    color: var(--text-color);
-}
-.modal-button.cancel:hover {
-    background-color: #555;
-}
-
-/* ローディングスピナー */
+.ad-modal-button.confirm { background-color: var(--accent-color); color: white; }
+.ad-modal-button.confirm:hover { background-color: var(--accent-color-dark); }
+.ad-modal-button.cancel { background-color: var(--border-color); color: var(--text-color); }
+.ad-modal-button.cancel:hover { background-color: #555; }
 #ad-loading-spinner {
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid var(--accent-color);
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    animation: spin 1s linear infinite;
-    margin: 20px auto;
-    display: none; /* デフォルトは非表示 */
+    border: 4px solid #f3f3f3; border-top: 4px solid var(--accent-color);
+    border-radius: 50%; width: 30px; height: 30px;
+    animation: spin 1s linear infinite; margin: 20px auto; display: none;
 }
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-
-@keyframes fadeOut {
-    0% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-}
-
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.95); } }
 @keyframes fadeInAndOut {
-    0% {
-        opacity: 0;
-        transform: translateY(5px);
-    }
-    20% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    80% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0;
-    }
+    0% { opacity: 0; transform: translateY(5px); } 20% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; } 100% { opacity: 0; }
 }
-
 @media (max-width: 800px) {
-    body {
-        height: auto;
-    }
-    #game-wrapper {
-        flex-direction: column;
-        padding: 10px;
-    }
-    #game-container, #sidebar {
-        width: 100%;
-        margin-left: 0;
-    }
-    #sidebar {
-        margin-top: 20px;
-        height: auto;
-    }
+    body { height: auto; }
+    #game-wrapper { flex-direction: column; padding: 10px; }
+    #game-container, #sidebar { width: 100%; margin-left: 0; }
+    #sidebar { margin-top: 20px; height: auto; }
 }
 
