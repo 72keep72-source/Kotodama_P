@@ -2,7 +2,6 @@
 import * as state from './services/state.js';
 import * as ui from './ui.js';
 import { callAI } from './services/api.js';
-// ★★★ パスを修正 ★★★
 import { RULEBOOK as RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 
@@ -52,7 +51,7 @@ async function handleUserCommand(commandFromButton = null) {
         ui.showAdModal();
         return;
     }
-
+    
     state.incrementDailyActions();
     ui.updateActionCountDisplay(state.getGameState().dailyActions);
     
@@ -64,35 +63,36 @@ async function handleUserCommand(commandFromButton = null) {
     await processAIturn();
 }
 
-/** 新しいゲームを作成 */
-function createNewGame(selectedRulebook) {
+/** 新しいゲームを開始する */
+function startNewGame(scenarioType) {
     if (state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS) {
         alert(`セーブスロットは${state.MAX_SAVE_SLOTS}つまでです。`);
         return;
     }
-    const newSlot = state.createNewSlot(selectedRulebook);
-    loadGame(newSlot.id);
-    ui.updateSlotSelector(state.getGameState());
+    const rulebook = scenarioType === 'sf' ? RULEBOOK_SF_AI : RULEBOOK_1ST;
     
+    // 新しいゲームの状態を作成して読み込む
+    const newGameState = state.createNewGame(rulebook);
+    
+    // UIを新しい状態で更新
+    ui.clearGameScreen();
+    ui.updateAllDisplays(newGameState);
+    ui.updateSlotSelector(state.getGameState());
+    ui.toggleInput(false);
+
+    // AIの最初のターンを開始
     processAIturn();
 }
 
-/** シナリオを選択して新しいゲームを開始するハンドラ */
-function handleScenarioSelection(scenarioType) {
-    const rulebook = scenarioType === 'sf' ? RULEBOOK_SF_AI : RULEBOOK_1ST;
-    createNewGame(rulebook);
-}
-
-/** ゲームデータをロード */
-function loadGame(slotId) {
+/** セーブデータからゲームをロードする */
+function loadGameFromSlot(slotId) {
     const gameState = state.loadGame(slotId);
     if (!gameState) {
-        ui.showWelcomeScreen(state.getGameState().gameSlots.length > 0, state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS, handleScenarioSelection);
+        initializeGame();
         return;
     }
     
     ui.clearGameScreen();
-    
     state.checkAndResetActions();
     ui.updateAllDisplays(gameState);
     
@@ -129,14 +129,15 @@ function initializeGame() {
 
     const hasSaveData = gameState.gameSlots.length > 0;
     const isSlotFull = gameState.gameSlots.length >= state.MAX_SAVE_SLOTS;
-    ui.showWelcomeScreen(hasSaveData, isSlotFull, handleScenarioSelection);
+    ui.showWelcomeScreen(hasSaveData, isSlotFull, startNewGame);
     
     ui.initializeHintButton();
-    ui.initializeAdModal(() => {
+    ui.initializeAdModal((onSuccess) => {
         setTimeout(() => {
             state.recoverActions(5);
             ui.updateActionCountDisplay(state.getGameState().dailyActions);
             ui.addLog('【システム】行動回数が5回分回復しました。', 'ai-response');
+            onSuccess();
         }, 3000);
     });
 }
@@ -157,15 +158,10 @@ userInput.addEventListener('input', () => {
 // 「決定」ボタンはロード専用
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
-    if (selectedValue && selectedValue !== 'new_game' && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+    if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
         state.setActiveSlotId(selectedValue);
-        loadGame(selectedValue);
-    } else if (selectedValue === 'new_game') {
-        // この部分は handleScenarioSelection に任せるため、何もしないか、
-        // シナリオ選択を促すメッセージを表示するのが親切です。
-        ui.showWelcomeScreen(state.getGameState().gameSlots.length > 0, state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS, handleScenarioSelection);
-    }
-    else {
+        loadGameFromSlot(selectedValue);
+    } else {
         alert('プルダウンからロードするセーブデータを選択してください。');
     }
 });
@@ -179,5 +175,4 @@ exportLogButton.addEventListener('click', () => {
 
 // DOMの読み込み完了時にゲームを初期化
 document.addEventListener('DOMContentLoaded', initializeGame);
-
 
