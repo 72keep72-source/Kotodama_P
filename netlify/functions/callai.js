@@ -24,20 +24,28 @@ exports.handler = async (event) => {
       throw new Error("リクエストされたJSONの形式が正しくありません。");
     }
     
+    // ... 既存のチェックの後 ...
+
     const conversationHistory = requestData.history;
 
-    // ★ 修正: 会話履歴が空、または配列でない場合にエラーを投げる
-    if (!conversationHistory || !Array.isArray(conversationHistory) || conversationHistory.length === 0) {
-        throw new Error("クライアントから送信された会話履歴が空、または不正です。");
+    // ... if (!conversationHistory ... ) のチェック ...
+
+    // ▼▼▼【修正案】ここから追加 ▼▼▼
+    const lastTurn = conversationHistory[conversationHistory.length - 1];
+    // 履歴の最後のデータ構造が正しいかチェックする
+    if (!lastTurn || !lastTurn.parts || !lastTurn.parts[0]) {
+        throw new Error("会話履歴の最後のデータ形式が不正です。");
     }
+    // ▲▲▲【修正案】ここまで追加 ▲▲▲
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest"});
     const chat = model.startChat({
       history: conversationHistory.slice(0, -1),
     });
 
-    const lastMessage = conversationHistory[conversationHistory.length - 1].parts[0].text;
+    const lastMessage = lastTurn.parts[0].text; // lastTurnを使うように変更
     const result = await chat.sendMessage(lastMessage);
+// ... 以降続く ...
     const response = await result.response;
     const text = response.text();
 
