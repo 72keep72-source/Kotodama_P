@@ -3,8 +3,8 @@ import * as state from './services/state.js';
 import * as ui from './ui.js';
 import { callAI } from './services/api.js';
 // ★★★ パスを修正 ★★★
-import { RULEBOOK as RULEBOOK_1ST } from '../assets/data/rulebook_1st.js';
-import { RULEBOOK_SF_AI } from '../assets/data/rulebook_SF_AI.js';
+import { RULEBOOK as RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
+import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 
 
 // --- DOM要素の取得 ---
@@ -85,12 +85,13 @@ function handleScenarioSelection(scenarioType) {
 
 /** ゲームデータをロード */
 function loadGame(slotId) {
-    ui.clearGameScreen();
     const gameState = state.loadGame(slotId);
     if (!gameState) {
-        initializeGame();
+        ui.showWelcomeScreen(state.getGameState().gameSlots.length > 0, state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS, handleScenarioSelection);
         return;
     }
+    
+    ui.clearGameScreen();
     
     state.checkAndResetActions();
     ui.updateAllDisplays(gameState);
@@ -132,8 +133,6 @@ function initializeGame() {
     
     ui.initializeHintButton();
     ui.initializeAdModal(() => {
-        // ★★★★★ ここが広告視聴のシミュレーション部分 ★★★★★
-        // AdSenseの審査が通ったら、この部分を本物の広告コードに置き換えます
         setTimeout(() => {
             state.recoverActions(5);
             ui.updateActionCountDisplay(state.getGameState().dailyActions);
@@ -158,10 +157,15 @@ userInput.addEventListener('input', () => {
 // 「決定」ボタンはロード専用
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
-    if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+    if (selectedValue && selectedValue !== 'new_game' && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
         state.setActiveSlotId(selectedValue);
         loadGame(selectedValue);
-    } else {
+    } else if (selectedValue === 'new_game') {
+        // この部分は handleScenarioSelection に任せるため、何もしないか、
+        // シナリオ選択を促すメッセージを表示するのが親切です。
+        ui.showWelcomeScreen(state.getGameState().gameSlots.length > 0, state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS, handleScenarioSelection);
+    }
+    else {
         alert('プルダウンからロードするセーブデータを選択してください。');
     }
 });
@@ -175,4 +179,5 @@ exportLogButton.addEventListener('click', () => {
 
 // DOMの読み込み完了時にゲームを初期化
 document.addEventListener('DOMContentLoaded', initializeGame);
+
 

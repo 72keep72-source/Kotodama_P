@@ -5,6 +5,12 @@
     <title>言霊のプロトコル</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+     <!-- ★★★ 追加箇所 ★★★ -->
+     <link rel="manifest" href="/manifest.json">
+     <meta name="theme-color" content="#1a1a1a">
+     <!-- ★★★ ここまで ★★★ -->
+
+    
     <!-- ★★★★★ ここにAdSenseコードを貼り付け ★★★★★ -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6381227150520241"
      crossorigin="anonymous"></script>
@@ -64,6 +70,20 @@
 
     <!-- JavaScriptモジュールを読み込み -->
     <script type="module" src="src/main.js"></script>
+
+    <!-- ★★★ 追加箇所 ★★★ -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').then(registration => {
+                console.log('サービスワーカーを登録しました:', registration);
+            }).catch(error => {
+                console.log('サービスワーカーの登録に失敗しました:', error);
+            });
+        });
+    }
+    </script>
+    <!-- ★★★ ここまで ★★★ -->
 </body>
 </html>
 
