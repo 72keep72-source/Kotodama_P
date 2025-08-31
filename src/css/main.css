@@ -4,21 +4,23 @@
     --border-color: #444;
     --text-color: #f0f0f0;
     --accent-color: #4CAF50;
+    --accent-color-dark: #388E3C;
     --ai-text: #a5d6a7;
     --user-text: #81d4fa;
     --danger-color: #c9302c;
     --twitter-color: #1DA1F2;
+    --subtle-text-color: #888;
 }
 
 html, body {
     height: 100%;
-    margin: 0;
 }
 
 body {
     background-color: var(--main-bg);
     color: var(--text-color);
-    font-family: sans-serif;
+    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    margin: 0;
     display: flex;
     flex-direction: column;
 }
@@ -54,6 +56,7 @@ header h1 {
     flex-direction: column;
     background-color: var(--container-bg);
     border: 1px solid var(--border-color);
+    border-radius: 8px;
 }
 
 #game-log {
@@ -61,65 +64,110 @@ header h1 {
     padding: 20px;
     overflow-y: auto;
     white-space: pre-wrap;
+    line-height: 1.6;
 }
 
-.ai-response { color: var(--ai-text); }
-.user-command { color: var(--user-text); }
+.ai-response {
+    color: var(--ai-text);
+}
 
+.user-command {
+    color: var(--user-text);
+    font-style: italic;
+}
+
+/* --- ★ここからシナリオ選択画面のスタイル --- */
 #scenario-selection-container {
-    padding: 20px;
-    border-bottom: 1px solid var(--border-color);
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
+    flex-direction: column; /* 縦並びにする */
+    justify-content: center; /* 垂直方向中央揃え */
+    align-items: center;     /* 水平方向中央揃え */
+    padding: 20px;
+    box-sizing: border-box;
+    flex-grow: 1; /* 親要素の高さに合わせて伸びる */
+    overflow-y: auto; /* シナリオが増えた時にスクロール可能にする */
 }
 
-.scenario-button {
-    background-color: transparent;
-    color: var(--accent-color);
-    border: 1px solid var(--accent-color);
-    padding: 12px 25px;
-    width: 80%;
-    max-width: 400px;
+/* シナリオ選択ボタン（カード風デザイン） */
+.scenario-card {
+    background: linear-gradient(145deg, #2f2f2f, #262626);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 25px 35px;
+    margin: 15px;
     cursor: pointer;
-    font-size: 1.1em;
+    border-radius: 12px;
+    transition: all 0.3s ease-in-out;
+    width: 90%;
+    max-width: 480px;
+    text-align: center;
+    box-shadow: 5px 5px 15px #1f1f1f, -5px -5px 15px #353535;
+    font-family: inherit;
+    font-size: 1em;
+}
+
+.scenario-card:hover, .scenario-card:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+}
+
+.scenario-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.4em;
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.scenario-card p {
+    margin: 0;
+    color: var(--subtle-text-color);
+    font-size: 0.95em;
+    line-height: 1.6;
+}
+
+/* コンテナがフェードアウトする時のアニメーション */
+#scenario-selection-container.fade-out {
+    animation: fadeOut 0.5s ease-in-out forwards;
+}
+/* --- ★ここまでシナリオ選択画面のスタイル --- */
+
+
+#input-container {
+    padding: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+#hint-toggle-button {
+    background-color: var(--container-bg);
+    color: var(--subtle-text-color);
+    border: 1px solid var(--border-color);
+    padding: 5px 10px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    font-size: 0.8em;
     border-radius: 5px;
     transition: all 0.2s ease;
 }
 
-.scenario-button:hover {
-    background-color: var(--accent-color);
+#hint-toggle-button:hover {
+    background-color: var(--border-color);
+    color: var(--text-color);
+}
+
+#hint-toggle-button.active {
+    background-color: var(--accent-color-dark);
+    border-color: var(--accent-color);
     color: white;
-    transform: scale(1.03);
 }
 
 #actions-container {
-    padding: 10px 20px;
-    border-top: 1px solid var(--border-color);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
+    padding: 0 10px 10px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 10px;
 }
-
-#hint-button {
-    background-color: var(--border-color);
-    color: var(--text-color);
-    border: 1px solid #555;
-    padding: 5px 10px;
-    margin-right: 10px;
-    cursor: pointer;
-    font-size: 13px;
-    border-radius: 5px;
-    transition: background-color 0.2s ease;
-}
-
-#hint-button.active {
-    background-color: var(--accent-color);
-    border-color: var(--accent-color);
-}
-
 
 .action-button {
     background-color: var(--accent-color);
@@ -144,8 +192,6 @@ header h1 {
 #input-area {
     display: flex;
     padding: 10px;
-    border-top: 1px solid var(--border-color);
-    align-items: center;
 }
 
 textarea#user-input {
@@ -162,6 +208,7 @@ textarea#user-input {
     overflow-y: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
+    border-radius: 5px;
 }
 
 #user-input:disabled {
@@ -184,6 +231,7 @@ textarea#user-input {
     background-color: #555;
 }
 
+
 #send-button {
     background-color: var(--accent-color);
     color: white;
@@ -191,6 +239,7 @@ textarea#user-input {
     padding: 10px 20px;
     cursor: pointer;
     font-size: 16px;
+    border-radius: 5px;
 }
 
 #sidebar {
@@ -208,6 +257,7 @@ textarea#user-input {
     border: 1px solid var(--border-color);
     overflow-y: auto;
     margin-bottom: 20px;
+    border-radius: 8px;
 }
 
 #status-container h2 {
@@ -215,6 +265,7 @@ textarea#user-input {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
     margin-top: 20px;
+    font-size: 1.1em;
 }
 
 #status-container h2:first-child {
@@ -227,6 +278,7 @@ textarea#user-input {
     text-align: center;
     margin-bottom: 20px;
     word-break: break-all;
+    font-weight: bold;
 }
 
 #status-display p {
@@ -248,6 +300,44 @@ textarea#user-input {
     margin-left: 10px;
     color: var(--ai-text);
     animation: fadeInAndOut 2s ease-in-out forwards;
+}
+
+.tooltip {
+    position: relative;
+    cursor: help;
+    border-bottom: 1px dotted var(--subtle-text-color);
+}
+  
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: fixed;
+    top: auto;
+    bottom: 20px;
+    right: 20px;
+    transform: none;
+    
+    background-color: var(--main-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 8px 12px;
+    
+    width: auto;
+    max-width: 300px;
+    min-width: 150px;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: left;
+    
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    z-index: 1000;
+}
+  
+.tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
 }
 
 #inventory-display p {
@@ -295,61 +385,32 @@ textarea#user-input {
     border: 1px solid #555;
     padding: 10px;
     font-size: 16px;
+    border-radius: 5px 0 0 5px;
 }
 
 #confirm-button, #delete-slot-button {
     color: white;
     border: none;
-    margin-left: 10px;
+    margin-left: 0;
     padding: 10px 15px;
     cursor: pointer;
     font-size: 16px;
-    border-radius: 5px;
 }
 
 #confirm-button {
     background-color: var(--accent-color);
+    border-radius: 0 5px 5px 0;
+    margin-left: -1px;
 }
 
 #delete-slot-button {
     background-color: var(--danger-color);
+    border-radius: 5px;
+    margin-left: 10px;
 }
 
-/* --- Tooltip Styles --- */
-.tooltip {
-  position: relative;
-  cursor: help;
-}
 
-.tooltip::after {
-  content: attr(data-tooltip);
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  transform: none;
-  background-color: var(--main-bg);
-  color: var(--text-color);
-  border: 1px solid var(--border-color);
-  border-radius: 5px;
-  padding: 8px 12px;
-  width: auto;
-  max-width: 300px;
-  min-width: 150px;
-  font-size: 14px;
-  line-height: 1.4;
-  text-align: left;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
-  z-index: 1000;
-}
-
-.tooltip:hover::after {
-  opacity: 1;
-  visibility: visible;
-}
-
-/* --- Ad Modal Styles --- */
+/* 広告モーダルのスタイル */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -369,8 +430,8 @@ textarea#user-input {
     border-radius: 8px;
     border: 1px solid var(--border-color);
     text-align: center;
-    max-width: 400px;
     width: 90%;
+    max-width: 400px;
 }
 
 .modal-content h3 {
@@ -387,38 +448,87 @@ textarea#user-input {
 
 .modal-button {
     padding: 10px 20px;
-    border-radius: 5px;
     border: none;
-    cursor: pointer;
+    border-radius: 5px;
     font-size: 16px;
-    font-weight: bold;
-    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
-
 .modal-button.confirm {
     background-color: var(--accent-color);
+    color: white;
+}
+.modal-button.confirm:hover {
+    background-color: var(--accent-color-dark);
+}
+.modal-button.cancel {
+    background-color: var(--border-color);
+    color: var(--text-color);
+}
+.modal-button.cancel:hover {
+    background-color: #555;
 }
 
-.modal-button.cancel {
-    background-color: var(--danger-color);
+/* ローディングスピナー */
+#ad-loading-spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--accent-color);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+    display: none; /* デフォルトは非表示 */
 }
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
 
 @keyframes fadeOut {
-    0% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0; transform: scale(0.95); }
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.95);
+    }
 }
 
 @keyframes fadeInAndOut {
-    0% { opacity: 0; transform: translateY(5px); }
-    20% { opacity: 1; transform: translateY(0); }
-    80% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+    20% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    80% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
 }
 
 @media (max-width: 800px) {
-    body { height: auto; }
-    #game-wrapper { flex-direction: column; padding: 10px; }
-    #game-container, #sidebar { width: 100%; margin-left: 0; }
-    #sidebar { margin-top: 20px; height: auto; }
+    body {
+        height: auto;
+    }
+    #game-wrapper {
+        flex-direction: column;
+        padding: 10px;
+    }
+    #game-container, #sidebar {
+        width: 100%;
+        margin-left: 0;
+    }
+    #sidebar {
+        margin-top: 20px;
+        height: auto;
+    }
 }
-

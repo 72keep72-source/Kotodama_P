@@ -12,6 +12,11 @@ const inventoryDisplay = document.getElementById('inventory-display');
 const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
 const inputArea = document.getElementById('input-area');
+const adModalOverlay = document.getElementById('ad-modal-overlay');
+const adConfirmButton = document.getElementById('ad-confirm-button');
+const adCancelButton = document.getElementById('ad-cancel-button');
+const adLoadingSpinner = document.getElementById('ad-loading-spinner');
+const adModalContent = document.querySelector('.ad-modal-content');
 
 
 // 各ステータスの説明文を定義
@@ -29,7 +34,7 @@ const statDescriptions = {
 
 export function addLog(text, className) {
     const p = document.createElement('p');
-    p.innerHTML = text; // innerHTMLに変更して改行を反映
+    p.innerHTML = text.replace(/\n/g, '<br>'); // 改行を<br>に変換
     if (className) p.classList.add(className);
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
@@ -37,7 +42,7 @@ export function addLog(text, className) {
 
 export function updateThinkingMessage(newText) {
     if (gameLog.lastChild && gameLog.lastChild.textContent === '考え中...') {
-        gameLog.lastChild.textContent = newText;
+        gameLog.lastChild.innerHTML = newText.replace(/\n/g, '<br>');
     }
 }
 
@@ -59,7 +64,6 @@ export function updateSlotSelector({ gameSlots }) {
             option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
             slotSelector.appendChild(option);
         });
-        // 最後に選択していたスロットをデフォルトで選択状態にする
         const lastSelectedId = localStorage.getItem('rpgActiveSlotId');
         if (lastSelectedId && gameSlots.some(s => s.id == lastSelectedId)) {
             slotSelector.value = lastSelectedId;
@@ -135,7 +139,7 @@ export function updateInventoryDisplay(inventory) {
 }
 
 export function displayActions(actions, commandHandler) {
-    actionsContainer.innerHTML = ''; // 既存のヒントをクリア
+    actionsContainer.innerHTML = '';
     if (actions && actions.length > 0) {
         actions.forEach(actionText => {
             const button = document.createElement('button');
@@ -177,7 +181,7 @@ export function rebuildLog(conversationHistory) {
             addLog(`> ${text}`, 'user-command');
         } else {
             const storyText = text.split('\n').filter(line => !line.startsWith('[')).join('\n');
-            addLog(storyText.replace(/\n/g, '<br>'), 'ai-response');
+            addLog(storyText, 'ai-response');
         }
     });
 }
@@ -187,19 +191,16 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
     
     let welcomeMessage = '';
     if (hasSaveData) {
-        // パターンA：シンプルで分かりやすいver.
-        welcomeMessage = 'おかえりなさい、旅人よ。<br>冒険を再開するには、サイドバーのプルダウンからロードしてください。<br>新たな物語を始める場合は、下のシナリオから選択できます。';
+        welcomeMessage = 'おかえりなさい、旅人よ。\n冒険を再開するには、サイドバーのプルダウンからロードしてください。\n新たな物語を始める場合は、下のシナリオから選択できます。';
     } else {
-        // パターンA：選択を強調するver.
-        welcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
+        welcomeMessage = '冷たい石の感触。失われた記憶。\nあなたは石碑の前で倒れている。\nここが剣と魔法の世界なのか、AIが支配する未来なのか…\nそれすら、まだ決まってはいない。\nすべては、あなたの最初の「言霊」から始まる。\n▼ 始めたい物語を、下から選択してください。';
     }
     addLog(welcomeMessage, 'ai-response');
 
     toggleInput(true, '物語を選択するか、データをロードしてください');
     
-    // スロットが満杯の場合はシナリオ選択を表示しない
     if (isSlotFull) {
-        addLog('<br>セーブデータがいっぱいです。新しい冒険を始めるには、サイドバーからデータを削除してください。', 'ai-response');
+        addLog('\nセーブデータがいっぱいです。新しい冒険を始めるには、サイドバーからデータを削除してください。', 'ai-response');
         return;
     }
 
@@ -212,11 +213,16 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
 
     scenarios.forEach(scenario => {
         const button = document.createElement('button');
-        button.className = 'scenario-button';
+        button.className = 'scenario-card'; // ★クラス名をカードに変更
         button.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
         button.onclick = () => {
-            scenarioSelectionContainer.innerHTML = '';
-            scenarioHandler(scenario.type);
+            // ★選択時の演出を追加
+            scenarioSelectionContainer.classList.add('fade-out');
+            setTimeout(() => {
+                scenarioSelectionContainer.innerHTML = '';
+                scenarioSelectionContainer.classList.remove('fade-out');
+                scenarioHandler(scenario.type);
+            }, 500); // 0.5秒後に処理を実行
         };
         scenarioSelectionContainer.appendChild(button);
     });
@@ -249,20 +255,15 @@ export function exportLogToFile(activeSlotId, playerName) {
     URL.revokeObjectURL(url);
 }
 
-// ヒント機能の初期化
 export function initializeHintButton() {
     let hintsVisible = localStorage.getItem('hintsVisible') === 'true';
     const hintButton = document.createElement('button');
     hintButton.id = 'hint-toggle-button';
     
     const updateHintState = () => {
-        if (hintsVisible) {
-            hintButton.textContent = 'ヒントを隠す';
-            actionsContainer.style.display = 'block';
-        } else {
-            hintButton.textContent = 'ヒントを表示';
-            actionsContainer.style.display = 'none';
-        }
+        actionsContainer.style.display = hintsVisible ? 'block' : 'none';
+        hintButton.textContent = hintsVisible ? 'ヒントを隠す' : 'ヒントを表示';
+        hintButton.classList.toggle('active', hintsVisible);
     };
     
     hintButton.addEventListener('click', () => {
@@ -271,8 +272,21 @@ export function initializeHintButton() {
         updateHintState();
     });
 
-    // input-areaにヒントボタンを追加
     inputArea.insertBefore(hintButton, userInput);
     updateHintState();
 }
 
+export function showAdModal() {
+    adModalOverlay.style.display = 'flex';
+}
+
+export function initializeAdModal(onConfirm) {
+    adConfirmButton.onclick = () => {
+        adModalContent.style.display = 'none';
+        adLoadingSpinner.style.display = 'block';
+        onConfirm(); 
+    };
+    adCancelButton.onclick = () => {
+        adModalOverlay.style.display = 'none';
+    };
+}
