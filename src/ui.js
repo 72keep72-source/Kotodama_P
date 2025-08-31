@@ -177,6 +177,14 @@ export function clearGameScreen() {
 export function rebuildLog(conversationHistory) {
     gameLog.innerHTML = '';
     (conversationHistory || []).slice(1).forEach(turn => {
+        // ▼▼▼【修正案】ここから追加 ▼▼▼
+        // turnやturn.partsが存在しない不正なデータの場合は、処理をスキップする
+        if (!turn || !turn.parts || !turn.parts[0]) {
+            console.warn('会話履歴に不正なデータが含まれていたため、スキップしました:', turn);
+            return; // このturnに対する処理を中断し、次に進む
+        }
+        // ▲▲▲【修正案】ここまで追加 ▲▲▲
+
         const text = turn.parts[0].text;
         if (turn.role === 'user') {
             addLog(`> ${text}`, 'user-command');
