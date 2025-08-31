@@ -29,7 +29,6 @@ async function processAIturn() {
         ui.updateThinkingMessage(parsedData.storyLogText);
         ui.displayActions(parsedData.actions, handleUserCommand);
         ui.updateAllDisplays(state.getGameState(), parsedData.statChanges);
-        // セーブは全ての状態更新が終わった後に行う
         state.saveCurrentSlotToStorage();
     } catch (error) {
         ui.updateThinkingMessage('エラーが発生しました: ' + error.message);
@@ -47,22 +46,24 @@ async function handleUserCommand(commandFromButton = null) {
     }
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
-
-    // 行動回数のチェックとリセット
+    
+    // ★★★ ここからが修正箇所 ★★★
+    // 行動回数のチェックを先に行う
     if (state.checkAndResetActions()) {
         ui.showAdModal();
-        return;
+        return; // 上限に達していたらここで処理を中断
     }
 
-    // ★カウントとUI更新を行ってからAIを呼び出す
+    // ユーザーのアクションがあったこのタイミングで、回数を1増やし、UIを更新する
     state.incrementDailyActions();
     ui.updateActionCountDisplay(state.getGameState().dailyActions);
-    
+    // ★★★ ここまでが修正箇所 ★★★
+
     ui.addLog(`> ${command}`, 'user-command');
     ui.clearInput();
     ui.clearActions();
     state.addHistory({ role: 'user', parts: [{ text: command }] });
-
+    // UI更新はすでに行われているので、ここではAIを呼び出すだけ
     await processAIturn();
 }
 
@@ -94,6 +95,7 @@ function loadGame(slotId) {
         return;
     }
     
+    // ロード時にも行動回数がリセット対象かチェックする
     state.checkAndResetActions();
     ui.updateAllDisplays(gameState);
     
@@ -177,4 +179,3 @@ exportLogButton.addEventListener('click', () => {
 
 // DOMの読み込み完了時にゲームを初期化
 document.addEventListener('DOMContentLoaded', initializeGame);
-
