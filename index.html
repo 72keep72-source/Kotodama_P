@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>言霊のプロトコル</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- ★★★★★ ここにAdSenseコードを貼り付け ★★★★★ -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6381227150520241"
+     crossorigin="anonymous"></script>
+
     <!-- スタイルシートを読み込み -->
     <link rel="stylesheet" href="src/css/main.css">
 </head>
@@ -12,7 +17,7 @@
     <div id="game-wrapper">
         <div id="game-container">
             <div id="game-log"></div>
-            <!-- ★ シナリオ選択ボタン用のコンテナを追加 -->
+            <!-- シナリオ選択ボタン用のコンテナ -->
             <div id="scenario-selection-container"></div>
             <div id="actions-container"></div>
             <div id="input-area">
@@ -44,6 +49,19 @@
             </div>
         </div>
     </div>
+
+    <!-- 広告確認モーダル用のHTML -->
+    <div id="ad-modal-overlay" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h3>行動回数を回復しますか？</h3>
+            <p>動画広告を視聴すると、行動回数が5回回復します。</p>
+            <div class="modal-buttons">
+                <button id="ad-confirm-button" class="modal-button confirm">はい</button>
+                <button id="ad-cancel-button" class="modal-button cancel">いいえ</button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScriptモジュールを読み込み -->
     <script type="module" src="src/main.js"></script>
 </body>

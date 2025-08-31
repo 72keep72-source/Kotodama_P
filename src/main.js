@@ -50,7 +50,7 @@ async function handleUserCommand(commandFromButton = null) {
 
     // 行動回数のチェックとリセット
     if (state.checkAndResetActions()) {
-        ui.addLog('本日の行動回数上限に達しました。また明日、冒険を続けてください。', 'ai-response');
+        ui.showAdModal();
         return;
     }
 
@@ -94,7 +94,6 @@ function loadGame(slotId) {
         return;
     }
     
-    // ロード時に行動回数をチェック・リセットしてUIに反映
     state.checkAndResetActions();
     ui.updateAllDisplays(gameState);
     
@@ -134,6 +133,15 @@ function initializeGame() {
     ui.showWelcomeScreen(hasSaveData, isSlotFull, handleScenarioSelection);
     
     ui.initializeHintButton();
+    ui.initializeAdModal(() => {
+        // ★★★★★ ここが広告視聴のシミュレーション部分 ★★★★★
+        // AdSenseの審査が通ったら、この部分を本物の広告コードに置き換えます
+        setTimeout(() => {
+            state.recoverActions(5);
+            ui.updateActionCountDisplay(state.getGameState().dailyActions);
+            ui.addLog('【システム】行動回数が5回分回復しました。', 'ai-response');
+        }, 3000);
+    });
 }
 
 // イベントリスナーを設定
