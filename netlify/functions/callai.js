@@ -17,7 +17,6 @@ exports.handler = async (event) => {
       throw new Error("リクエストのデータが空です。");
     }
 
-    // JSONの解析自体もtry...catchで囲み、より安全に
     let requestData;
     try {
       requestData = JSON.parse(event.body);
@@ -28,8 +27,9 @@ exports.handler = async (event) => {
     // フロントエンドから送られてきた会話履歴を取得
     const conversationHistory = requestData.history;
 
-    if (!conversationHistory || !Array.isArray(conversationHistory)) {
-        throw new Error("会話履歴(history)が不正です。");
+    // ★★★ 会話履歴が空、または不正な形式でないかチェックするガード句を追加 ★★★
+    if (!conversationHistory || !Array.isArray(conversationHistory) || conversationHistory.length === 0) {
+        throw new Error("クライアントから送信された会話履歴が空、または不正です。");
     }
 
     // Google AIモデルを取得してチャットセッションを開始
