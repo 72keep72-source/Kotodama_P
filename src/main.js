@@ -2,8 +2,9 @@
 import * as state from './services/state.js';
 import * as ui from './ui.js';
 import { callAI } from './services/api.js';
-import { RULEBOOK as RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
-import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
+// ★★★ パスを修正 ★★★
+import { RULEBOOK as RULEBOOK_1ST } from '../assets/data/rulebook_1st.js';
+import { RULEBOOK_SF_AI } from '../assets/data/rulebook_SF_AI.js';
 
 
 // --- DOM要素の取得 ---
@@ -46,24 +47,20 @@ async function handleUserCommand(commandFromButton = null) {
     }
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
-    
-    // ★★★ ここからが修正箇所 ★★★
-    // 行動回数のチェックを先に行う
+
     if (state.checkAndResetActions()) {
         ui.showAdModal();
-        return; // 上限に達していたらここで処理を中断
+        return;
     }
 
-    // ユーザーのアクションがあったこのタイミングで、回数を1増やし、UIを更新する
     state.incrementDailyActions();
     ui.updateActionCountDisplay(state.getGameState().dailyActions);
-    // ★★★ ここまでが修正箇所 ★★★
-
+    
     ui.addLog(`> ${command}`, 'user-command');
     ui.clearInput();
     ui.clearActions();
     state.addHistory({ role: 'user', parts: [{ text: command }] });
-    // UI更新はすでに行われているので、ここではAIを呼び出すだけ
+
     await processAIturn();
 }
 
@@ -95,7 +92,6 @@ function loadGame(slotId) {
         return;
     }
     
-    // ロード時にも行動回数がリセット対象かチェックする
     state.checkAndResetActions();
     ui.updateAllDisplays(gameState);
     
@@ -179,3 +175,4 @@ exportLogButton.addEventListener('click', () => {
 
 // DOMの読み込み完了時にゲームを初期化
 document.addEventListener('DOMContentLoaded', initializeGame);
+
