@@ -156,6 +156,7 @@ export function parseAIResponse(fullAiText) {
         const activeSlot = gameSlots.find(slot => slot.id == activeSlotId);
         if (activeSlot) activeSlot.name = playerName;
     }
+    storyText = storyText.replace(/\[NAME\].*/, '').trim();
 
     const statRegex = /\[STAT\]\s*(\w+)\s*([+\-]?)\s*(\d+)/g;
     let statMatch;
@@ -163,15 +164,7 @@ export function parseAIResponse(fullAiText) {
         const [_, stat, operator, valueStr] = statMatch;
         const value = parseInt(valueStr, 10);
         
-        if (stat === 'HP' && playerStats.HP) {
-            if (!operator) playerStats.HP.current = value;
-            else if (operator === '+') playerStats.HP.current += value;
-            else if (operator === '-') playerStats.HP.current -= value;
-            
-            if(playerStats.HP.current > playerStats.HP.max) playerStats.HP.current = playerStats.HP.max;
-            if(playerStats.HP.current < 0) playerStats.HP.current = 0;
-        } 
-        else if (playerStats && typeof playerStats[stat] === 'number') {
+        if (playerStats && typeof playerStats[stat] === 'number') {
             if (operator === '+') {
                 playerStats[stat] += value;
                 statChanges[stat] = `+${value}`;
@@ -187,6 +180,20 @@ export function parseAIResponse(fullAiText) {
         }
     }
     storyText = storyText.replace(statRegex, '').trim();
+
+    // [DAMAGE] タグを処理してHPを減らす
+    const damageRegex = /\[DAMAGE\]\s*(\d+)/g;
+    let damageMatch;
+    while ((damageMatch = damageRegex.exec(storyText))) {
+        const damage = parseInt(damageMatch[1], 10);
+        if (playerStats.HP) {
+            playerStats.HP.current -= damage;
+            if (playerStats.HP.current < 0) {
+                playerStats.HP.current = 0;
+            }
+        }
+    }
+    storyText = storyText.replace(damageRegex, '').trim();
 
     const itemAddRegex = /\[ITEM_ADD\]\s*(.+)/g;
     let itemAddMatch;
@@ -239,5 +246,15 @@ export function incrementDailyActions() {
 /** 会話履歴を追加する */
 export function addHistory(turn) {
     conversationHistory.push(turn);
+}
+
+/** 行動回数を回復する */
+export function recoverActions(amount) {
+    if (dailyActions.count > 0) {
+        dailyActions.count -= amount;
+        if (dailyActions.count < 0) {
+            dailyActions.count = 0;
+        }
+    }
 }
 
