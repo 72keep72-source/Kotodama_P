@@ -19,7 +19,7 @@ html, body {
 body {
     background-color: var(--main-bg);
     color: var(--text-color);
-    font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    font-family: sans-serif;
     margin: 0;
     display: flex;
     flex-direction: column;
@@ -56,7 +56,6 @@ header h1 {
     flex-direction: column;
     background-color: var(--container-bg);
     border: 1px solid var(--border-color);
-    border-radius: 8px;
 }
 
 #game-log {
@@ -64,7 +63,6 @@ header h1 {
     padding: 20px;
     overflow-y: auto;
     white-space: pre-wrap;
-    line-height: 1.6;
 }
 
 .ai-response {
@@ -73,72 +71,61 @@ header h1 {
 
 .user-command {
     color: var(--user-text);
-    font-style: italic;
 }
 
-/* --- ★ここからシナリオ選択画面のスタイル --- */
+/* --- ★ここからが新しいスタイル --- */
+
+/* シナリオ選択画面のコンテナ */
 #scenario-selection-container {
     display: flex;
-    flex-direction: column; /* 縦並びにする */
-    justify-content: center; /* 垂直方向中央揃え */
-    align-items: center;     /* 水平方向中央揃え */
-    padding: 20px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
     box-sizing: border-box;
-    flex-grow: 1; /* 親要素の高さに合わせて伸びる */
-    overflow-y: auto; /* シナリオが増えた時にスクロール可能にする */
+    flex-grow: 1; /* 画面の高さいっぱいに広げる */
 }
 
 /* シナリオ選択ボタン（カード風デザイン） */
 .scenario-card {
-    background: linear-gradient(145deg, #2f2f2f, #262626);
+    background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color);
-    color: var(--text-color);
-    padding: 25px 35px;
-    margin: 15px;
+    padding: 20px 30px;
+    margin: 10px;
     cursor: pointer;
-    border-radius: 12px;
-    transition: all 0.3s ease-in-out;
-    width: 90%;
-    max-width: 480px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    width: 80%;
+    max-width: 400px;
     text-align: center;
-    box-shadow: 5px 5px 15px #1f1f1f, -5px -5px 15px #353535;
-    font-family: inherit;
-    font-size: 1em;
 }
 
-.scenario-card:hover, .scenario-card:focus {
-    outline: none;
-    border-color: var(--accent-color);
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+.scenario-card:hover {
+    background-color: var(--border-color);
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .scenario-card h3 {
     margin: 0 0 10px 0;
-    font-size: 1.4em;
+    font-size: 1.2em;
     color: var(--accent-color);
-    font-weight: 600;
 }
 
 .scenario-card p {
     margin: 0;
     color: var(--subtle-text-color);
-    font-size: 0.95em;
-    line-height: 1.6;
+    font-size: 0.9em;
 }
 
-/* コンテナがフェードアウトする時のアニメーション */
-#scenario-selection-container.fade-out {
-    animation: fadeOut 0.5s ease-in-out forwards;
-}
-/* --- ★ここまでシナリオ選択画面のスタイル --- */
 
-
+/* 入力エリア全体のコンテナ */
 #input-container {
     padding: 10px;
     border-top: 1px solid var(--border-color);
 }
 
+/* ヒントボタン */
 #hint-toggle-button {
     background-color: var(--container-bg);
     color: var(--subtle-text-color);
@@ -162,11 +149,17 @@ header h1 {
     color: white;
 }
 
+
+/* アクションボタン（ヒント）のコンテナ */
 #actions-container {
-    padding: 0 10px 10px;
-    text-align: center;
+    padding: 0 0 10px 0;
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 10px;
+    display: none; /* デフォルトは非表示 */
+}
+
+#actions-container.visible {
+    display: block; /* 表示状態 */
 }
 
 .action-button {
@@ -189,9 +182,11 @@ header h1 {
     animation: fadeOut 0.5s ease-in-out forwards;
 }
 
+/* --- ★ここまでが新しいスタイル --- */
+
 #input-area {
     display: flex;
-    padding: 10px;
+    padding: 0; /* input-containerがpaddingを持つので0に */
 }
 
 textarea#user-input {
@@ -208,7 +203,6 @@ textarea#user-input {
     overflow-y: auto;
     white-space: pre-wrap;
     word-wrap: break-word;
-    border-radius: 5px;
 }
 
 #user-input:disabled {
@@ -239,7 +233,6 @@ textarea#user-input {
     padding: 10px 20px;
     cursor: pointer;
     font-size: 16px;
-    border-radius: 5px;
 }
 
 #sidebar {
@@ -257,7 +250,6 @@ textarea#user-input {
     border: 1px solid var(--border-color);
     overflow-y: auto;
     margin-bottom: 20px;
-    border-radius: 8px;
 }
 
 #status-container h2 {
@@ -265,7 +257,6 @@ textarea#user-input {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
     margin-top: 20px;
-    font-size: 1.1em;
 }
 
 #status-container h2:first-child {
@@ -278,7 +269,6 @@ textarea#user-input {
     text-align: center;
     margin-bottom: 20px;
     word-break: break-all;
-    font-weight: bold;
 }
 
 #status-display p {
@@ -305,7 +295,6 @@ textarea#user-input {
 .tooltip {
     position: relative;
     cursor: help;
-    border-bottom: 1px dotted var(--subtle-text-color);
 }
   
 .tooltip::after {
@@ -385,28 +374,24 @@ textarea#user-input {
     border: 1px solid #555;
     padding: 10px;
     font-size: 16px;
-    border-radius: 5px 0 0 5px;
 }
 
 #confirm-button, #delete-slot-button {
     color: white;
     border: none;
-    margin-left: 0;
+    margin-left: 10px;
     padding: 10px 15px;
     cursor: pointer;
     font-size: 16px;
+    border-radius: 5px;
 }
 
 #confirm-button {
     background-color: var(--accent-color);
-    border-radius: 0 5px 5px 0;
-    margin-left: -1px;
 }
 
 #delete-slot-button {
     background-color: var(--danger-color);
-    border-radius: 5px;
-    margin-left: 10px;
 }
 
 
@@ -418,7 +403,7 @@ textarea#user-input {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
-    display: flex;
+    display: none; /* デフォルトは非表示 */
     justify-content: center;
     align-items: center;
     z-index: 2000;
@@ -532,3 +517,4 @@ textarea#user-input {
         height: auto;
     }
 }
+

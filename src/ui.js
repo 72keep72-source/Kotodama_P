@@ -11,7 +11,6 @@ const playerNameDisplay = document.getElementById('player-name-display');
 const inventoryDisplay = document.getElementById('inventory-display');
 const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
-const inputArea = document.getElementById('input-area');
 const adModalOverlay = document.getElementById('ad-modal-overlay');
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
@@ -265,6 +264,7 @@ export function initializeHintButton() {
         updateHintState();
     });
     
+    // ★★★ 修正箇所 ★★★
     const inputContainer = document.getElementById('input-container');
     if (inputContainer) {
         inputContainer.insertBefore(hintButton, inputContainer.firstChild);

@@ -5,31 +5,28 @@
     <title>言霊のプロトコル</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-     <!-- ★★★ 追加箇所 ★★★ -->
-     <link rel="manifest" href="/manifest.json">
-     <meta name="theme-color" content="#1a1a1a">
-     <!-- ★★★ ここまで ★★★ -->
-
-    
-    <!-- ★★★★★ ここにAdSenseコードを貼り付け ★★★★★ -->
+    <!-- AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6381227150520241"
      crossorigin="anonymous"></script>
 
-    <!-- スタイルシートを読み込み -->
+    <!-- Stylesheet -->
     <link rel="stylesheet" href="src/css/main.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
     <header><h1>言霊のプロトコル</h1></header>
     <div id="game-wrapper">
         <div id="game-container">
             <div id="game-log"></div>
-            <!-- シナリオ選択ボタン用のコンテナ -->
             <div id="scenario-selection-container"></div>
-            <div id="actions-container"></div>
-            <div id="input-area">
-                <textarea id="user-input"></textarea>
-                <button id="export-log-button">exp</button>
-                <button id="send-button">送信</button>
+             <!-- ★ 構造変更 ★ -->
+            <div id="input-container">
+                 <div id="actions-container"></div>
+                 <div id="input-area">
+                    <textarea id="user-input"></textarea>
+                    <button id="export-log-button">exp</button>
+                    <button id="send-button">送信</button>
+                </div>
             </div>
         </div>
         <div id="sidebar">
@@ -49,14 +46,14 @@
             </div>
             <div id="system-menu">
                 <a class="system-button share" 
-                   href="https://twitter.com/intent/tweet?text=%E2%96%BCAI%E3%81%A8%E4%BD%9C%E3%82%8BRPG%E3%80%8E%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B潁%E3%83%AB%E3%80%8F%E3%81%A7%E9%81%8A%E3%82%93%E3%81%A7%E3%81%BF%E3%82%88%E3%81%86%EF%BC%81&url=https%3A%2F%2Fhelpful-bavarois-b141f3.netlify.app%2F&hashtags=%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB%2C%E5%80%8B%E4%BA%BA%E9%96%8B%E7%99%BA" 
+                   href="https://twitter.com/intent/tweet?text=%E2%96%BCAI%E3%81%A8%E4%BD%9C%E3%82%8BRPG%E3%80%8E%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB%E3%80%8F%E3%81%A7%E9%81%8A%E3%82%93%E3%81%A7%E3%81%BF%E3%82%88%E3%81%86%EF%BC%81&url=https%3A%2F%2Fhelpful-bavarois-b141f3.netlify.app%2F&hashtags=%E8%A8%80%E9%9C%8A%E3%81%AE%E3%83%97%E3%83%AD%E3%83%88%E3%82%B3%E3%83%AB%2C%E5%80%8B%E4%BA%BA%E9%96%8B%E7%99%BA" 
                    target="_blank" 
                    rel="noopener noreferrer">Xにシェアする</a>
             </div>
         </div>
     </div>
 
-    <!-- 広告確認モーダル用のHTML -->
+    <!-- Ad Modal -->
     <div id="ad-modal-overlay" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <h3>行動回数を回復しますか？</h3>
@@ -68,22 +65,19 @@
         </div>
     </div>
 
-    <!-- JavaScriptモジュールを読み込み -->
+    <!-- JavaScript Modules -->
     <script type="module" src="src/main.js"></script>
-
-    <!-- ★★★ 追加箇所 ★★★ -->
     <script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js').then(registration => {
-                console.log('サービスワーカーを登録しました:', registration);
-            }).catch(error => {
-                console.log('サービスワーカーの登録に失敗しました:', error);
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('サービスワーカーを登録しました:', registration);
+                }).catch(error => {
+                    console.log('サービスワーカーの登録に失敗しました:', error);
+                });
             });
-        });
-    }
+        }
     </script>
-    <!-- ★★★ ここまで ★★★ -->
 </body>
 </html>
 
