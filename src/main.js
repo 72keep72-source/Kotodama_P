@@ -18,24 +18,23 @@ const exportLogButton = document.getElementById('export-log-button');
 
 /** AIとの対話処理をまとめた関数 */
 async function processAIturn() {
-    
     ui.addLog('考え中...', 'ai-response');
     ui.toggleInput(true, 'AIが応答を考えています…');
 
+    // ▼▼▼【このチェックが重要です】▼▼▼
+    const currentHistory = state.getGameState().conversationHistory;
 
-        // ▼▼▼【修正案】ここから追加 ▼▼▼
-        const currentHistory = state.getGameState().conversationHistory;
-
-        // APIを呼び出す前に、会話履歴が有効かチェックする
-        if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
+    // APIを呼び出す前に、会話履歴が有効かチェックする
+    if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
         console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
-        ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。アプリケーションをリロードしてください。');
+        ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
         ui.toggleInput(false);
         return; // 処理を中断
-}
-// ▲▲▲【修正案】ここまで追加 ▲▲▲
+    }
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     try {
+        // ... 以降のAPI呼び出し処理 ...
         const fullAiText = await callAI(state.getGameState().conversationHistory);
         state.addHistory({ role: 'model', parts: [{ text: fullAiText }] });
         const parsedData = state.parseAIResponse(fullAiText);
