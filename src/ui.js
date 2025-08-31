@@ -214,7 +214,7 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
         button.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
         button.onclick = () => {
             scenarioSelectionContainer.innerHTML = '';
-            scenarioHandler(scenario.type); // ★ ここでmain.jsのstartNewGameを呼び出す
+            scenarioHandler(scenario.type);
         };
         scenarioSelectionContainer.appendChild(button);
     });
