@@ -1,22 +1,15 @@
-// Google AI SDKをインポート
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-
-// APIキーを環境変数から取得
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-// Netlify関数の本体
 exports.handler = async (event) => {
-  // POSTリクエスト以外のアクセスを拒否
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ error: { message: "Method Not Allowed" } }) };
   }
 
   try {
-    // リクエストのbodyが存在するかチェック
     if (!event.body) {
       throw new Error("リクエストのデータが空です。");
     }
-
     let requestData;
     try {
       requestData = JSON.parse(event.body);
@@ -24,19 +17,19 @@ exports.handler = async (event) => {
       throw new Error("リクエストされたJSONの形式が正しくありません。");
     }
     
-    // ... 既存のチェックの後 ...
-
     const conversationHistory = requestData.history;
 
-    // ... if (!conversationHistory ... ) のチェック ...
+    if (!conversationHistory || !Array.isArray(conversationHistory) || conversationHistory.length === 0) {
+        throw new Error("クライアントから送信された会話履歴が空、または不正です。");
+    }
 
-    // ▼▼▼【修正案】ここから追加 ▼▼▼
+    // ▼▼▼【この部分が重要です】▼▼▼
+    // 履歴の最後のデータ構造が正しいかチェックします
     const lastTurn = conversationHistory[conversationHistory.length - 1];
-    // 履歴の最後のデータ構造が正しいかチェックする
     if (!lastTurn || !lastTurn.parts || !lastTurn.parts[0]) {
         throw new Error("会話履歴の最後のデータ形式が不正です。");
     }
-    // ▲▲▲【修正案】ここまで追加 ▲▲▲
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest"});
     const chat = model.startChat({
@@ -45,7 +38,6 @@ exports.handler = async (event) => {
 
     const lastMessage = lastTurn.parts[0].text; // lastTurnを使うように変更
     const result = await chat.sendMessage(lastMessage);
-// ... 以降続く ...
     const response = await result.response;
     const text = response.text();
 
@@ -72,4 +64,3 @@ exports.handler = async (event) => {
     };
   }
 };
-
