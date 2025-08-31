@@ -71,7 +71,6 @@ function startNewGame(scenarioType) {
     }
     const rulebook = scenarioType === 'sf' ? RULEBOOK_SF_AI : RULEBOOK_1ST;
     
-    // ★ 修正: state.createNewGameを呼び出す
     const newGameState = state.createNewGame(rulebook);
     
     ui.clearGameScreen();

@@ -15,7 +15,7 @@ const adModalOverlay = document.getElementById('ad-modal-overlay');
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
 const adLoadingSpinner = document.getElementById('ad-loading-spinner');
-const inputContainer = document.getElementById('input-container'); // ★ 追加
+const inputContainer = document.getElementById('input-container');
 
 // 各ステータスの説明文を定義
 const statDescriptions = {
@@ -214,11 +214,12 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
         button.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
         button.onclick = () => {
             scenarioSelectionContainer.innerHTML = '';
-            scenarioHandler(scenario.type);
+            scenarioHandler(scenario.type); // ★ ここでmain.jsのstartNewGameを呼び出す
         };
         scenarioSelectionContainer.appendChild(button);
     });
 }
+
 
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
@@ -246,7 +247,6 @@ export function exportLogToFile(activeSlotId, playerName) {
     URL.revokeObjectURL(url);
 }
 
-// ★ 修正箇所
 export function initializeHintButton() {
     let hintsVisible = localStorage.getItem('hintsVisible') === 'true';
     const hintButton = document.createElement('button');
@@ -268,7 +268,7 @@ export function initializeHintButton() {
         updateHintState();
     });
 
-    inputContainer.insertBefore(hintButton, actionsContainer); // ★ inputAreaからinputContainerに変更
+    inputContainer.insertBefore(hintButton, actionsContainer);
     updateHintState();
 }
 
@@ -278,7 +278,7 @@ export function initializeAdModal(onConfirm) {
         adLoadingSpinner.style.display = 'block';
         adConfirmButton.style.display = 'none';
         adCancelButton.style.display = 'none';
-        onConfirm(() => { // 成功時のコールバック
+        onConfirm(() => {
             adModalOverlay.classList.remove('visible');
             adLoadingSpinner.style.display = 'none';
             adConfirmButton.style.display = 'block';

@@ -110,7 +110,7 @@ export function createNewGame(rulebook) {
     gameSlots.push(newSlot);
     activeSlotId = newSlot.id;
     
-    // ★ 修正: グローバル変数を新しいスロットの状態に更新
+    // グローバル変数を新しいスロットの状態に更新
     conversationHistory = newSlot.history;
     playerStats = newSlot.stats;
     dailyActions = newSlot.actions;
