@@ -11,11 +11,11 @@ const playerNameDisplay = document.getElementById('player-name-display');
 const inventoryDisplay = document.getElementById('inventory-display');
 const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
+const hintToggleButton = document.getElementById('hint-toggle-button');
 const adModalOverlay = document.getElementById('ad-modal-overlay');
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
 const adLoadingSpinner = document.getElementById('ad-loading-spinner');
-const inputContainer = document.getElementById('input-container');
 
 // 各ステータスの説明文を定義
 const statDescriptions = {
@@ -32,14 +32,14 @@ const statDescriptions = {
 
 export function addLog(text, className) {
     const p = document.createElement('p');
-    p.innerHTML = text;
+    p.innerHTML = text.replace(/\n/g, '<br>');
     if (className) p.classList.add(className);
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
 }
 
 export function updateThinkingMessage(newText) {
-    const thinkingElement = Array.from(gameLog.getElementsByTagName('p')).find(p => p.textContent === '考え中...');
+    const thinkingElement = Array.from(gameLog.getElementsByTagName('p')).find(p => p.textContent.trim() === '考え中...');
     if (thinkingElement) {
         thinkingElement.innerHTML = newText.replace(/\n/g, '<br>');
     }
@@ -54,28 +54,40 @@ export function clearActions() {
     actionsContainer.innerHTML = '';
 }
 
-export function updateSlotSelector({ gameSlots }) {
+export function updateSlotSelector({ gameSlots, maxSlots }) {
     slotSelector.innerHTML = '';
-    const hasSaveData = gameSlots && gameSlots.length > 0;
+    
+    // 1. プレースホルダー（初期選択肢）
+    const placeholder = document.createElement('option');
+    placeholder.textContent = 'データを選択してください';
+    placeholder.value = ''; // valueを空にする
+    slotSelector.appendChild(placeholder);
 
-    if (hasSaveData) {
+    // 2. 既存のセーブデータを追加
+    if (gameSlots && gameSlots.length > 0) {
         gameSlots.forEach((slot, index) => {
             const option = document.createElement('option');
             option.value = slot.id;
             option.textContent = `データ${index + 1}: ${slot.name || '（名前未設定）'}`;
             slotSelector.appendChild(option);
         });
-        const lastSelectedId = localStorage.getItem('rpgActiveSlotId');
-        if (lastSelectedId && gameSlots.some(s => s.id == lastSelectedId)) {
-            slotSelector.value = lastSelectedId;
-        }
-    } else {
-        const option = document.createElement('option');
-        option.textContent = 'セーブデータなし';
-        option.disabled = true;
-        slotSelector.appendChild(option);
+    }
+
+    // 3. 「新規ゲーム」の選択肢を、空きスロットがあれば追加
+    if (!maxSlots || gameSlots.length < maxSlots) {
+        const newGameOption = document.createElement('option');
+        newGameOption.textContent = '新規ゲームを始める';
+        newGameOption.value = 'new_game';
+        slotSelector.appendChild(newGameOption);
+    }
+    
+    // 最後に選択していたスロットを復元
+    const lastSelectedId = localStorage.getItem('rpgActiveSlotId');
+    if (lastSelectedId && gameSlots.some(s => s.id == lastSelectedId)) {
+        slotSelector.value = lastSelectedId;
     }
 }
+
 
 export function updatePlayerNameDisplay(name) {
     playerNameDisplay.textContent = name;
@@ -170,45 +182,45 @@ export function clearGameScreen() {
         playerStats: {},
         modifiedStats: new Set(),
         dailyActions: { count: 0 },
-        inventory: []
+        inventory: [],
+        playerName: ''
     });
 }
 
 export function rebuildLog(conversationHistory) {
     gameLog.innerHTML = '';
     (conversationHistory || []).slice(1).forEach(turn => {
-        // ▼▼▼【修正案】ここから追加 ▼▼▼
-        // turnやturn.partsが存在しない不正なデータの場合は、処理をスキップする
         if (!turn || !turn.parts || !turn.parts[0]) {
             console.warn('会話履歴に不正なデータが含まれていたため、スキップしました:', turn);
-            return; // このturnに対する処理を中断し、次に進む
+            return;
         }
-        // ▲▲▲【修正案】ここまで追加 ▲▲▲
-
         const text = turn.parts[0].text;
         if (turn.role === 'user') {
             addLog(`> ${text}`, 'user-command');
         } else {
             const storyText = text.split('\n').filter(line => !line.startsWith('[')).join('\n');
-            addLog(storyText.replace(/\n/g, '<br>'), 'ai-response');
+            addLog(storyText, 'ai-response');
         }
     });
 }
 
-export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
+export function showWelcomeScreen(hasSaveData) {
     clearGameScreen();
     
     let welcomeMessage = hasSaveData
-        ? 'おかえりなさい、旅人よ。<br>冒険を再開するには、サイドバーのプルダウンからロードしてください。<br>新たな物語を始める場合は、下のシナリオから選択できます。'
-        : '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
+        ? 'おかえりなさい、旅人よ。<br>冒険を再開、または新規に始めるには、ステータス欄上のプルダウンから選択して「決定」を押してください。'
+        : 'ようこそ、「言霊のプロトコル」へ。<br>冒険を始めるには、ステータス欄上のプルダウンから「新規ゲームを始める」を選択してください。';
     
     addLog(welcomeMessage, 'ai-response');
-    toggleInput(true, '物語を選択するか、データをロードしてください');
-    
-    if (isSlotFull) {
-        addLog('<br>セーブデータがいっぱいです。新しい冒険を始めるには、サイドバーからデータを削除してください。', 'ai-response');
-        return;
-    }
+    toggleInput(true, 'データを選択して「決定」してください');
+}
+
+export function showScenarioSelection(scenarioHandler) {
+    clearGameScreen();
+    // ★★★ ここをカッコいいメッセージに変更 ★★★
+    const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
+    addLog(scenarioWelcomeMessage, 'ai-response');
+    toggleInput(true, '物語を選択してください');
 
     scenarioSelectionContainer.innerHTML = '';
     const scenarios = [
@@ -217,17 +229,16 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
     ];
 
     scenarios.forEach(scenario => {
-        const button = document.createElement('button');
-        button.className = 'scenario-button';
-        button.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
-        button.onclick = () => {
+        const card = document.createElement('div');
+        card.className = 'scenario-card';
+        card.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
+        card.onclick = () => {
             scenarioSelectionContainer.innerHTML = '';
-            scenarioHandler(scenario.type); // ★ ここでmain.jsのstartNewGameを呼び出す
+            scenarioHandler(scenario.type);
         };
-        scenarioSelectionContainer.appendChild(button);
+        scenarioSelectionContainer.appendChild(card);
     });
 }
-
 
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
@@ -256,27 +267,31 @@ export function exportLogToFile(activeSlotId, playerName) {
 }
 
 export function initializeHintButton() {
-    let hintsVisible = localStorage.getItem('hintsVisible') === 'true';
-    const hintButton = document.createElement('button');
-    hintButton.id = 'hint-toggle-button';
+    if (!hintToggleButton) { 
+        console.error("ヒントボタンの要素が見つかりません。");
+        return;
+    }
     
+    let hintsVisible = localStorage.getItem('hintsVisible') === 'true';
+
     const updateHintState = () => {
         if (hintsVisible) {
-            hintButton.textContent = 'ヒントを隠す';
-            actionsContainer.style.display = 'block';
+            hintToggleButton.textContent = 'ヒントを隠す';
+            hintToggleButton.classList.add('active');
+            actionsContainer.classList.add('visible');
         } else {
-            hintButton.textContent = 'ヒントを表示';
-            actionsContainer.style.display = 'none';
+            hintToggleButton.textContent = 'ヒントを表示';
+            hintToggleButton.classList.remove('active');
+            actionsContainer.classList.remove('visible');
         }
     };
     
-    hintButton.addEventListener('click', () => {
+    hintToggleButton.addEventListener('click', () => {
         hintsVisible = !hintsVisible;
         localStorage.setItem('hintsVisible', hintsVisible);
         updateHintState();
     });
 
-    inputContainer.insertBefore(hintButton, actionsContainer);
     updateHintState();
 }
 
@@ -286,11 +301,12 @@ export function initializeAdModal(onConfirm) {
         adLoadingSpinner.style.display = 'block';
         adConfirmButton.style.display = 'none';
         adCancelButton.style.display = 'none';
+        
         onConfirm(() => {
             adModalOverlay.classList.remove('visible');
             adLoadingSpinner.style.display = 'none';
-            adConfirmButton.style.display = 'block';
-            adCancelButton.style.display = 'block';
+            adConfirmButton.style.display = 'inline-block';
+            adCancelButton.style.display = 'inline-block';
         });
     });
 }
@@ -298,4 +314,3 @@ export function initializeAdModal(onConfirm) {
 export function showAdModal() {
     adModalOverlay.classList.add('visible');
 }
-

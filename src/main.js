@@ -21,20 +21,15 @@ async function processAIturn() {
     ui.addLog('考え中...', 'ai-response');
     ui.toggleInput(true, 'AIが応答を考えています…');
 
-    // ▼▼▼【このチェックが重要です】▼▼▼
     const currentHistory = state.getGameState().conversationHistory;
-
-    // APIを呼び出す前に、会話履歴が有効かチェックする
     if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
         console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
         ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
         ui.toggleInput(false);
-        return; // 処理を中断
+        return;
     }
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     try {
-        // ... 以降のAPI呼び出し処理 ...
         const fullAiText = await callAI(state.getGameState().conversationHistory);
         state.addHistory({ role: 'model', parts: [{ text: fullAiText }] });
         const parsedData = state.parseAIResponse(fullAiText);
@@ -60,7 +55,7 @@ async function handleUserCommand(commandFromButton = null) {
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
-    if (state.checkAndResetActions()) {
+    if (state.checkActionLimit()) {
         ui.showAdModal();
         return;
     }
@@ -135,11 +130,13 @@ function deleteSelectedSlot() {
 function initializeGame() {
     state.loadGameSlotsFromStorage();
     const gameState = state.getGameState();
-    ui.updateSlotSelector(gameState);
+    ui.updateSlotSelector({ 
+        gameSlots: gameState.gameSlots, 
+        maxSlots: state.MAX_SAVE_SLOTS 
+    });
 
     const hasSaveData = gameState.gameSlots.length > 0;
-    const isSlotFull = gameState.gameSlots.length >= state.MAX_SAVE_SLOTS;
-    ui.showWelcomeScreen(hasSaveData, isSlotFull, startNewGame);
+    ui.showWelcomeScreen(hasSaveData);
     
     ui.initializeHintButton();
     ui.initializeAdModal((onSuccess) => {
@@ -148,7 +145,7 @@ function initializeGame() {
             ui.updateActionCountDisplay(state.getGameState().dailyActions);
             ui.addLog('【システム】行動回数が5回分回復しました。', 'ai-response');
             onSuccess();
-        }, 3000);
+        }, 2000);
     });
 }
 
@@ -167,11 +164,17 @@ userInput.addEventListener('input', () => {
 
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
-    if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+
+    if (selectedValue === 'new_game') {
+        // 「新規ゲーム」が選択されたら、シナリオ選択画面を表示
+        ui.showScenarioSelection(startNewGame);
+    } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+        // 既存のセーブデータが選択されたら、ロード
         state.setActiveSlotId(selectedValue);
         loadGameFromSlot(selectedValue);
     } else {
-        alert('プルダウンからロードするセーブデータを選択してください。');
+        // 何も選択されていない場合
+        alert('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
     }
 });
 
@@ -183,4 +186,3 @@ exportLogButton.addEventListener('click', () => {
 });
 
 document.addEventListener('DOMContentLoaded', initializeGame);
-

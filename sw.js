@@ -1,6 +1,6 @@
 const CACHE_NAME = 'kotodama-protocol-cache-v1';
-// オフライン用に保存しておくファイルのリスト
-const URLS_TO_CACHE = [
+// キャッシュするファイルのリスト
+const urlsToCache = [
     '/',
     '/index.html',
     '/src/css/main.css',
@@ -11,35 +11,38 @@ const URLS_TO_CACHE = [
     '/src/assets/data/rulebook_1st.js',
     '/src/assets/data/rulebook_SF_AI.js',
     '/manifest.json'
+    // favicon.ico やアイコン画像などもここに追加すると良い
 ];
 
-// サービスワーカーのインストール処理
+// インストール時に、ファイルをキャッシュする
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('キャッシュを開きました');
-                return cache.addAll(URLS_TO_CACHE);
+                return cache.addAll(urlsToCache);
             })
     );
 });
 
-// リクエストへの応答処理
+// fetchイベントを監視し、キャッシュまたはネットワークから応答を返す
 self.addEventListener('fetch', event => {
-    // ★★★ 修正箇所 ★★★
-    // このサイトの管理下にないリクエスト（広告など）は無視する
-    if (!event.request.url.startsWith(self.location.origin)) {
-        return;
+    const requestUrl = new URL(event.request.url);
+
+    // ★★★ APIへのリクエストはキャッシュせず、常にネットワークに接続する ★★★
+    if (requestUrl.pathname.startsWith('/.netlify/functions/')) {
+        // 何もせず、ブラウザのデフォルトのネットワーク処理に任せる
+        return; 
     }
 
     event.respondWith(
         caches.match(event.request)
             .then(response => {
-                // キャッシュにあればそれを返す
+                // キャッシュにヒットした場合、それを返す
                 if (response) {
                     return response;
                 }
-                // なければネットワークから取得
+                // キャッシュになかった場合、ネットワークにリクエストしに行く
                 return fetch(event.request);
             })
     );

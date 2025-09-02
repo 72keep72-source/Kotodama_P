@@ -75,21 +75,29 @@ export function saveCurrentSlotToStorage() {
     localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
 }
 
+
 /** 指定されたスロットIDのゲームデータを読み込む */
 export function loadGame(slotId) {
     const slot = gameSlots.find(s => s.id == slotId);
     if (!slot) return null;
 
     activeSlotId = slot.id;
-    conversationHistory = slot.history || [];
-    playerStats = slot.stats || {};
-    dailyActions = slot.actions.lastActionTimestamp ? slot.actions : { lastActionTimestamp: 0, count: 0 };
+    
+    // ★★★ここから変更★★★
+    // 参照渡しによるバグを防ぐため、JSONを介してデータの完全な複製（ディープコピー）を作成します。
+    conversationHistory = JSON.parse(JSON.stringify(slot.history || []));
+    playerStats = JSON.parse(JSON.stringify(slot.stats || {}));
+    dailyActions = JSON.parse(JSON.stringify(slot.actions || { lastActionTimestamp: 0, count: 0 }));
     playerName = slot.name || '（名前未設定）';
-    inventory = slot.inventory || [];
+    inventory = JSON.parse(JSON.stringify(slot.inventory || []));
     modifiedStats = new Set(slot.modified || []);
+    // ★★★ここまで変更★★★
     
     return getGameState();
 }
+
+
+
 
 /** 新しいゲームを作成し、その状態を返す */
 export function createNewGame(rulebook) {
