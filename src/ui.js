@@ -309,20 +309,20 @@ export function showAdModal() {
     adModalOverlay.classList.add('visible');
 }
 
-export function initializeFooter() {
-    const footerContainer = document.getElementById('footer-container');
-    if (!footerContainer) return;
+//export function initializeFooter() {
+   // const footerContainer = document.getElementById('footer-container');
+   // if (!footerContainer) return;
 
-    const footer = document.createElement('footer');
-    footer.innerHTML = `
-        <nav class="footer-nav">
-            <ul>
-                <li><a href="privacy.html">プライバシーポリシー</a></li>
-                <li><a href="contact.html">お問い合わせ</a></li>
-                <li><a href="about.html">運営者情報</a></li>
-            </ul>
-        </nav>
+   // const footer = document.createElement('footer');
+   // footer.innerHTML = `
+       // <nav class="footer-nav">
+            //<ul>
+                //<li><a href="privacy.html">プライバシーポリシー</a></li>
+               // <li><a href="contact.html">お問い合わせ</a></li>
+                //<li><a href="about.html">運営者情報</a></li>
+           // </ul>
+        //</nav>
         <p class="copyright">&copy; 2025 言霊のプロトコル</p>
-    `;
-    footerContainer.appendChild(footer);
-}
+    //`;
+    //footerContainer.appendChild(footer);
+//}

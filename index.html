@@ -4,150 +4,21 @@
     <meta charset="UTF-8">
     <title>言霊のプロトコル</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- AdSense コード -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6381227150520241"
      crossorigin="anonymous"></script>
-    
-    <style>
-        /* --- 基本スタイル --- */
-        :root { --main-bg: #1a1a1a; --container-bg: #2b2b2b; --border-color: #444; --text-color: #f0f0f0; --accent-color: #4CAF50; --ai-text: #a5d6a7; --user-text: #81d4fa; --danger-color: #c9302c; --twitter-color: #1DA1F2; }
-        html { height: 100%; }
-        body {
-            background-color: var(--main-bg);
-            color: var(--text-color);
-            font-family: sans-serif;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100vh; /* 画面の高さに固定 */
-            overflow: hidden; /* ページ全体のスクロールを禁止 */
-        }
-        header {
-            background-color: var(--container-bg);
-            padding: 10px 20px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
-        header h1 { margin: 0; font-size: 1.2em; }
-        
-        /* --- レイアウト --- */
-        #game-wrapper {
-            display: flex;
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            box-sizing: border-box;
-            flex-grow: 1;
-            overflow: hidden;
-        }
-        #game-container {
-            width: 70%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background-color: var(--container-bg);
-            border: 1px solid var(--border-color);
-        }
-        #sidebar {
-            width: 30%;
-            height: 100%;
-            margin-left: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* --- ゲーム画面 --- */
-        #game-log {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto; /* ここだけスクロールさせる */
-            white-space: pre-wrap;
-        }
-        .ai-response { color: var(--ai-text); }
-        .user-command { color: var(--user-text); }
-
-        /* --- シナリオ選択 --- */
-        #scenario-selection-container { /* スタイルはui.jsで適用 */ }
-
-        /* --- 入力エリア --- */
-        #input-container { border-top: 1px solid var(--border-color); }
-        #actions-container { padding: 10px 20px; }
-        .action-button { background-color: var(--accent-color); color: white; border: none; padding: 12px; margin: 5px; cursor: pointer; font-size: 15px; border-radius: 5px; transition: all 0.2s ease; }
-        .action-button:hover { filter: brightness(1.2); }
-        .action-button.fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
-        #input-area { display: flex; padding: 10px; }
-        textarea#user-input { flex-grow: 1; background-color: #333; color: var(--text-color); border: 1px solid #555; padding: 10px; font-size: 16px; font-family: sans-serif; resize: none; line-height: 1.5; max-height: 150px; }
-        #user-input:disabled { background-color: #444; cursor: not-allowed; }
-        #send-button { background-color: var(--accent-color); color: white; border: none; padding: 10px 20px; cursor: pointer; font-size: 16px; }
-        #export-log-button { background-color: var(--border-color); color: var(--text-color); border: 1px solid #555; padding: 10px 15px; margin: 0 10px; cursor: pointer; font-size: 14px; border-radius: 5px; transition: background-color 0.2s ease; }
-        #export-log-button:hover { background-color: #555; }
-        #hint-toggle-button { /* スタイルはui.jsで適用 */ }
-
-        /* --- サイドバー --- */
-        #status-container { flex-grow: 1; padding: 20px; background-color: var(--container-bg); border: 1px solid var(--border-color); overflow-y: auto; margin-bottom: 20px; }
-        #status-container h2 { color: var(--accent-color); border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-top: 20px; }
-        #status-container h2:first-child { margin-top: 0; }
-        #player-name-display { font-size: 1.5em; color: var(--accent-color); text-align: center; margin-bottom: 20px; word-break: break-all; }
-        #status-display p { display: flex; justify-content: space-between; margin: 10px 0; font-size: 16px; }
-        #status-display span { font-weight: bold; }
-        .stat-value { color: var(--user-text); }
-        .stat-change { margin-left: 10px; color: var(--ai-text); animation: fadeInAndOut 2s ease-in-out forwards; }
-        #inventory-display p { color: var(--text-color); font-size: 15px; margin: 5px 0; }
-        #slot-selector-container { display: flex; margin-bottom: 10px; }
-        #slot-selector { flex-grow: 1; background-color: #333; color: var(--text-color); border: 1px solid #555; padding: 10px; font-size: 16px; }
-        #confirm-button, #delete-slot-button { color: white; border: none; margin-left: 10px; padding: 10px 15px; cursor: pointer; font-size: 16px; border-radius: 5px; }
-        #confirm-button { background-color: var(--accent-color); }
-        #delete-slot-button { background-color: var(--danger-color); }
-
-        /* --- ツールチップ --- */
-        .tooltip { position: relative; cursor: help; border-bottom: 1px dotted var(--text-color); }
-        .tooltip::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); margin-bottom: 8px; background-color: var(--main-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 5px; padding: 8px 12px; width: 200px; font-size: 14px; line-height: 1.4; text-align: left; opacity: 0; visibility: hidden; transition: opacity 0.2s, visibility 0.2s; z-index: 10; }
-        .tooltip:hover::after { opacity: 1; visibility: visible; }
-
-        /* --- 広告モーダル --- */
-        .ad-modal-overlay { /* スタイルはui.jsで適用 */ }
-
-        /* --- フッター --- */
-        footer {
-            background-color: var(--container-bg);
-            border-top: 1px solid var(--border-color);
-            padding: 20px;
-            text-align: center;
-            flex-shrink: 0;
-            font-size: 14px;
-        }
-        .footer-nav ul { list-style: none; padding: 0; margin: 0 0 10px 0; }
-        .footer-nav li { display: inline-block; margin: 0 15px; }
-        .footer-nav a { color: var(--text-color); text-decoration: none; transition: color 0.2s ease; }
-        .footer-nav a:hover { color: var(--accent-color); }
-        .copyright { color: #888; margin: 0; }
-
-        /* --- アニメーション --- */
-        @keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.95); } }
-        @keyframes fadeInAndOut { 0% { opacity: 0; transform: translateY(5px); } 20% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; } 100% { opacity: 0; } }
-
-        /* --- レスポンシブ対応 --- */
-        @media (max-width: 800px) {
-            body { height: auto; overflow: visible; }
-            #game-wrapper { flex-direction: column; padding: 10px; }
-            #game-container, #sidebar { width: 100%; margin-left: 0; }
-            #sidebar { margin-top: 20px; height: auto; }
-        }
-    </style>
+    <link rel="stylesheet" href="src/css/main.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
     <header><h1>言霊のプロトコル</h1></header>
-
     <div id="game-wrapper">
         <div id="game-container">
             <div id="game-log"></div>
             <div id="scenario-selection-container"></div>
+            <!-- ★ 構造を整理 -->
             <div id="input-container">
-                <button id="hint-toggle-button">ヒントを表示</button>
-                <div id="actions-container"></div>
-                <div id="input-area">
+                 <div id="actions-container"></div>
+                 <div id="input-area">
                     <textarea id="user-input"></textarea>
                     <button id="export-log-button">exp</button>
                     <button id="send-button">送信</button>
@@ -178,11 +49,11 @@
         </div>
     </div>
 
-    <!-- 広告表示用のモーダル -->
+    <!-- 広告モーダル -->
     <div id="ad-modal-overlay" class="ad-modal-overlay">
         <div class="ad-modal-content">
-            <h2>行動回数が上限に達しました</h2>
-            <p>動画広告を視聴して、行動回数を5回分回復しますか？</p>
+            <h3>行動回数を回復しますか？</h3>
+            <p>動画広告を視聴すると、行動回数が5回回復します。</p>
             <div id="ad-loading-spinner"></div>
             <div class="ad-modal-buttons">
                 <button id="ad-confirm-button" class="ad-modal-button confirm">はい</button>
@@ -190,7 +61,6 @@
             </div>
         </div>
     </div>
-    
     <footer >
         <nav class="footer-nav">
             <ul>
@@ -202,7 +72,18 @@
         <p class="copyright">&copy; 2025 言霊のプロトコル</p>
     </footer>
 
-    <!-- JavaScriptモジュールを読み込み -->
     <script type="module" src="src/main.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').then(registration => {
+                    console.log('サービスワーカーを登録しました:', registration);
+                }).catch(error => {
+                    console.log('サービスワーカーの登録に失敗しました:', error);
+                });
+            });
+        }
+    </script>
 </body>
 </html>
+
