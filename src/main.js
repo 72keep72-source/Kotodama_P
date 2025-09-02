@@ -186,4 +186,3 @@ exportLogButton.addEventListener('click', () => {
 });
 
 document.addEventListener('DOMContentLoaded', initializeGame);
-

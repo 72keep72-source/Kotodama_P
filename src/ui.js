@@ -314,4 +314,3 @@ export function initializeAdModal(onConfirm) {
 export function showAdModal() {
     adModalOverlay.classList.add('visible');
 }
-
