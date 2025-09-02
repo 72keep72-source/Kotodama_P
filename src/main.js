@@ -11,9 +11,8 @@ const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const confirmButton = document.getElementById('confirm-button');
 const deleteSlotButton = document.getElementById('delete-slot-button');
-const slotSelector = document.getElementById('slot-selector'); // ★★★ この行を追記 ★★★
+const slotSelector = document.getElementById('slot-selector');
 const exportLogButton = document.getElementById('export-log-button');
-
 
 // --- ゲームロジック ---
 
@@ -22,20 +21,15 @@ async function processAIturn() {
     ui.addLog('考え中...', 'ai-response');
     ui.toggleInput(true, 'AIが応答を考えています…');
 
-    // ▼▼▼【このチェックが重要です】▼▼▼
     const currentHistory = state.getGameState().conversationHistory;
-
-    // APIを呼び出す前に、会話履歴が有効かチェックする
     if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
         console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
         ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
         ui.toggleInput(false);
-        return; // 処理を中断
+        return;
     }
-    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
     try {
-        // ... 以降のAPI呼び出し処理 ...
         const fullAiText = await callAI(state.getGameState().conversationHistory);
         state.addHistory({ role: 'model', parts: [{ text: fullAiText }] });
         const parsedData = state.parseAIResponse(fullAiText);
@@ -61,7 +55,7 @@ async function handleUserCommand(commandFromButton = null) {
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
-    if (state.checkAndResetActions()) {
+    if (state.checkActionLimit()) {
         ui.showAdModal();
         return;
     }
@@ -97,18 +91,11 @@ function startNewGame(scenarioType) {
 
 /** セーブデータからゲームをロードする */
 function loadGameFromSlot(slotId) {
-    // --- ▼▼▼ ここから調査用コードです ▼▼▼ ---
-    console.log(`loadGameFromSlotがID: ${slotId} で実行されました。`);
-
     const gameState = state.loadGame(slotId);
-    console.log("state.loadGameから返されたgameState:", gameState);
-
     if (!gameState) {
-        console.error("ロード処理失敗: gameStateが取得できませんでした。");
         initializeGame();
         return;
     }
-    // --- ▲▲▲ ここまで調査用コードです ▲▲▲ ---
     
     ui.clearGameScreen();
     state.checkAndResetActions();
@@ -143,11 +130,13 @@ function deleteSelectedSlot() {
 function initializeGame() {
     state.loadGameSlotsFromStorage();
     const gameState = state.getGameState();
-    ui.updateSlotSelector(gameState);
+    ui.updateSlotSelector({ 
+        gameSlots: gameState.gameSlots, 
+        maxSlots: state.MAX_SAVE_SLOTS 
+    });
 
     const hasSaveData = gameState.gameSlots.length > 0;
-    const isSlotFull = gameState.gameSlots.length >= state.MAX_SAVE_SLOTS;
-    ui.showWelcomeScreen(hasSaveData, isSlotFull, startNewGame);
+    ui.showWelcomeScreen(hasSaveData);
     
     ui.initializeHintButton();
     ui.initializeAdModal((onSuccess) => {
@@ -156,9 +145,8 @@ function initializeGame() {
             ui.updateActionCountDisplay(state.getGameState().dailyActions);
             ui.addLog('【システム】行動回数が5回分回復しました。', 'ai-response');
             onSuccess();
-        }, 3000);
+        }, 2000);
     });
-    ui.initializeFooter();
 }
 
 // イベントリスナーを設定
@@ -175,30 +163,18 @@ userInput.addEventListener('input', () => {
 });
 
 confirmButton.addEventListener('click', () => {
-    // --- ▼▼▼ ここから調査用コードです ▼▼▼ ---
-    console.log("「決定」ボタンがクリックされました。");
     const selectedValue = slotSelector.value;
-    console.log("プルダウンで選択されている値 (selectedValue):", selectedValue);
 
-    const currentSlots = state.getGameState().gameSlots;
-    console.log("現在のセーブデータ (gameSlots):", currentSlots);
-
-    // someメソッドは、条件に合う要素が一つでもあればtrueを返します
-    const isSlotFound = currentSlots.some(s => s.id == selectedValue);
-    console.log("選択された値がセーブデータ内に見つかりましたか？:", isSlotFound);
-    // --- ▲▲▲ ここまで調査用コードです ▲▲▲ ---
-
-    // 調査結果を使って条件分岐
-    if (isSlotFound) {
-        console.log("ロード処理を実行します。");
+    if (selectedValue === 'new_game') {
+        // 「新規ゲーム」が選択されたら、シナリオ選択画面を表示
+        ui.showScenarioSelection(startNewGame);
+    } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+        // 既存のセーブデータが選択されたら、ロード
         state.setActiveSlotId(selectedValue);
         loadGameFromSlot(selectedValue);
     } else {
-        console.log("ロード処理に失敗。アラートを表示します。");
-        // new_game や空の値の場合も考慮
-        if (selectedValue && selectedValue !== 'new_game') {
-             alert('プルダウンからロードするセーブデータを選択してください。');
-        }
+        // 何も選択されていない場合
+        alert('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
     }
 });
 
