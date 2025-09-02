@@ -11,8 +11,9 @@ const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const confirmButton = document.getElementById('confirm-button');
 const deleteSlotButton = document.getElementById('delete-slot-button');
-const slotSelector = document.getElementById('slot-selector');
+const slotSelector = document.getElementById('slot-selector'); // ★★★ この行を追記 ★★★
 const exportLogButton = document.getElementById('export-log-button');
+
 
 // --- ゲームロジック ---
 
@@ -96,11 +97,18 @@ function startNewGame(scenarioType) {
 
 /** セーブデータからゲームをロードする */
 function loadGameFromSlot(slotId) {
+    // --- ▼▼▼ ここから調査用コードです ▼▼▼ ---
+    console.log(`loadGameFromSlotがID: ${slotId} で実行されました。`);
+
     const gameState = state.loadGame(slotId);
+    console.log("state.loadGameから返されたgameState:", gameState);
+
     if (!gameState) {
+        console.error("ロード処理失敗: gameStateが取得できませんでした。");
         initializeGame();
         return;
     }
+    // --- ▲▲▲ ここまで調査用コードです ▲▲▲ ---
     
     ui.clearGameScreen();
     state.checkAndResetActions();
@@ -150,6 +158,7 @@ function initializeGame() {
             onSuccess();
         }, 3000);
     });
+    ui.initializeFooter();
 }
 
 // イベントリスナーを設定
@@ -166,12 +175,30 @@ userInput.addEventListener('input', () => {
 });
 
 confirmButton.addEventListener('click', () => {
+    // --- ▼▼▼ ここから調査用コードです ▼▼▼ ---
+    console.log("「決定」ボタンがクリックされました。");
     const selectedValue = slotSelector.value;
-    if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+    console.log("プルダウンで選択されている値 (selectedValue):", selectedValue);
+
+    const currentSlots = state.getGameState().gameSlots;
+    console.log("現在のセーブデータ (gameSlots):", currentSlots);
+
+    // someメソッドは、条件に合う要素が一つでもあればtrueを返します
+    const isSlotFound = currentSlots.some(s => s.id == selectedValue);
+    console.log("選択された値がセーブデータ内に見つかりましたか？:", isSlotFound);
+    // --- ▲▲▲ ここまで調査用コードです ▲▲▲ ---
+
+    // 調査結果を使って条件分岐
+    if (isSlotFound) {
+        console.log("ロード処理を実行します。");
         state.setActiveSlotId(selectedValue);
         loadGameFromSlot(selectedValue);
     } else {
-        alert('プルダウンからロードするセーブデータを選択してください。');
+        console.log("ロード処理に失敗。アラートを表示します。");
+        // new_game や空の値の場合も考慮
+        if (selectedValue && selectedValue !== 'new_game') {
+             alert('プルダウンからロードするセーブデータを選択してください。');
+        }
     }
 });
 

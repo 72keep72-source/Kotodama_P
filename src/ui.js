@@ -11,11 +11,13 @@ const playerNameDisplay = document.getElementById('player-name-display');
 const inventoryDisplay = document.getElementById('inventory-display');
 const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
+const hintToggleButton = document.getElementById('hint-toggle-button');
 const adModalOverlay = document.getElementById('ad-modal-overlay');
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
 const adLoadingSpinner = document.getElementById('ad-loading-spinner');
-const inputContainer = document.getElementById('input-container');
+
+// --- (以降のコードはそのまま) ---
 
 // 各ステータスの説明文を定義
 const statDescriptions = {
@@ -39,7 +41,7 @@ export function addLog(text, className) {
 }
 
 export function updateThinkingMessage(newText) {
-    const thinkingElement = Array.from(gameLog.getElementsByTagName('p')).find(p => p.textContent === '考え中...');
+    const thinkingElement = Array.from(gameLog.getElementsByTagName('p')).find(p => p.textContent.trim() === '考え中...');
     if (thinkingElement) {
         thinkingElement.innerHTML = newText.replace(/\n/g, '<br>');
     }
@@ -177,14 +179,10 @@ export function clearGameScreen() {
 export function rebuildLog(conversationHistory) {
     gameLog.innerHTML = '';
     (conversationHistory || []).slice(1).forEach(turn => {
-        // ▼▼▼【修正案】ここから追加 ▼▼▼
-        // turnやturn.partsが存在しない不正なデータの場合は、処理をスキップする
         if (!turn || !turn.parts || !turn.parts[0]) {
             console.warn('会話履歴に不正なデータが含まれていたため、スキップしました:', turn);
-            return; // このturnに対する処理を中断し、次に進む
+            return;
         }
-        // ▲▲▲【修正案】ここまで追加 ▲▲▲
-
         const text = turn.parts[0].text;
         if (turn.role === 'user') {
             addLog(`> ${text}`, 'user-command');
@@ -205,8 +203,9 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
     addLog(welcomeMessage, 'ai-response');
     toggleInput(true, '物語を選択するか、データをロードしてください');
     
-    if (isSlotFull) {
+    if (isSlotFull && hasSaveData) {
         addLog('<br>セーブデータがいっぱいです。新しい冒険を始めるには、サイドバーからデータを削除してください。', 'ai-response');
+        scenarioSelectionContainer.innerHTML = '';
         return;
     }
 
@@ -217,14 +216,14 @@ export function showWelcomeScreen(hasSaveData, isSlotFull, scenarioHandler) {
     ];
 
     scenarios.forEach(scenario => {
-        const button = document.createElement('button');
-        button.className = 'scenario-button';
-        button.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
-        button.onclick = () => {
+        const card = document.createElement('div');
+        card.className = 'scenario-card';
+        card.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
+        card.onclick = () => {
             scenarioSelectionContainer.innerHTML = '';
-            scenarioHandler(scenario.type); // ★ ここでmain.jsのstartNewGameを呼び出す
+            scenarioHandler(scenario.type);
         };
-        scenarioSelectionContainer.appendChild(button);
+        scenarioSelectionContainer.appendChild(card);
     });
 }
 
@@ -256,27 +255,37 @@ export function exportLogToFile(activeSlotId, playerName) {
 }
 
 export function initializeHintButton() {
-    let hintsVisible = localStorage.getItem('hintsVisible') === 'true';
-    const hintButton = document.createElement('button');
-    hintButton.id = 'hint-toggle-button';
+    // The line that was here has been REMOVED.
     
+    // This "if" check now correctly uses the hintToggleButton
+    // variable you defined at the top of the file.
+    if (!hintToggleButton) { 
+        console.error("ヒントボタンの要素が見つかりません。");
+        return;
+    }
+    // ... rest of the function
+    
+
+    let hintsVisible = localStorage.getItem('hintsVisible') === 'true';
+
     const updateHintState = () => {
         if (hintsVisible) {
-            hintButton.textContent = 'ヒントを隠す';
-            actionsContainer.style.display = 'block';
+            hintToggleButton.textContent = 'ヒントを隠す';
+            hintToggleButton.classList.add('active');
+            actionsContainer.classList.add('visible');
         } else {
-            hintButton.textContent = 'ヒントを表示';
-            actionsContainer.style.display = 'none';
+            hintToggleButton.textContent = 'ヒントを表示';
+            hintToggleButton.classList.remove('active');
+            actionsContainer.classList.remove('visible');
         }
     };
     
-    hintButton.addEventListener('click', () => {
+    hintToggleButton.addEventListener('click', () => {
         hintsVisible = !hintsVisible;
         localStorage.setItem('hintsVisible', hintsVisible);
         updateHintState();
     });
 
-    inputContainer.insertBefore(hintButton, actionsContainer);
     updateHintState();
 }
 
@@ -286,11 +295,12 @@ export function initializeAdModal(onConfirm) {
         adLoadingSpinner.style.display = 'block';
         adConfirmButton.style.display = 'none';
         adCancelButton.style.display = 'none';
+        
         onConfirm(() => {
             adModalOverlay.classList.remove('visible');
             adLoadingSpinner.style.display = 'none';
-            adConfirmButton.style.display = 'block';
-            adCancelButton.style.display = 'block';
+            adConfirmButton.style.display = 'inline-block';
+            adCancelButton.style.display = 'inline-block';
         });
     });
 }
@@ -299,3 +309,20 @@ export function showAdModal() {
     adModalOverlay.classList.add('visible');
 }
 
+export function initializeFooter() {
+    const footerContainer = document.getElementById('footer-container');
+    if (!footerContainer) return;
+
+    const footer = document.createElement('footer');
+    footer.innerHTML = `
+        <nav class="footer-nav">
+            <ul>
+                <li><a href="privacy.html">プライバシーポリシー</a></li>
+                <li><a href="contact.html">お問い合わせ</a></li>
+                <li><a href="about.html">運営者情報</a></li>
+            </ul>
+        </nav>
+        <p class="copyright">&copy; 2025 言霊のプロトコル</p>
+    `;
+    footerContainer.appendChild(footer);
+}
