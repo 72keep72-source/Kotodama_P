@@ -22,11 +22,12 @@ async function processAIturn() {
     ui.toggleInput(true, 'AIが応答を考えています…');
 
     const currentHistory = state.getGameState().conversationHistory;
+
     if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
         console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
         ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
         ui.toggleInput(false);
-        return;
+        return; 
     }
 
     try {
@@ -55,7 +56,8 @@ async function handleUserCommand(commandFromButton = null) {
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
-    if (state.checkActionLimit()) {
+    // ★★★ エラー修正：関数名を checkActionLimit から checkAndResetActions に変更 ★★★
+    if (state.checkAndResetActions()) {
         ui.showAdModal();
         return;
     }
@@ -83,7 +85,10 @@ function startNewGame(scenarioType) {
     
     ui.clearGameScreen();
     ui.updateAllDisplays(newGameState);
-    ui.updateSlotSelector(state.getGameState());
+    ui.updateSlotSelector({
+        gameSlots: state.getGameState().gameSlots,
+        maxSlots: state.MAX_SAVE_SLOTS
+    });
     ui.toggleInput(false);
 
     processAIturn();
@@ -165,16 +170,14 @@ userInput.addEventListener('input', () => {
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
 
-    if (selectedValue === 'new_game') {
-        // 「新規ゲーム」が選択されたら、シナリオ選択画面を表示
-        ui.showScenarioSelection(startNewGame);
+    if (selectedValue === 'scenario_fantasy' || selectedValue === 'scenario_sf') {
+        const scenarioType = selectedValue.replace('scenario_', '');
+        startNewGame(scenarioType);
     } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
-        // 既存のセーブデータが選択されたら、ロード
         state.setActiveSlotId(selectedValue);
         loadGameFromSlot(selectedValue);
     } else {
-        // 何も選択されていない場合
-        alert('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
+        alert('プルダウンからロードするセーブデータ、または新しい物語を選択してください。');
     }
 });
 
@@ -186,3 +189,4 @@ exportLogButton.addEventListener('click', () => {
 });
 
 document.addEventListener('DOMContentLoaded', initializeGame);
+
