@@ -38,6 +38,25 @@ export function addLog(text, className) {
     gameLog.scrollTop = gameLog.scrollHeight;
 }
 
+// ★★★ ポップアップ(alert)の代わりになる関数を新設 ★★★
+export function showTemporaryMessage(message) {
+    const p = document.createElement('p');
+    p.innerHTML = `【システム】 ${message}`;
+    p.classList.add('ai-response'); // AIの応答と同じスタイルを使う
+    p.style.color = '#fdd835'; // 少し警告色にする
+    gameLog.appendChild(p);
+    gameLog.scrollTop = gameLog.scrollHeight;
+    // 3秒後にメッセージを自動で消す
+    setTimeout(() => {
+        if (p.isConnected) {
+            p.style.transition = 'opacity 0.5s ease';
+            p.style.opacity = '0';
+            setTimeout(() => p.remove(), 500);
+        }
+    }, 3000);
+}
+
+
 export function updateThinkingMessage(newText) {
     const thinkingElement = Array.from(gameLog.getElementsByTagName('p')).find(p => p.textContent.trim() === '考え中...');
     if (thinkingElement) {
@@ -57,13 +76,11 @@ export function clearActions() {
 export function updateSlotSelector({ gameSlots, maxSlots }) {
     slotSelector.innerHTML = '';
     
-    // 1. プレースホルダー（初期選択肢）
     const placeholder = document.createElement('option');
     placeholder.textContent = 'データを選択してください';
-    placeholder.value = ''; // valueを空にする
+    placeholder.value = '';
     slotSelector.appendChild(placeholder);
 
-    // 2. 既存のセーブデータを追加
     if (gameSlots && gameSlots.length > 0) {
         gameSlots.forEach((slot, index) => {
             const option = document.createElement('option');
@@ -73,15 +90,18 @@ export function updateSlotSelector({ gameSlots, maxSlots }) {
         });
     }
 
-    // 3. 「新規ゲーム」の選択肢を、空きスロットがあれば追加
     if (!maxSlots || gameSlots.length < maxSlots) {
+        const separator = document.createElement('option');
+        separator.disabled = true;
+        separator.textContent = '---';
+        slotSelector.appendChild(separator);
+
         const newGameOption = document.createElement('option');
         newGameOption.textContent = '新規ゲームを始める';
         newGameOption.value = 'new_game';
         slotSelector.appendChild(newGameOption);
     }
     
-    // 最後に選択していたスロットを復元
     const lastSelectedId = localStorage.getItem('rpgActiveSlotId');
     if (lastSelectedId && gameSlots.some(s => s.id == lastSelectedId)) {
         slotSelector.value = lastSelectedId;
@@ -208,8 +228,8 @@ export function showWelcomeScreen(hasSaveData) {
     clearGameScreen();
     
     let welcomeMessage = hasSaveData
-        ? 'おかえりなさい、旅人よ。<br>冒険を再開、または新規に始めるには、ステータス欄上のプルダウンから選択して「決定」を押してください。'
-        : 'ようこそ、「言霊のプロトコル」へ。<br>冒険を始めるには、ステータス欄上のプルダウンから「新規ゲームを始める」を選択してください。';
+        ? 'おかえりなさい、旅人よ。<br>冒険を再開、または新規に始めるには、サイドバーのプルダウンから選択して「決定」を押してください。'
+        : 'ようこそ、「言霊のプロトコル」へ。<br>冒険を始めるには、サイドバーのプルダウンから「新規ゲームを始める」を選択してください。';
     
     addLog(welcomeMessage, 'ai-response');
     toggleInput(true, 'データを選択して「決定」してください');
@@ -217,7 +237,6 @@ export function showWelcomeScreen(hasSaveData) {
 
 export function showScenarioSelection(scenarioHandler) {
     clearGameScreen();
-    // ★★★ ここをカッコいいメッセージに変更 ★★★
     const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
     addLog(scenarioWelcomeMessage, 'ai-response');
     toggleInput(true, '物語を選択してください');
@@ -249,7 +268,7 @@ export function updateAllDisplays(gameState, changes = {}) {
 
 export function exportLogToFile(activeSlotId, playerName) {
     if (!activeSlotId) {
-        alert('エクスポートするゲームデータがありません。');
+        showTemporaryMessage('エクスポートするゲームデータがありません。');
         return;
     }
     const logText = gameLog.innerText;
@@ -314,3 +333,4 @@ export function initializeAdModal(onConfirm) {
 export function showAdModal() {
     adModalOverlay.classList.add('visible');
 }
+
