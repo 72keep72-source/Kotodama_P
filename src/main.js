@@ -22,7 +22,6 @@ async function processAIturn() {
     ui.toggleInput(true, 'AIが応答を考えています…');
 
     const currentHistory = state.getGameState().conversationHistory;
-
     if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
         console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
         ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
@@ -50,13 +49,12 @@ async function processAIturn() {
 /** ユーザーのコマンドを処理 */
 async function handleUserCommand(commandFromButton = null) {
     if (!state.getActiveSlotId()) {
-        alert('「決定」ボタンで新しい冒険を開始するか、続きを遊ぶデータを選択してください。');
+        ui.showTemporaryMessage('「決定」ボタンで新しい冒険を開始するか、続きを遊ぶデータを選択してください。');
         return;
     }
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
-    // ★★★ エラー修正：関数名を checkActionLimit から checkAndResetActions に変更 ★★★
     if (state.checkAndResetActions()) {
         ui.showAdModal();
         return;
@@ -76,7 +74,7 @@ async function handleUserCommand(commandFromButton = null) {
 /** 新しいゲームを開始する */
 function startNewGame(scenarioType) {
     if (state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS) {
-        alert(`セーブスロットは${state.MAX_SAVE_SLOTS}つまでです。`);
+        ui.showTemporaryMessage(`セーブスロットは${state.MAX_SAVE_SLOTS}つまでです。`);
         return;
     }
     const rulebook = scenarioType === 'sf' ? RULEBOOK_SF_AI : RULEBOOK_1ST;
@@ -119,7 +117,7 @@ function loadGameFromSlot(slotId) {
 function deleteSelectedSlot() {
     const selectedId = slotSelector.value;
     if (!selectedId || !state.getGameState().gameSlots.some(s => s.id == selectedId)) {
-        alert('削除するセーブデータを選択してください。');
+        ui.showTemporaryMessage('削除するセーブデータを選択してください。');
         return;
     }
     const slotToDelete = state.getGameState().gameSlots.find(s => s.id == selectedId);
@@ -170,14 +168,16 @@ userInput.addEventListener('input', () => {
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
 
-    if (selectedValue === 'scenario_fantasy' || selectedValue === 'scenario_sf') {
-        const scenarioType = selectedValue.replace('scenario_', '');
-        startNewGame(scenarioType);
+    if (selectedValue === 'new_game') {
+        // 「新規ゲーム」が選択されたら、シナリオ選択画面を表示
+        ui.showScenarioSelection(startNewGame);
     } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+        // 既存のセーブデータが選択されたら、ロード
         state.setActiveSlotId(selectedValue);
         loadGameFromSlot(selectedValue);
     } else {
-        alert('プルダウンからロードするセーブデータ、または新しい物語を選択してください。');
+        // 何も選択されていない場合、ポップアップの代わりにUIメッセージを表示
+        ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
     }
 });
 
