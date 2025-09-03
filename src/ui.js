@@ -33,7 +33,7 @@ const statDescriptions = {
 export function addLog(text, className) {
     const p = document.createElement('p');
     p.innerHTML = text.replace(/\n/g, '<br>');
-    if (className) p.classList.add(className);
+    if (className) p.className = className; // classList.addから変更
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
     return p;
@@ -236,10 +236,19 @@ export function showScenarioSelection(scenarioHandler) {
     });
 }
 
-/** ゲームログに一時的なメッセージを表示し、3秒後に自動で消す */
+/** ゲームログに一時的な警告メッセージを表示し、3秒後に自動で消す */
 export function showTemporaryMessage(message) {
-    // ★★★ 修正点：クラス名を 'ai-response' から 'system-warning' に変更 ★★★
-    const tempMessage = addLog(`【！】 ${message}`, 'system-warning');
+    // ★★★ ここからが修正箇所 ★★★
+    // 既存の一時メッセージがあれば、まず削除する
+    const existingMessage = gameLog.querySelector('.system-temporary-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    // 新しいメッセージを追加し、スタイル用と識別用のクラスを両方付ける
+    const tempMessage = addLog(`【！】 ${message}`, 'system-warning system-temporary-message');
+    
+    // 3秒後に自動で消すタイマー
     setTimeout(() => {
         if (tempMessage.isConnected) {
             tempMessage.remove();
