@@ -36,6 +36,7 @@ export function addLog(text, className) {
     if (className) p.classList.add(className);
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
+    return p; // ★一時メッセージ用に要素を返す
 }
 
 export function updateThinkingMessage(newText) {
@@ -71,12 +72,16 @@ export function updateSlotSelector({ gameSlots, maxSlots }) {
         });
     }
 
-    // セーブスロットに空きがあれば「新規ゲーム」の選択肢を追加
     if (!maxSlots || gameSlots.length < maxSlots) {
-        const newGameOption = document.createElement('option');
-        newGameOption.textContent = '新規ゲームを始める';
-        newGameOption.value = 'new_game';
-        slotSelector.appendChild(newGameOption);
+        const fantasyOption = document.createElement('option');
+        fantasyOption.textContent = '新規：剣と魔法の世界';
+        fantasyOption.value = 'scenario_fantasy';
+        slotSelector.appendChild(fantasyOption);
+
+        const sfOption = document.createElement('option');
+        sfOption.textContent = '新規：SFの世界';
+        sfOption.value = 'scenario_sf';
+        slotSelector.appendChild(sfOption);
     }
     
     const lastSelectedId = localStorage.getItem('rpgActiveSlotId');
@@ -212,38 +217,18 @@ export function showWelcomeScreen(hasSaveData) {
     toggleInput(true, 'データを選択して「決定」してください');
 }
 
-export function showScenarioSelection(scenarioHandler) {
-    clearGameScreen();
-    const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
-    addLog(scenarioWelcomeMessage, 'ai-response');
-    toggleInput(true, '物語を選択してください');
-
-    scenarioSelectionContainer.innerHTML = '';
-    const scenarios = [
-        { name: '剣と魔法の世界', type: 'fantasy', description: '呪われた森で失われた記憶の《コア》を探す、王道ファンタジー。' },
-        { name: 'AIが管理する未来的な世界', type: 'sf', description: '巨大サイバー都市で失われた記憶《媒体》を探す、SFアドベンチャー。' }
-    ];
-
-    scenarios.forEach(scenario => {
-        const card = document.createElement('div');
-        card.className = 'scenario-card';
-        card.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
-        card.onclick = () => {
-            scenarioSelectionContainer.innerHTML = '';
-            scenarioHandler(scenario.type);
-        };
-        scenarioSelectionContainer.appendChild(card);
-    });
-}
-
+// ★★★ 新しい関数を追加 ★★★
+/** ゲームログに一時的なメッセージを表示し、3秒後に自動で消す */
 export function showTemporaryMessage(message) {
     const tempMessage = addLog(`【！】 ${message}`, 'ai-response');
     setTimeout(() => {
+        // メッセージがまだ画面に存在する場合のみ、削除処理を行う
         if (tempMessage.isConnected) {
             tempMessage.remove();
         }
-    }, 3000);
+    }, 3000); // 3秒後に消える
 }
+
 
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
