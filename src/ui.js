@@ -33,7 +33,7 @@ const statDescriptions = {
 export function addLog(text, className) {
     const p = document.createElement('p');
     p.innerHTML = text.replace(/\n/g, '<br>');
-    if (className) p.className = className; // classList.addから変更
+    if (className) p.className = className;
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
     return p;
@@ -213,6 +213,8 @@ export function showWelcomeScreen(hasSaveData) {
 }
 
 export function showScenarioSelection(scenarioHandler) {
+    // ★★★ ここからが修正箇所 ★★★
+    // 画面をクリアし、カッコいいメッセージを表示
     clearGameScreen();
     const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
     addLog(scenarioWelcomeMessage, 'ai-response');
@@ -238,17 +240,13 @@ export function showScenarioSelection(scenarioHandler) {
 
 /** ゲームログに一時的な警告メッセージを表示し、3秒後に自動で消す */
 export function showTemporaryMessage(message) {
-    // ★★★ ここからが修正箇所 ★★★
-    // 既存の一時メッセージがあれば、まず削除する
     const existingMessage = gameLog.querySelector('.system-temporary-message');
     if (existingMessage) {
         existingMessage.remove();
     }
 
-    // 新しいメッセージを追加し、スタイル用と識別用のクラスを両方付ける
     const tempMessage = addLog(`【！】 ${message}`, 'system-warning system-temporary-message');
     
-    // 3秒後に自動で消すタイマー
     setTimeout(() => {
         if (tempMessage.isConnected) {
             tempMessage.remove();

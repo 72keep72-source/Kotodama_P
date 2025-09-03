@@ -26,7 +26,7 @@ async function processAIturn() {
         console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
         ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
         ui.toggleInput(false);
-        return;
+        return; 
     }
 
     try {
@@ -116,7 +116,7 @@ function loadGameFromSlot(slotId) {
 /** 選択されたスロットを削除 */
 function deleteSelectedSlot() {
     const selectedId = slotSelector.value;
-    if (!selectedId || selectedId.startsWith('scenario_') || !state.getGameState().gameSlots.some(s => s.id == selectedId)) {
+    if (!selectedId || !state.getGameState().gameSlots.some(s => s.id == selectedId)) {
         ui.showTemporaryMessage('削除するセーブデータを選択してください。');
         return;
     }
@@ -168,14 +168,13 @@ userInput.addEventListener('input', () => {
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
 
-    if (selectedValue.startsWith('scenario_')) {
-        const scenarioType = selectedValue.replace('scenario_', '');
-        startNewGame(scenarioType);
+    if (selectedValue === 'new_game') {
+        ui.showScenarioSelection(startNewGame);
     } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
         state.setActiveSlotId(selectedValue);
         loadGameFromSlot(selectedValue);
     } else {
-        ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または新しい物語を選択してください。');
+        ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
     }
 });
 
