@@ -38,25 +38,6 @@ export function addLog(text, className) {
     gameLog.scrollTop = gameLog.scrollHeight;
 }
 
-// ★★★ ポップアップ(alert)の代わりになる関数を新設 ★★★
-export function showTemporaryMessage(message) {
-    const p = document.createElement('p');
-    p.innerHTML = `【システム】 ${message}`;
-    p.classList.add('ai-response'); // AIの応答と同じスタイルを使う
-    p.style.color = '#fdd835'; // 少し警告色にする
-    gameLog.appendChild(p);
-    gameLog.scrollTop = gameLog.scrollHeight;
-    // 3秒後にメッセージを自動で消す
-    setTimeout(() => {
-        if (p.isConnected) {
-            p.style.transition = 'opacity 0.5s ease';
-            p.style.opacity = '0';
-            setTimeout(() => p.remove(), 500);
-        }
-    }, 3000);
-}
-
-
 export function updateThinkingMessage(newText) {
     const thinkingElement = Array.from(gameLog.getElementsByTagName('p')).find(p => p.textContent.trim() === '考え中...');
     if (thinkingElement) {
@@ -78,7 +59,7 @@ export function updateSlotSelector({ gameSlots, maxSlots }) {
     
     const placeholder = document.createElement('option');
     placeholder.textContent = 'データを選択してください';
-    placeholder.value = '';
+    placeholder.value = ''; 
     slotSelector.appendChild(placeholder);
 
     if (gameSlots && gameSlots.length > 0) {
@@ -91,15 +72,15 @@ export function updateSlotSelector({ gameSlots, maxSlots }) {
     }
 
     if (!maxSlots || gameSlots.length < maxSlots) {
-        const separator = document.createElement('option');
-        separator.disabled = true;
-        separator.textContent = '---';
-        slotSelector.appendChild(separator);
+        const fantasyOption = document.createElement('option');
+        fantasyOption.textContent = '新規：剣と魔法の世界';
+        fantasyOption.value = 'scenario_fantasy';
+        slotSelector.appendChild(fantasyOption);
 
-        const newGameOption = document.createElement('option');
-        newGameOption.textContent = '新規ゲームを始める';
-        newGameOption.value = 'new_game';
-        slotSelector.appendChild(newGameOption);
+        const sfOption = document.createElement('option');
+        sfOption.textContent = '新規：SFの世界';
+        sfOption.value = 'scenario_sf';
+        slotSelector.appendChild(sfOption);
     }
     
     const lastSelectedId = localStorage.getItem('rpgActiveSlotId');
@@ -228,35 +209,20 @@ export function showWelcomeScreen(hasSaveData) {
     clearGameScreen();
     
     let welcomeMessage = hasSaveData
-        ? 'おかえりなさい、旅人よ。<br>冒険を再開、または新規に始めるには、サイドバーのプルダウンから選択して「決定」を押してください。'
-        : 'ようこそ、「言霊のプロトコル」へ。<br>冒険を始めるには、サイドバーのプルダウンから「新規ゲームを始める」を選択してください。';
+        ? 'おかえりなさい、旅人よ。<br>冒険を再開、または新規に始めるには、ステータス欄上のプルダウンから選択して「決定」を押してください。'
+        : 'ようこそ、「言霊のプロトコル」へ。<br>冒険を始めるには、ステータス欄上のプルダウンから新しい物語を選択してください。';
     
     addLog(welcomeMessage, 'ai-response');
     toggleInput(true, 'データを選択して「決定」してください');
 }
 
-export function showScenarioSelection(scenarioHandler) {
-    clearGameScreen();
-    const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
-    addLog(scenarioWelcomeMessage, 'ai-response');
-    toggleInput(true, '物語を選択してください');
-
-    scenarioSelectionContainer.innerHTML = '';
-    const scenarios = [
-        { name: '剣と魔法の世界', type: 'fantasy', description: '呪われた森で失われた記憶の《コア》を探す、王道ファンタジー。' },
-        { name: 'AIが管理する未来的な世界', type: 'sf', description: '巨大サイバー都市で失われた記憶《媒体》を探す、SFアドベンチャー。' }
-    ];
-
-    scenarios.forEach(scenario => {
-        const card = document.createElement('div');
-        card.className = 'scenario-card';
-        card.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
-        card.onclick = () => {
-            scenarioSelectionContainer.innerHTML = '';
-            scenarioHandler(scenario.type);
-        };
-        scenarioSelectionContainer.appendChild(card);
-    });
+export function showTemporaryMessage(message) {
+    const tempMessage = addLog(`【！】 ${message}`, 'ai-response');
+    setTimeout(() => {
+        if (tempMessage.isConnected) {
+            tempMessage.remove();
+        }
+    }, 3000);
 }
 
 export function updateAllDisplays(gameState, changes = {}) {
@@ -297,11 +263,11 @@ export function initializeHintButton() {
         if (hintsVisible) {
             hintToggleButton.textContent = 'ヒントを隠す';
             hintToggleButton.classList.add('active');
-            actionsContainer.classList.add('visible');
+            actionsContainer.style.display = 'block';
         } else {
             hintToggleButton.textContent = 'ヒントを表示';
             hintToggleButton.classList.remove('active');
-            actionsContainer.classList.remove('visible');
+            actionsContainer.style.display = 'none';
         }
     };
     

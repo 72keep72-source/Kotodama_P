@@ -12,7 +12,7 @@
     --subtle-text-color: #888;
 }
 
-html, body {
+html {
     height: 100%;
 }
 
@@ -23,8 +23,8 @@ body {
     margin: 0;
     display: flex;
     flex-direction: column;
-    height: 100vh; /* ★高さを画面の高さ100%に固定 */
-    overflow: hidden; /* ★ページ全体のスクロールを禁止 */
+    height: 100%; /* vhから%に変更 */
+    overflow: hidden;
 }
 header {
     background-color: var(--container-bg);
@@ -47,7 +47,7 @@ header h1 {
     padding: 20px;
     box-sizing: border-box;
     flex-grow: 1;
-    overflow: hidden;
+    overflow: hidden; /* 子要素のスクロールを制御 */
 }
 
 #game-container {
@@ -60,9 +60,9 @@ header h1 {
 }
 
 #game-log {
-    flex-grow: 1; /* 親要素の残りの高さいっぱいに伸びる */
+    flex-grow: 1; 
     padding: 20px;
-    overflow-y: auto; /* ★内容がはみ出たら、ここだけスクロールさせる */
+    overflow-y: auto; 
     white-space: pre-wrap;
 }
 
@@ -74,22 +74,17 @@ header h1 {
     color: var(--user-text);
 }
 
-/* シナリオ選択画面のコンテナ */
 #scenario-selection-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 40px 20px;
+    /* このコンテナはJSで動的に内容が作られるため、基本的なスタイルのみ */
+    padding: 20px;
     box-sizing: border-box;
-    flex-grow: 1;
 }
 
 .scenario-card {
     background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color);
     padding: 20px 30px;
-    margin: 10px;
+    margin: 10px auto;
     cursor: pointer;
     border-radius: 8px;
     transition: all 0.3s ease;
@@ -116,7 +111,6 @@ header h1 {
     font-size: 0.9em;
 }
 
-/* 入力エリア全体のコンテナ */
 #input-container {
     padding: 10px;
     border-top: 1px solid var(--border-color);
@@ -149,11 +143,7 @@ header h1 {
     padding: 0 0 10px 0;
     border-bottom: 1px solid var(--border-color);
     margin-bottom: 10px;
-    display: none;
-}
-
-#actions-container.visible {
-    display: block;
+    display: none; /* 初期状態は非表示 */
 }
 
 .action-button {
@@ -284,40 +274,38 @@ textarea#user-input {
 }
 
 .tooltip {
-    position: relative;
-    cursor: help;
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted var(--text-color);
 }
-  
+
 .tooltip::after {
-    content: attr(data-tooltip);
-    position: fixed;
-    top: auto;
-    bottom: 20px;
-    right: 20px;
-    transform: none;
-    
-    background-color: var(--main-bg);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    padding: 8px 12px;
-    
-    width: auto;
-    max-width: 300px;
-    min-width: 150px;
-    font-size: 14px;
-    line-height: 1.4;
-    text-align: left;
-    
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s, visibility 0.2s;
-    z-index: 1000;
-}
+  content: attr(data-tooltip);
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   
+  background-color: var(--main-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  padding: 8px 12px;
+  
+  width: 90%;
+  max-width: 300px;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: center;
+  
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 1000;
+}
 .tooltip:hover::after {
-    opacity: 1;
-    visibility: visible;
+  opacity: 1;
+  visibility: visible;
 }
 
 #inventory-display p {
@@ -412,7 +400,7 @@ textarea#user-input {
     max-width: 400px;
 }
 
-.ad-modal-content h2 {
+.ad-modal-content h3 {
     margin-top: 0;
     color: var(--accent-color);
 }
@@ -458,7 +446,6 @@ textarea#user-input {
     display: none;
 }
 
-/* ★★★ フッターのスタイルを追加 ★★★ */
 footer {
     background-color: var(--container-bg);
     border-top: 1px solid var(--border-color);
@@ -467,14 +454,6 @@ footer {
     flex-shrink: 0;
     font-size: 14px;
 }
-
-/* スマホ表示の時はサイドバーの下にフッターが来るように調整 */
-@media (max-width: 800px) {
-    #sidebar {
-        margin-bottom: 20px;
-    }
-}
-
 
 .footer-nav ul {
     list-style: none;
@@ -502,55 +481,52 @@ footer {
     margin: 0;
 }
 
-
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
 @keyframes fadeOut {
-    0% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(0.95);
-    }
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.95); }
 }
 
 @keyframes fadeInAndOut {
-    0% {
-        opacity: 0;
-        transform: translateY(5px);
-    }
-    20% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    80% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0;
-    }
+    0% { opacity: 0; transform: translateY(5px); }
+    20% { opacity: 1; transform: translateY(0); }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
 }
 
 @media (max-width: 800px) {
     body {
-        height: auto;
+        height: auto; /* スマホでは高さを自動に */
+        overflow: visible; /* スクロールを許可 */
     }
     #game-wrapper {
         flex-direction: column;
         padding: 10px;
+        height: auto;
     }
     #game-container, #sidebar {
         width: 100%;
         margin-left: 0;
+        height: auto; /* 高さを自動に */
+    }
+    #game-container {
+        /* スマホでの最小高さを確保 */
+        min-height: 50vh; 
     }
     #sidebar {
         margin-top: 20px;
-        height: auto;
+    }
+    .tooltip::after {
+        /* スマホではツールチップを中央に */
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
     }
 }
+
+
 
