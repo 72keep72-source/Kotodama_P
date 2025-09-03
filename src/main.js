@@ -55,6 +55,7 @@ async function handleUserCommand(commandFromButton = null) {
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
+    // ★★★ エラー修正：関数名を checkActionLimit から checkAndResetActions に変更 ★★★
     if (state.checkAndResetActions()) {
         ui.showAdModal();
         return;
@@ -169,14 +170,11 @@ confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
 
     if (selectedValue === 'new_game') {
-        // 「新規ゲーム」が選択されたら、シナリオ選択画面を表示
         ui.showScenarioSelection(startNewGame);
     } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
-        // 既存のセーブデータが選択されたら、ロード
         state.setActiveSlotId(selectedValue);
         loadGameFromSlot(selectedValue);
     } else {
-        // 何も選択されていない場合、ポップアップの代わりにUIメッセージを表示
         ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
     }
 });
