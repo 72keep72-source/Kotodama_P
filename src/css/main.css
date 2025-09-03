@@ -10,6 +10,7 @@
     --danger-color: #c9302c;
     --twitter-color: #1DA1F2;
     --subtle-text-color: #888;
+    --warning-color: #ff9800; /* ★ オレンジ色を定義 */
 }
 
 html {
@@ -70,9 +71,16 @@ header h1 {
     color: var(--ai-text);
 }
 
+/* ★★★ 新しいスタイルを追加 ★★★ */
+.system-warning {
+    color: var(--warning-color);
+    font-weight: bold;
+}
+
 .user-command {
     color: var(--user-text);
 }
+
 
 #scenario-selection-container {
     /* このコンテナはJSで動的に内容が作られるため、基本的なスタイルのみ */
