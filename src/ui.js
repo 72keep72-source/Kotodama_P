@@ -11,11 +11,14 @@ const playerNameDisplay = document.getElementById('player-name-display');
 const inventoryDisplay = document.getElementById('inventory-display');
 const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
-const hintToggleButton = document.getElementById('hint-toggle-button');
 const adModalOverlay = document.getElementById('ad-modal-overlay');
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
 const adLoadingSpinner = document.getElementById('ad-loading-spinner');
+// ★★★ 新しい要素を取得 ★★★
+const introToggleButton = document.getElementById('intro-toggle-button');
+const introTextContainer = document.getElementById('intro-text-container');
+const hintToggleButton = document.getElementById('hint-toggle-button');
 
 // 各ステータスの説明文を定義
 const statDescriptions = {
@@ -33,10 +36,23 @@ const statDescriptions = {
 export function addLog(text, className) {
     const p = document.createElement('p');
     p.innerHTML = text.replace(/\n/g, '<br>');
-    if (className) p.className = className;
+    if (className) p.classList.add(className);
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
     return p;
+}
+
+export function showTemporaryMessage(message) {
+    const existingMessage = document.querySelector('.system-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    const tempMessage = addLog(`【！】 ${message}`, 'system-message');
+    setTimeout(() => {
+        if (tempMessage.isConnected) {
+            tempMessage.remove();
+        }
+    }, 3000);
 }
 
 export function updateThinkingMessage(newText) {
@@ -205,16 +221,14 @@ export function showWelcomeScreen(hasSaveData) {
     clearGameScreen();
     
     let welcomeMessage = hasSaveData
-        ? 'おかえりなさい、旅人よ。<br>冒険を再開、または新規に始めるには、ステータス欄上のプルダウンから選択して「決定」を押してください。'
-        : 'ようこそ、「言霊のプロトコル」へ。<br>冒険を始めるには、ステータス欄上のプルダウンから「新規ゲームを始める」を選択してください。';
+        ? 'おかえりなさい、旅人よ。<br>冒険を再開、または新規に始めるには、サイドバーのプルダウンから選択して「決定」を押してください。'
+        : 'ようこそ、「言霊のプロトコル」へ。<br>冒険を始めるには、サイドバーのプルダウンから「新規ゲームを始める」を選択してください。';
     
     addLog(welcomeMessage, 'ai-response');
     toggleInput(true, 'データを選択して「決定」してください');
 }
 
 export function showScenarioSelection(scenarioHandler) {
-    // ★★★ ここからが修正箇所 ★★★
-    // 画面をクリアし、カッコいいメッセージを表示
     clearGameScreen();
     const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
     addLog(scenarioWelcomeMessage, 'ai-response');
@@ -237,23 +251,6 @@ export function showScenarioSelection(scenarioHandler) {
         scenarioSelectionContainer.appendChild(card);
     });
 }
-
-/** ゲームログに一時的な警告メッセージを表示し、3秒後に自動で消す */
-export function showTemporaryMessage(message) {
-    const existingMessage = gameLog.querySelector('.system-temporary-message');
-    if (existingMessage) {
-        existingMessage.remove();
-    }
-
-    const tempMessage = addLog(`【！】 ${message}`, 'system-warning system-temporary-message');
-    
-    setTimeout(() => {
-        if (tempMessage.isConnected) {
-            tempMessage.remove();
-        }
-    }, 3000);
-}
-
 
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
@@ -281,6 +278,19 @@ export function exportLogToFile(activeSlotId, playerName) {
     URL.revokeObjectURL(url);
 }
 
+// ★★★ ここから新しい関数と修正 ★★★
+
+/** 紹介文アコーディオンの初期化 */
+export function initializeIntroButton() {
+    if (!introToggleButton || !introTextContainer) return;
+
+    introToggleButton.addEventListener('click', () => {
+        const isVisible = introTextContainer.classList.toggle('visible');
+        introToggleButton.textContent = isVisible ? '▲「言霊のプロトコル」とは？' : '▼「言霊のプロトコル」とは？';
+    });
+}
+
+/** ヒント表示ボタンの初期化 */
 export function initializeHintButton() {
     if (!hintToggleButton) { 
         console.error("ヒントボタンの要素が見つかりません。");
@@ -309,6 +319,8 @@ export function initializeHintButton() {
 
     updateHintState();
 }
+// ★★★ ここまで新しい関数と修正 ★★★
+
 
 export function initializeAdModal(onConfirm) {
     adCancelButton.addEventListener('click', () => adModalOverlay.classList.remove('visible'));

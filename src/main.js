@@ -141,7 +141,10 @@ function initializeGame() {
     const hasSaveData = gameState.gameSlots.length > 0;
     ui.showWelcomeScreen(hasSaveData);
     
+    // ★★★ 新しい関数を呼び出す ★★★
+    ui.initializeIntroButton();
     ui.initializeHintButton();
+
     ui.initializeAdModal((onSuccess) => {
         setTimeout(() => {
             state.recoverActions(5);
