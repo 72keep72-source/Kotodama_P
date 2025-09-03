@@ -15,9 +15,20 @@
         <div id="game-container">
             <div id="game-log"></div>
             <div id="scenario-selection-container"></div>
-            <!-- ▼ここから入力エリア全体のコンテナ -->
             <div id="input-container">
-                <button id="hint-toggle-button">ヒントを表示</button> <!-- ★修正点：このボタンを再度追加 -->
+                <!-- ▼▼▼ ここからが変更点 ▼▼▼ -->
+                <button id="intro-toggle-button">▼「言霊のプロトコル」とは？</button>
+                <div id="intro-text-container">
+                    <p>
+                        物語に、レールは要らない。あなたの「言葉」が、世界を創る。<br>
+                        『言霊のプロトコル』は、あなたの入力した「言葉」で物語を紡ぐ、新世代のテキストRPGです。<br>
+                        AIゲームマスターが、あなたのどんな無茶な行動にもリアルタイムで応答し、<br>
+                        世界は二度と同じ顔を見せません。<br>
+                        さあ、あなただけの伝説を、その手で紡ぎ出してください。
+                    </p>
+                </div>
+                <button id="hint-toggle-button">ヒントを表示</button>
+                <!-- ▲▲▲ ここまでが変更点 ▲▲▲ -->
                 <div id="actions-container"></div>
                 <div id="input-area">
                     <textarea id="user-input"></textarea>
@@ -25,11 +36,9 @@
                     <button id="send-button">送信</button>
                 </div>
             </div>
-            <!-- ▲ここまで入力エリア全体のコンテナ -->
         </div>
         <div id="sidebar">
-             <!-- ... (サイドバーの中身は変更なし) ... -->
-             <div id="status-container">
+            <div id="status-container">
                 <div id="slot-selector-container">
                     <select id="slot-selector"></select>
                     <button id="confirm-button">決定</button>
@@ -54,7 +63,7 @@
 
     <!-- 広告モーダル -->
     <div id="ad-modal-overlay" class="ad-modal-overlay">
-         <div class="ad-modal-content">
+        <div class="ad-modal-content">
             <h3>行動回数を回復しますか？</h3>
             <p>動画広告を視聴すると、行動回数が5回回復します。</p>
             <div id="ad-loading-spinner"></div>
@@ -65,7 +74,7 @@
         </div>
     </div>
     
-    <footer >
+    <footer>
         <nav class="footer-nav">
             <ul>
                 <li><a href="privacy.html">プライバシーポリシー</a></li>
@@ -90,4 +99,3 @@
     </script>
 </body>
 </html>
-
