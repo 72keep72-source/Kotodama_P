@@ -33,29 +33,11 @@ const statDescriptions = {
 export function addLog(text, className) {
     const p = document.createElement('p');
     p.innerHTML = text.replace(/\n/g, '<br>');
-    if (className) p.classList.add(className);
+    if (className) p.className = className;
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
+    return p;
 }
-
-// ★★★ ポップアップ(alert)の代わりになる関数を新設 ★★★
-export function showTemporaryMessage(message) {
-    const p = document.createElement('p');
-    p.innerHTML = `【システム】 ${message}`;
-    p.classList.add('ai-response'); // AIの応答と同じスタイルを使う
-    p.style.color = '#fdd835'; // 少し警告色にする
-    gameLog.appendChild(p);
-    gameLog.scrollTop = gameLog.scrollHeight;
-    // 3秒後にメッセージを自動で消す
-    setTimeout(() => {
-        if (p.isConnected) {
-            p.style.transition = 'opacity 0.5s ease';
-            p.style.opacity = '0';
-            setTimeout(() => p.remove(), 500);
-        }
-    }, 3000);
-}
-
 
 export function updateThinkingMessage(newText) {
     const thinkingElement = Array.from(gameLog.getElementsByTagName('p')).find(p => p.textContent.trim() === '考え中...');
@@ -78,7 +60,7 @@ export function updateSlotSelector({ gameSlots, maxSlots }) {
     
     const placeholder = document.createElement('option');
     placeholder.textContent = 'データを選択してください';
-    placeholder.value = '';
+    placeholder.value = ''; 
     slotSelector.appendChild(placeholder);
 
     if (gameSlots && gameSlots.length > 0) {
@@ -91,11 +73,6 @@ export function updateSlotSelector({ gameSlots, maxSlots }) {
     }
 
     if (!maxSlots || gameSlots.length < maxSlots) {
-        const separator = document.createElement('option');
-        separator.disabled = true;
-        separator.textContent = '---';
-        slotSelector.appendChild(separator);
-
         const newGameOption = document.createElement('option');
         newGameOption.textContent = '新規ゲームを始める';
         newGameOption.value = 'new_game';
@@ -228,14 +205,16 @@ export function showWelcomeScreen(hasSaveData) {
     clearGameScreen();
     
     let welcomeMessage = hasSaveData
-        ? 'おかえりなさい、旅人よ。<br>冒険を再開、または新規に始めるには、サイドバーのプルダウンから選択して「決定」を押してください。'
-        : 'ようこそ、「言霊のプロトコル」へ。<br>冒険を始めるには、サイドバーのプルダウンから「新規ゲームを始める」を選択してください。';
+        ? 'おかえりなさい、旅人よ。<br>冒険を再開、または新規に始めるには、ステータス欄上のプルダウンから選択して「決定」を押してください。'
+        : 'ようこそ、「言霊のプロトコル」へ。<br>冒険を始めるには、ステータス欄上のプルダウンから「新規ゲームを始める」を選択してください。';
     
     addLog(welcomeMessage, 'ai-response');
     toggleInput(true, 'データを選択して「決定」してください');
 }
 
 export function showScenarioSelection(scenarioHandler) {
+    // ★★★ ここからが修正箇所 ★★★
+    // 画面をクリアし、カッコいいメッセージを表示
     clearGameScreen();
     const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
     addLog(scenarioWelcomeMessage, 'ai-response');
@@ -258,6 +237,23 @@ export function showScenarioSelection(scenarioHandler) {
         scenarioSelectionContainer.appendChild(card);
     });
 }
+
+/** ゲームログに一時的な警告メッセージを表示し、3秒後に自動で消す */
+export function showTemporaryMessage(message) {
+    const existingMessage = gameLog.querySelector('.system-temporary-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+
+    const tempMessage = addLog(`【！】 ${message}`, 'system-warning system-temporary-message');
+    
+    setTimeout(() => {
+        if (tempMessage.isConnected) {
+            tempMessage.remove();
+        }
+    }, 3000);
+}
+
 
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
@@ -297,11 +293,11 @@ export function initializeHintButton() {
         if (hintsVisible) {
             hintToggleButton.textContent = 'ヒントを隠す';
             hintToggleButton.classList.add('active');
-            actionsContainer.classList.add('visible');
+            actionsContainer.style.display = 'block';
         } else {
             hintToggleButton.textContent = 'ヒントを表示';
             hintToggleButton.classList.remove('active');
-            actionsContainer.classList.remove('visible');
+            actionsContainer.style.display = 'none';
         }
     };
     

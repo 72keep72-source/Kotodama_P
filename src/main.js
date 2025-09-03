@@ -11,7 +11,7 @@ const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
 const confirmButton = document.getElementById('confirm-button');
 const deleteSlotButton = document.getElementById('delete-slot-button');
-const slotSelector = document.getElementById('slot-selector'); // ★★★ エラー修正：この行を追加 ★★★
+const slotSelector = document.getElementById('slot-selector');
 const exportLogButton = document.getElementById('export-log-button');
 
 // --- ゲームロジック ---
