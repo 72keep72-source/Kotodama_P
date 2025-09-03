@@ -116,8 +116,7 @@ function loadGameFromSlot(slotId) {
 /** 選択されたスロットを削除 */
 function deleteSelectedSlot() {
     const selectedId = slotSelector.value;
-    // 「新しい物語」の選択肢は削除できないようにする
-    if (!selectedId || selectedId.startsWith('scenario_') || !state.getGameState().gameSlots.some(s => s.id == selectedId)) {
+    if (!selectedId || selectedId === 'new_game' || !state.getGameState().gameSlots.some(s => s.id == selectedId)) {
         ui.showTemporaryMessage('削除するセーブデータを選択してください。');
         return;
     }
@@ -169,14 +168,16 @@ userInput.addEventListener('input', () => {
 confirmButton.addEventListener('click', () => {
     const selectedValue = slotSelector.value;
 
-    if (selectedValue.startsWith('scenario_')) {
-        const scenarioType = selectedValue.replace('scenario_', '');
-        startNewGame(scenarioType);
+    if (selectedValue === 'new_game') {
+        // 「新規ゲーム」が選択されたら、シナリオ選択画面を表示
+        ui.showScenarioSelection(startNewGame);
     } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+        // 既存のセーブデータが選択されたら、ロード
         state.setActiveSlotId(selectedValue);
         loadGameFromSlot(selectedValue);
     } else {
-        ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または新しい物語を選択してください。');
+        // 何も選択されていない場合
+        ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
     }
 });
 
