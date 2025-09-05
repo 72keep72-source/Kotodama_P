@@ -13,6 +13,11 @@ const confirmButton = document.getElementById('confirm-button');
 const deleteSlotButton = document.getElementById('delete-slot-button');
 const slotSelector = document.getElementById('slot-selector');
 const exportLogButton = document.getElementById('export-log-button');
+// ★★★ 新しい要素を取得 ★★★
+const landingPage = document.getElementById('landing-page');
+const startGameButton = document.getElementById('start-game-button');
+const gameWrapper = document.getElementById('game-wrapper');
+
 
 // --- ゲームロジック ---
 
@@ -55,7 +60,6 @@ async function handleUserCommand(commandFromButton = null) {
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
-    // ★★★ エラー修正：関数名を checkActionLimit から checkAndResetActions に変更 ★★★
     if (state.checkAndResetActions()) {
         ui.showAdModal();
         return;
@@ -130,7 +134,7 @@ function deleteSelectedSlot() {
 
 // --- 初期化とイベントリスナー ---
 
-/** ゲームの初期化 */
+/** ゲームの初期化 (ボタンクリック後に呼ばれる) */
 function initializeGame() {
     state.loadGameSlotsFromStorage();
     const gameState = state.getGameState();
@@ -142,7 +146,9 @@ function initializeGame() {
     const hasSaveData = gameState.gameSlots.length > 0;
     ui.showWelcomeScreen(hasSaveData);
     
+    ui.initializeIntroButton();
     ui.initializeHintButton();
+
     ui.initializeAdModal((onSuccess) => {
         setTimeout(() => {
             state.recoverActions(5);
@@ -186,5 +192,10 @@ exportLogButton.addEventListener('click', () => {
     ui.exportLogToFile(activeSlotId, playerName);
 });
 
-document.addEventListener('DOMContentLoaded', initializeGame);
+// ★★★ ランディングページのボタンにイベントリスナーを追加 ★★★
+startGameButton.addEventListener('click', () => {
+    landingPage.classList.add('hidden');
+    gameWrapper.classList.remove('hidden');
+    initializeGame(); // ここで初めてゲームの初期化を実行
+});
 
