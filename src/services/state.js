@@ -13,6 +13,7 @@ let dailyActions = { lastActionTimestamp: 0, count: 0 };
 let playerName = '';
 let inventory = [];
 let modifiedStats = new Set();
+let activeScenarioType = ''; // ★★★ 現在のシナリオタイプを保持する変数を追加 ★★★
 
 
 /** JSTでの「最後のAM4時」のタイムスタンプを取得する */
@@ -71,6 +72,7 @@ export function saveCurrentSlotToStorage() {
         activeSlot.name = playerName;
         activeSlot.inventory = inventory;
         activeSlot.modified = Array.from(modifiedStats);
+        activeSlot.scenarioType = activeScenarioType; // ★★★ シナリオタイプも保存 ★★★
     }
     localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
 }
@@ -92,6 +94,7 @@ export function loadGame(slotId) {
     inventory = JSON.parse(JSON.stringify(slot.inventory || []));
     modifiedStats = new Set(slot.modified || []);
     // ★★★ここまで変更★★★
+    activeScenarioType = slot.scenarioType || 'fantasy'; // ★★★ シナリオタイプを読み込む ★★★
     
     return getGameState();
 }
@@ -125,6 +128,7 @@ export function createNewGame(rulebook) {
     playerName = newSlot.name;
     inventory = newSlot.inventory;
     modifiedStats = new Set(newSlot.modified);
+    activeScenarioType = newSlot.scenarioType; // ★★★
     
     saveCurrentSlotToStorage();
     return getGameState();
