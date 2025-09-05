@@ -10,7 +10,8 @@ const urlsToCache = [
     '/src/services/api.js',
     '/src/assets/data/rulebook_1st.js',
     '/src/assets/data/rulebook_SF_AI.js',
-    '/manifest.json'
+    '/manifest.json',
+    '/src/assets/image/Kotodama_P.gif', // <-- この行を追加
     // favicon.ico やアイコン画像などもここに追加すると良い
 ];
 
