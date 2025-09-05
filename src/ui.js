@@ -11,14 +11,12 @@ const playerNameDisplay = document.getElementById('player-name-display');
 const inventoryDisplay = document.getElementById('inventory-display');
 const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
+const hintToggleButton = document.getElementById('hint-toggle-button');
 const adModalOverlay = document.getElementById('ad-modal-overlay');
+const adModalText = document.querySelector('#ad-modal-overlay p'); // ★★★ p要素を取得 ★★★
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
 const adLoadingSpinner = document.getElementById('ad-loading-spinner');
-// ★★★ 新しい要素を取得 ★★★
-const introToggleButton = document.getElementById('intro-toggle-button');
-const introTextContainer = document.getElementById('intro-text-container');
-const hintToggleButton = document.getElementById('hint-toggle-button');
 
 // 各ステータスの説明文を定義
 const statDescriptions = {
@@ -40,19 +38,6 @@ export function addLog(text, className) {
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
     return p;
-}
-
-export function showTemporaryMessage(message) {
-    const existingMessage = document.querySelector('.system-message');
-    if (existingMessage) {
-        existingMessage.remove();
-    }
-    const tempMessage = addLog(`【！】 ${message}`, 'system-message');
-    setTimeout(() => {
-        if (tempMessage.isConnected) {
-            tempMessage.remove();
-        }
-    }, 3000);
 }
 
 export function updateThinkingMessage(newText) {
@@ -228,6 +213,18 @@ export function showWelcomeScreen(hasSaveData) {
     toggleInput(true, 'データを選択して「決定」してください');
 }
 
+export function showTemporaryMessage(message) {
+    const existingMessage = document.querySelector('.temp-message');
+    if (existingMessage) existingMessage.remove();
+
+    const tempMessage = addLog(`【！】 ${message}`, 'system-warning temp-message');
+    setTimeout(() => {
+        if (tempMessage.isConnected) {
+            tempMessage.remove();
+        }
+    }, 3000);
+}
+
 export function showScenarioSelection(scenarioHandler) {
     clearGameScreen();
     const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
@@ -278,19 +275,6 @@ export function exportLogToFile(activeSlotId, playerName) {
     URL.revokeObjectURL(url);
 }
 
-// ★★★ ここから新しい関数と修正 ★★★
-
-/** 紹介文アコーディオンの初期化 */
-export function initializeIntroButton() {
-    if (!introToggleButton || !introTextContainer) return;
-
-    introToggleButton.addEventListener('click', () => {
-        const isVisible = introTextContainer.classList.toggle('visible');
-        introToggleButton.textContent = isVisible ? '▲「言霊のプロトコル」とは？' : '▼「言霊のプロトコル」とは？';
-    });
-}
-
-/** ヒント表示ボタンの初期化 */
 export function initializeHintButton() {
     if (!hintToggleButton) { 
         console.error("ヒントボタンの要素が見つかりません。");
@@ -319,8 +303,6 @@ export function initializeHintButton() {
 
     updateHintState();
 }
-// ★★★ ここまで新しい関数と修正 ★★★
-
 
 export function initializeAdModal(onConfirm) {
     adCancelButton.addEventListener('click', () => adModalOverlay.classList.remove('visible'));
@@ -338,7 +320,15 @@ export function initializeAdModal(onConfirm) {
     });
 }
 
-export function showAdModal() {
+export function showAdModal(scenarioType) { // ★★★ scenarioTypeを受け取る ★★★
+    // ★★★ メッセージを動的に変更 ★★★
+    let message = '';
+    if (scenarioType === 'sf') {
+        message = '警告：精神負荷が臨界点に達しました。<br>これ以上のマトリクスへの接続は、あなたの精神崩壊を招きます。<br>システムは、全ユーザーの接続を強制的にリフレッシュします。<br>ネットワークへの再アクセスは、システムデイリーメンテナンス（毎日午前4時）の完了後に許可されます。';
+    } else { // デフォルトはファンタジー
+        message = '夜の森を覆う呪いが、あなたの理性を蝕んでいく…<br>これ以上は危険だ。今は身を潜め、心を休めるしかない。<br>呪いが和らぐ夜明け（午前4時）と共に、再びあなたの道は開かれるだろう。';
+    }
+    adModalText.innerHTML = message;
     adModalOverlay.classList.add('visible');
 }
 
