@@ -40,6 +40,57 @@ header h1 {
     font-size: 1.2em;
 }
 
+/* ★★★ ここからランディングページ用のスタイル ★★★ */
+main#landing-page {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.landing-content {
+    max-width: 700px;
+}
+
+.landing-title {
+    font-size: 2.5em;
+    color: var(--accent-color);
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.landing-description {
+    font-size: 1.1em;
+    line-height: 1.8;
+    margin-bottom: 40px;
+    color: var(--subtle-text-color);
+}
+
+#start-game-button {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#start-game-button:hover {
+    background-color: var(--accent-color-dark);
+    transform: scale(1.05);
+}
+
+.hidden {
+    display: none !important;
+}
+/* ★★★ ここまでランディングページ用のスタイル ★★★ */
+
+
 #game-wrapper {
     display: flex;
     width: 100%;
@@ -78,7 +129,13 @@ header h1 {
 
 .system-message {
     color: var(--system-message-color); 
+    background-color: rgba(255, 152, 0, 0.1);
+    border: 1px solid var(--system-message-color);
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
 }
+
 
 #scenario-selection-container {
     display: flex;
@@ -128,9 +185,15 @@ header h1 {
     flex-direction: column; 
 }
 
-/* ★★★ ここからスタイルを追加・修正 ★★★ */
+#intro-and-hint-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
 #intro-toggle-button,
 #hint-toggle-button {
+    flex: 1; /* ★flexを使って均等に配置 */
     background-color: var(--container-bg);
     color: var(--subtle-text-color);
     border: 1px solid var(--border-color);
@@ -139,18 +202,9 @@ header h1 {
     font-size: 0.8em;
     border-radius: 5px;
     transition: all 0.2s ease;
-    width: 100%; 
     box-sizing: border-box; 
-    text-align: left; /* 文字を左揃えに */
+    text-align: center;
 }
-
-#intro-toggle-button {
-    margin-bottom: 5px; /* 下のボタンとの間隔 */
-}
-#hint-toggle-button {
-    margin-bottom: 10px;
-}
-
 
 #intro-toggle-button:hover,
 #hint-toggle-button:hover {
@@ -166,7 +220,7 @@ header h1 {
 }
 
 #intro-text-container {
-    display: none; /* デフォルトで非表示 */
+    display: none;
     padding: 10px;
     margin-bottom: 10px;
     border: 1px solid var(--border-color);
@@ -178,9 +232,8 @@ header h1 {
 }
 
 #intro-text-container.visible {
-    display: block; /* .visibleクラスが付いたら表示 */
+    display: block;
 }
-/* ★★★ ここまでスタイルを追加・修正 ★★★ */
 
 
 #actions-container {
@@ -571,6 +624,10 @@ footer {
         height: auto;
         overflow: auto; 
     }
+    /* ★★★ ここからスマホ用修正 ★★★ */
+    .landing-title {
+        font-size: 1.8em;
+    }
     #game-wrapper {
         flex-direction: column;
         padding: 10px;
@@ -586,5 +643,6 @@ footer {
     #sidebar {
         margin-top: 20px;
     }
+    /* ★★★ ここまでスマホ用修正 ★★★ */
 }
 

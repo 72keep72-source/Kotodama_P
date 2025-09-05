@@ -13,6 +13,11 @@ const confirmButton = document.getElementById('confirm-button');
 const deleteSlotButton = document.getElementById('delete-slot-button');
 const slotSelector = document.getElementById('slot-selector');
 const exportLogButton = document.getElementById('export-log-button');
+// ★★★ 新しい要素を取得 ★★★
+const landingPage = document.getElementById('landing-page');
+const startGameButton = document.getElementById('start-game-button');
+const gameWrapper = document.getElementById('game-wrapper');
+
 
 // --- ゲームロジック ---
 
@@ -141,7 +146,6 @@ function initializeGame() {
     const hasSaveData = gameState.gameSlots.length > 0;
     ui.showWelcomeScreen(hasSaveData);
     
-    // ★★★ 新しい関数を呼び出す ★★★
     ui.initializeIntroButton();
     ui.initializeHintButton();
 
@@ -188,5 +192,13 @@ exportLogButton.addEventListener('click', () => {
     ui.exportLogToFile(activeSlotId, playerName);
 });
 
-document.addEventListener('DOMContentLoaded', initializeGame);
+// ★★★ ランディングページのボタンにイベントリスナーを追加 ★★★
+startGameButton.addEventListener('click', () => {
+    landingPage.classList.add('hidden');
+    gameWrapper.classList.remove('hidden');
+    initializeGame();
+});
+
+// ★★★ ページ読み込み時は、ゲームの初期化を呼ばないようにする ★★★
+// document.addEventListener('DOMContentLoaded', initializeGame);
 
