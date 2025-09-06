@@ -13,7 +13,7 @@ const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
 const hintToggleButton = document.getElementById('hint-toggle-button');
 const adModalOverlay = document.getElementById('ad-modal-overlay');
-const adModalText = document.querySelector('#ad-modal-overlay p');
+const adModalText = document.querySelector('#ad-modal-overlay .ad-modal-text');
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
 const adLoadingSpinner = document.getElementById('ad-loading-spinner');
@@ -131,7 +131,6 @@ export function updateStatusDisplay({ playerStats, modifiedStats }, changes = {}
     }
 }
 
-/** ★★★ 新しい行動回数オブジェクトに合わせて表示を更新 ★★★ */
 export function updateActionCountDisplay({ current, limit }) {
     actionCountDisplay.textContent = `${current || 0} / ${limit || 50}`;
 }
@@ -226,10 +225,13 @@ export function showTemporaryMessage(message) {
     }, 3000);
 }
 
+// ★★★ 導入メッセージを常に表示するように修正 ★★★
 export function showScenarioSelection(scenarioHandler) {
     clearGameScreen();
+    
     const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
     addLog(scenarioWelcomeMessage, 'ai-response');
+    
     toggleInput(true, '物語を選択してください');
 
     scenarioSelectionContainer.innerHTML = '';
@@ -249,6 +251,7 @@ export function showScenarioSelection(scenarioHandler) {
         scenarioSelectionContainer.appendChild(card);
     });
 }
+
 
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
