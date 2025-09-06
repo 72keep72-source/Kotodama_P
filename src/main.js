@@ -2,7 +2,7 @@
 import * as state from './services/state.js';
 import * as ui from './ui.js';
 import { callAI } from './services/api.js';
-import { RULEBOOK as RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
+import { RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 
 // --- 初期化 ---
