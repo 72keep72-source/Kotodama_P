@@ -130,7 +130,7 @@ function deleteSelectedSlot() {
     const slotToDelete = state.getGameState().gameSlots.find(s => s.id == selectedId);
     if (confirm(`本当にセーブデータ「${slotToDelete.name}」を削除しますか？`)) {
         state.deleteSlot(selectedId);
-        window.location.reload();
+        initializeGame();
     }
 }
 
