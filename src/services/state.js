@@ -261,7 +261,6 @@ export function getActiveSlotData() {
 
 /** 外部のセーブデータをインポートする */
 export function importSlot(importedSlot) {
-    // IDが重複している場合は上書き
     const existingSlotIndex = gameSlots.findIndex(s => s.id == importedSlot.id);
     if (existingSlotIndex !== -1) {
         gameSlots[existingSlotIndex] = importedSlot;
@@ -269,7 +268,6 @@ export function importSlot(importedSlot) {
         return { success: true, importedSlot };
     }
     
-    // 新規スロットとして追加
     if (gameSlots.length >= MAX_SAVE_SLOTS) {
         return { success: false, reason: 'slot_full' };
     }
@@ -287,18 +285,20 @@ export function createSlotFromTxt(txtContent, rulebook) {
     let currentParts = [];
     let playerNameFromTxt = "";
 
-    // ログからプレイヤー名を探す
+    // ★★★ ログからプレイヤー名を正規表現で探す ★★★
     for (const line of lines) {
-        const match = line.match(/^> (?:私の名前は「(.+?)」だ|(.+?)です)$/);
-        if (match) {
-            playerNameFromTxt = match[1] || match[2];
-            break;
+        // 例: 「> 私の名前は「リヒト」だ」 or 「> sosogiです」
+        const nameMatch = line.match(/^>\s*(?:私の名前は「(.+?)」だ|(.+?)です)/);
+        if (nameMatch) {
+            // マッチした部分 (リヒト or sosogi) を取得
+            playerNameFromTxt = nameMatch[1] || nameMatch[2];
+            break; // 最初に見つかった名前を採用
         }
     }
+    // 見つからなかった場合のフォールバック
     if (!playerNameFromTxt) {
          playerNameFromTxt = "（TXTから）";
     }
-
 
     lines.forEach(line => {
         if (line.startsWith('> ')) {
@@ -315,23 +315,22 @@ export function createSlotFromTxt(txtContent, rulebook) {
         restoredHistory.push({ role: 'model', parts: [{ text: currentParts.join('\n') }] });
     }
 
-    // 会話の最初は必ず'user'でなければならないので、ルールブックを追加
     const initialUserTurn = {
         role: 'user',
-        parts: [{ text: rulebook }] // ここではステータスを含めないのが安全
+        parts: [{ text: rulebook }] 
     };
 
     const finalHistory = [initialUserTurn, ...restoredHistory];
 
     const newSlot = {
         id: Date.now(),
-        name: `${playerNameFromTxt}_txt`,
+        name: `${playerNameFromTxt}_txt`, // ★★★ 抽出した名前を使用 ★★★
         stats: generateStats(),
         history: finalHistory,
-        inventory: [], // txtからは復元不可
+        inventory: [],
         actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
         modified: [],
-        scenarioType: 'fantasy' // TXTはファンタジー固定とする
+        scenarioType: 'fantasy' 
     };
 
     return newSlot;

@@ -60,13 +60,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const command = commandFromButton || userInput.value.trim();
         if (command === '') return;
 
-        // ★★★ エラー修正：正しい関数名 hasActionsLeft に変更 ★★★
         if (!state.hasActionsLeft()) {
             ui.showAdModal(state.getGameState().activeScenarioType);
             return;
         }
         
-        // ★★★ エラー修正：正しい関数名 decrementActions に変更 ★★★
         state.decrementActions();
         ui.updateActionCountDisplay(state.getGameState().dailyActions);
         
@@ -116,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
             ui.displayActions(parsedData.actions, handleUserCommand);
         } else if (lastTurn && lastTurn.role === 'user') {
+            // ★★★ TXTインポート後、AIの応答を促す ★★★
             processAIturn();
         }
         
@@ -214,6 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (file.name.endsWith('.json')) {
                     importedSlot = JSON.parse(fileContent);
                 } else if (file.name.endsWith('.txt')) {
+                    // ★★★ TXTインポート時は、ファンタジーのルールブックを渡す ★★★
                     importedSlot = state.createSlotFromTxt(fileContent, RULEBOOK_1ST);
                 } else {
                     throw new Error('サポートされていないファイル形式です。(.json または .txt)');
@@ -227,8 +227,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const importResult = state.importSlot(importedSlot);
                 if (importResult.success) {
                     ui.showTemporaryMessage(`データ「${importedSlot.name}」をインポートしました。`);
-                    initializeGame();
-                    ui.highlightSlot(importResult.importedSlot.id);
+                    // ★★★ インポート後の処理を改善 ★★★
+                    initializeGame(); // 1. スロットリストを更新して再表示
+                    ui.highlightSlot(importResult.importedSlot.id); // 2. インポートしたスロットをハイライト
+                    loadGameFromSlot(importResult.importedSlot.id); // 3. インポートしたデータを即座にロード
                 } else if (importResult.reason === 'slot_full') {
                     ui.showTemporaryMessage('セーブスロットがいっぱいです。既存のデータを削除してください。');
                 }
@@ -237,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
         reader.readAsText(file);
-        event.target.value = '';
+        event.target.value = ''; // 同じファイルを連続で選択できるように
     });
 });
 

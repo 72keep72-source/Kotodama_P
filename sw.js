@@ -11,7 +11,7 @@ const urlsToCache = [
     '/src/assets/data/rulebook_1st.js',
     '/src/assets/data/rulebook_SF_AI.js',
     '/manifest.json',
-    '/src/assets/image/Kotodama_P.gif', // <-- この行を追加
+    '/src/assets/image/Kotodama_P_toka.png', // <-- この行を追加
     // favicon.ico やアイコン画像などもここに追加すると良い
 ];
 
