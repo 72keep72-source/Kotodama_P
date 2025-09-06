@@ -5,84 +5,23 @@ import { callAI } from './services/api.js';
 import { RULEBOOK as RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 
-/** ゲーム画面が表示された後、最初に行う初期化処理 */
-function initializeGame() {
-    // ゲーム画面で使うDOM要素を取得
-    const userInput = document.getElementById('user-input');
-    const sendButton = document.getElementById('send-button');
-    const confirmButton = document.getElementById('confirm-button');
-    const deleteSlotButton = document.getElementById('delete-slot-button');
-    const slotSelector = document.getElementById('slot-selector');
-    const exportLogButton = document.getElementById('export-log-button');
 
-    // ゲーム状態を初期化
-    state.loadGameSlotsFromStorage();
-    const gameState = state.getGameState();
-    ui.updateSlotSelector({ 
-        gameSlots: gameState.gameSlots, 
-        maxSlots: state.MAX_SAVE_SLOTS 
-    });
+// --- グローバルDOM要素 (ランディングページ用) ---
+const landingPage = document.getElementById('landing-page');
+const startGameButton = document.getElementById('start-game-button');
+const gameWrapper = document.getElementById('game-wrapper');
 
-    const hasSaveData = gameState.gameSlots.length > 0;
-    ui.showWelcomeScreen(hasSaveData);
-    
-    ui.initializeHintButton();
-    ui.initializeAdModal((onSuccess) => {
-        setTimeout(() => {
-            state.recoverActions(5);
-            ui.updateActionCountDisplay(state.getGameState().dailyActions);
-            ui.addLog('【システム】行動回数が5回分回復しました。', 'ai-response');
-            onSuccess();
-        }, 2000);
-    });
-
-    // ゲーム画面専用のイベントリスナーを設定
-    sendButton.addEventListener('click', () => handleUserCommand());
-    userInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' && event.ctrlKey) {
-            event.preventDefault();
-            handleUserCommand();
-        }
-    });
-    userInput.addEventListener('input', () => {
-        userInput.style.height = 'auto';
-        userInput.style.height = (userInput.scrollHeight) + 'px';
-    });
-    confirmButton.addEventListener('click', () => {
-        const selectedValue = slotSelector.value;
-
-        if (selectedValue === 'new_game') {
-            ui.showScenarioSelection(startNewGame);
-        } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
-            state.setActiveSlotId(selectedValue);
-            loadGameFromSlot(selectedValue);
-        } else {
-            ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
-        }
-    });
-    deleteSlotButton.addEventListener('click', deleteSelectedSlot);
-    exportLogButton.addEventListener('click', () => {
-        const { activeSlotId, playerName } = state.getGameState();
-        ui.exportLogToFile(activeSlotId, playerName);
-    });
-}
-
-/** ページの読み込みが完了したら、まずこの処理が実行される */
-document.addEventListener('DOMContentLoaded', () => {
-    const startGameButton = document.getElementById('start-game-button');
-
-    // 「ゲームを開始する」ボタンがクリックされた時の処理だけを設定
-    if (startGameButton) {
-        startGameButton.addEventListener('click', () => {
-            document.body.classList.add('game-active');
-            // ゲーム画面が表示されてから、ゲームの初期化処理を呼び出す
-            initializeGame(); 
-        });
-    }
-});
+// --- DOM要素の取得 ---
+const userInput = document.getElementById('user-input');
+const sendButton = document.getElementById('send-button');
+const confirmButton = document.getElementById('confirm-button');
+const deleteSlotButton = document.getElementById('delete-slot-button');
+const slotSelector = document.getElementById('slot-selector');
+const exportLogButton = document.getElementById('export-log-button');
 
 
-// --- ここから下のゲームロジック関数は変更ありません ---
+
+// --- ゲームロジック ---
 
 /** AIとの対話処理をまとめた関数 */
 async function processAIturn() {
@@ -116,7 +55,6 @@ async function processAIturn() {
 
 /** ユーザーのコマンドを処理 */
 async function handleUserCommand(commandFromButton = null) {
-    const userInput = document.getElementById('user-input');
     if (!state.getActiveSlotId()) {
         ui.showTemporaryMessage('「決定」ボタンで新しい冒険を開始するか、続きを遊ぶデータを選択してください。');
         return;
@@ -124,12 +62,14 @@ async function handleUserCommand(commandFromButton = null) {
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
-    if (state.checkAndResetActions()) {
+    // ★★★ 新しい行動回数チェック関数を呼び出す ★★★
+    if (!state.hasActionsLeft()) {
         ui.showAdModal(state.getGameState().activeScenarioType);
         return;
     }
     
-    state.incrementDailyActions();
+    // ★★★ 行動回数を「減らす」関数を呼び出す ★★★
+    state.decrementActions();
     ui.updateActionCountDisplay(state.getGameState().dailyActions);
     
     ui.addLog(`> ${command}`, 'user-command');
@@ -165,13 +105,11 @@ function startNewGame(scenarioType) {
 function loadGameFromSlot(slotId) {
     const gameState = state.loadGame(slotId);
     if (!gameState) {
-        // ロードに失敗した場合はウェルカム画面に戻すのが安全
         ui.showWelcomeScreen(state.getGameState().gameSlots.length > 0);
         return;
     }
     
     ui.clearGameScreen();
-    state.checkAndResetActions();
     ui.updateAllDisplays(gameState);
     
     ui.rebuildLog(gameState.conversationHistory);
@@ -185,7 +123,6 @@ function loadGameFromSlot(slotId) {
 
 /** 選択されたスロットを削除 */
 function deleteSelectedSlot() {
-    const slotSelector = document.getElementById('slot-selector');
     const selectedId = slotSelector.value;
     if (!selectedId || !state.getGameState().gameSlots.some(s => s.id == selectedId)) {
         ui.showTemporaryMessage('削除するセーブデータを選択してください。');
@@ -197,4 +134,77 @@ function deleteSelectedSlot() {
         window.location.reload();
     }
 }
+
+// --- 初期化とイベントリスナー ---
+
+/** ゲーム画面が表示された後、最初に行う初期化処理 */
+function initializeGame() {
+    state.loadGameSlotsFromStorage();
+    const gameState = state.getGameState();
+    ui.updateSlotSelector({ 
+        gameSlots: gameState.gameSlots, 
+        maxSlots: state.MAX_SAVE_SLOTS 
+    });
+
+    const hasSaveData = gameState.gameSlots.length > 0;
+    ui.showWelcomeScreen(hasSaveData);
+    
+    ui.initializeHintButton();
+    ui.initializeAdModal((onSuccess) => {
+        setTimeout(() => {
+            state.recoverActions(5); // 回復量はここで指定
+            ui.updateActionCountDisplay(state.getGameState().dailyActions);
+            ui.addLog('【システム】行動回数が5回分回復しました。', 'ai-response');
+            onSuccess();
+        }, 2000);
+    });
+}
+
+
+/** ページの読み込みが完了したら、まずこの処理が実行される */
+document.addEventListener('DOMContentLoaded', () => {
+    // ランディングページがなければ何もしない
+    if (!landingPage || !startGameButton || !gameWrapper) {
+        console.warn("ランディングページの要素が見つからないため、ゲームを直接初期化します。");
+        initializeGame();
+        return;
+    }
+
+    // 「ゲームを開始する」ボタンがクリックされた時の処理だけを設定
+    startGameButton.addEventListener('click', () => {
+        document.body.classList.add('game-active');
+        // ゲーム画面が表示されてから、ゲームの初期化処理を呼び出す
+        initializeGame(); 
+    });
+
+    // ゲーム画面専用のイベントリスナー
+    sendButton.addEventListener('click', () => handleUserCommand());
+    userInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && event.ctrlKey) {
+            event.preventDefault();
+            handleUserCommand();
+        }
+    });
+    userInput.addEventListener('input', () => {
+        userInput.style.height = 'auto';
+        userInput.style.height = (userInput.scrollHeight) + 'px';
+    });
+    confirmButton.addEventListener('click', () => {
+        const selectedValue = slotSelector.value;
+
+        if (selectedValue === 'new_game') {
+            ui.showScenarioSelection(startNewGame);
+        } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+            state.setActiveSlotId(selectedValue);
+            loadGameFromSlot(selectedValue);
+        } else {
+            ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
+        }
+    });
+    deleteSlotButton.addEventListener('click', deleteSelectedSlot);
+    exportLogButton.addEventListener('click', () => {
+        const { activeSlotId, playerName } = state.getGameState();
+        ui.exportLogToFile(activeSlotId, playerName);
+    });
+});
 
