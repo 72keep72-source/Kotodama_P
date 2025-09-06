@@ -10,29 +10,22 @@
     --danger-color: #c9302c;
     --twitter-color: #1DA1F2;
     --subtle-text-color: #aaa;
-    --system-message-color: #ff9800; /* オレンジ色 */
+    --system-warning-color: #ff9800; /* オレンジ色 */
 }
 
+/* --- 基本スタイル --- */
 html, body {
-    height: 100%;
-}
-
-body {
+    margin: 0;
     background-color: var(--main-bg);
     color: var(--text-color);
     font-family: sans-serif;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow: hidden;
 }
+
 header {
     background-color: var(--container-bg);
     padding: 10px 20px;
     text-align: center;
     border-bottom: 1px solid var(--border-color);
-    flex-shrink: 0;
 }
 
 header h1 {
@@ -40,34 +33,67 @@ header h1 {
     font-size: 1.2em;
 }
 
-/* ★★★ ここからランディングページ用のスタイル ★★★ */
-main#landing-page {
+footer {
+    background-color: var(--container-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+}
+.footer-nav ul { list-style: none; padding: 0; margin: 0 0 10px 0; }
+.footer-nav li { display: inline-block; margin: 0 15px; }
+.footer-nav a { color: var(--text-color); text-decoration: none; transition: color 0.2s ease; }
+.footer-nav a:hover { color: var(--accent-color); }
+.copyright { color: var(--subtle-text-color); margin: 0; }
+
+
+/* --- ★★★ レイアウト切り替えのコアロジック ★★★ --- */
+
+/* デフォルト（ランディングページ）のレイアウト */
+#landing-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+#game-wrapper {
+    display: none; /* ゲーム画面は最初は非表示 */
+}
+
+/* ゲーム画面に切り替わった時のレイアウト */
+body.game-active #landing-page {
+    display: none;
+}
+body.game-active #game-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+}
+
+/* --- ★★★ 以前のカッコいいランディングページのスタイルを復元 ★★★ --- */
+.game-introduction {
     flex-grow: 1;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
     padding: 20px;
 }
-
-.landing-content {
-    max-width: 700px;
-}
-
-.landing-title {
-    font-size: 2.5em;
+.game-introduction .landing-title {
+    font-size: clamp(1.8em, 5vw, 2.5em); /* 画面サイズに応じて調整 */
     color: var(--accent-color);
     margin-bottom: 20px;
     line-height: 1.4;
 }
-
-.landing-description {
-    font-size: 1.1em;
+.game-introduction .landing-description {
+    font-size: clamp(1em, 2.5vw, 1.1em);
     line-height: 1.8;
     margin-bottom: 40px;
+    max-width: 700px;
     color: var(--subtle-text-color);
 }
-
 #start-game-button {
     background-color: var(--accent-color);
     color: white;
@@ -75,21 +101,47 @@ main#landing-page {
     padding: 15px 40px;
     font-size: 1.2em;
     font-weight: bold;
-    border-radius: 50px;
+    border-radius: 50px; /* 角を丸くしてボタンを柔らかい印象に */
     cursor: pointer;
     transition: all 0.3s ease;
 }
-
 #start-game-button:hover {
     background-color: var(--accent-color-dark);
     transform: scale(1.05);
 }
 
-.hidden {
-    display: none !important;
-}
-/* ★★★ ここまでランディングページ用のスタイル ★★★ */
 
+
+/* --- ★★★ ゲーム画面のスタイル ★★★ --- */
+#game-content-wrapper {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+    flex-grow: 1;
+    overflow: hidden;
+}
+#game-container {
+    width: 70%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+}
+#game-log {
+    flex-grow: 1;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    position: relative;
+    padding: 20px;
+}
+.ai-response { color: var(--ai-text); }
+.user-command { color: var(--user-text); }
+.system-warning { color: var(--system-warning-color) !important; font-weight: bold; }
+/* ( ... その他のゲーム内スタイル ... ) */
 
 #game-wrapper {
     display: flex;
@@ -319,6 +371,7 @@ textarea#user-input {
     font-size: 16px;
 }
 
+
 #sidebar {
     width: 30%;
     height: 100%;
@@ -448,7 +501,7 @@ textarea#user-input {
 
 #slot-selector-container {
     display: flex;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 #slot-selector {
@@ -456,17 +509,17 @@ textarea#user-input {
     background-color: #333;
     color: var(--text-color);
     border: 1px solid #555;
-    padding: 10px;
-    font-size: 16px;
+    padding: 8px;
+    font-size: 14px;
 }
 
 #confirm-button, #delete-slot-button {
     color: white;
     border: none;
-    margin-left: 10px;
-    padding: 10px 15px;
+    margin-left: 5px;
+    padding: 8px 15px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
     border-radius: 5px;
 }
 
@@ -477,6 +530,7 @@ textarea#user-input {
 #delete-slot-button {
     background-color: var(--danger-color);
 }
+
 
 .ad-modal-overlay {
     position: fixed;
@@ -619,30 +673,32 @@ footer {
     }
 }
 
+
+/* --- スマホ表示 --- */
 @media (max-width: 800px) {
-    body {
+    body.game-active {
         height: auto;
-        overflow: auto; 
+        overflow: auto;
     }
-    /* ★★★ ここからスマホ用修正 ★★★ */
     .landing-title {
         font-size: 1.8em;
     }
-    #game-wrapper {
+    #game-content-wrapper {
         flex-direction: column;
         padding: 10px;
+        overflow: visible;
     }
-    #game-container, #sidebar {
+    #game-container, 
+    #sidebar {
         width: 100%;
         margin-left: 0;
-        height: auto; 
+        height: auto;
     }
     #game-log {
-        min-height: 300px; 
+        min-height: 300px;
     }
     #sidebar {
         margin-top: 20px;
     }
-    /* ★★★ ここまでスマホ用修正 ★★★ */
 }
 

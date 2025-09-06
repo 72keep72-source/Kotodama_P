@@ -6,6 +6,11 @@ import { RULEBOOK as RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 
 
+// --- グローバルDOM要素 (ランディングページ用) ---
+const landingPage = document.getElementById('landing-page');
+const startGameButton = document.getElementById('start-game-button');
+const gameWrapper = document.getElementById('game-wrapper');
+
 // --- DOM要素の取得 ---
 const userInput = document.getElementById('user-input');
 const sendButton = document.getElementById('send-button');
@@ -13,6 +18,8 @@ const confirmButton = document.getElementById('confirm-button');
 const deleteSlotButton = document.getElementById('delete-slot-button');
 const slotSelector = document.getElementById('slot-selector');
 const exportLogButton = document.getElementById('export-log-button');
+
+
 
 // --- ゲームロジック ---
 
@@ -55,13 +62,12 @@ async function handleUserCommand(commandFromButton = null) {
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
-    if (state.checkAndResetActions()) {
-        // ★★★ 現在のシナリオタイプを渡すように変更 ★★★
+    if (!state.hasActionsLeft()) {
         ui.showAdModal(state.getGameState().activeScenarioType);
         return;
     }
     
-    state.incrementDailyActions();
+    state.decrementActions();
     ui.updateActionCountDisplay(state.getGameState().dailyActions);
     
     ui.addLog(`> ${command}`, 'user-command');
@@ -80,7 +86,6 @@ function startNewGame(scenarioType) {
     }
     const rulebook = scenarioType === 'sf' ? RULEBOOK_SF_AI : RULEBOOK_1ST;
     
-    // ★★★ scenarioTypeを渡すように変更 ★★★
     const newGameState = state.createNewGame(rulebook, scenarioType);
     
     ui.clearGameScreen();
@@ -98,12 +103,12 @@ function startNewGame(scenarioType) {
 function loadGameFromSlot(slotId) {
     const gameState = state.loadGame(slotId);
     if (!gameState) {
-        initializeGame();
+        // ロードに失敗した場合はウェルカム画面に戻すのが安全
+        ui.showWelcomeScreen(state.getGameState().gameSlots.length > 0);
         return;
     }
     
     ui.clearGameScreen();
-    state.checkAndResetActions();
     ui.updateAllDisplays(gameState);
     
     ui.rebuildLog(gameState.conversationHistory);
@@ -125,13 +130,13 @@ function deleteSelectedSlot() {
     const slotToDelete = state.getGameState().gameSlots.find(s => s.id == selectedId);
     if (confirm(`本当にセーブデータ「${slotToDelete.name}」を削除しますか？`)) {
         state.deleteSlot(selectedId);
-        window.location.reload();
+        initializeGame();
     }
 }
 
 // --- 初期化とイベントリスナー ---
 
-/** ゲームの初期化 */
+/** ゲーム画面が表示された後、最初に行う初期化処理 */
 function initializeGame() {
     state.loadGameSlotsFromStorage();
     const gameState = state.getGameState();
@@ -152,54 +157,56 @@ function initializeGame() {
             onSuccess();
         }, 2000);
     });
+
+    // ゲーム画面専用のイベントリスナーをここで設定
+    sendButton.addEventListener('click', () => handleUserCommand());
+    userInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && event.ctrlKey) {
+            event.preventDefault();
+            handleUserCommand();
+        }
+    });
+    userInput.addEventListener('input', () => {
+        userInput.style.height = 'auto';
+        userInput.style.height = (userInput.scrollHeight) + 'px';
+    });
+    confirmButton.addEventListener('click', () => {
+        const selectedValue = slotSelector.value;
+        // ★★★ 既存データがあるかどうかをチェック ★★★
+        const hasSaveData = state.getGameState().gameSlots.length > 0;
+
+        if (selectedValue === 'new_game') {
+            // ★★★ 既存データがあるかどうかを引数で渡す ★★★
+            ui.showScenarioSelection(startNewGame, hasSaveData);
+        } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+            state.setActiveSlotId(selectedValue);
+            loadGameFromSlot(selectedValue);
+        } else {
+            ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
+        }
+    });
+    deleteSlotButton.addEventListener('click', deleteSelectedSlot);
+    exportLogButton.addEventListener('click', () => {
+        const { activeSlotId, playerName } = state.getGameState();
+        ui.exportLogToFile(activeSlotId, playerName);
+    });
 }
 
-// イベントリスナーを設定
-sendButton.addEventListener('click', () => handleUserCommand());
-userInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && event.ctrlKey) {
-        event.preventDefault();
-        handleUserCommand();
+/** ページの読み込みが完了したら、まずこの処理が実行される */
+document.addEventListener('DOMContentLoaded', () => {
+    // ランディングページがなければ何もしない
+    if (!landingPage || !startGameButton || !gameWrapper) {
+        console.warn("ランディングページの要素が見つからないため、ゲームを直接初期化します。");
+        document.body.classList.add('game-active');
+        initializeGame();
+        return;
     }
-});
-userInput.addEventListener('input', () => {
-    userInput.style.height = 'auto';
-    userInput.style.height = (userInput.scrollHeight) + 'px';
-});
 
-confirmButton.addEventListener('click', () => {
-    const selectedValue = slotSelector.value;
-
-    if (selectedValue === 'new_game') {
-        ui.showScenarioSelection(startNewGame);
-    } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
-        state.setActiveSlotId(selectedValue);
-        loadGameFromSlot(selectedValue);
-    } else {
-        ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
-    }
-});
-
-deleteSlotButton.addEventListener('click', deleteSelectedSlot);
-
-exportLogButton.addEventListener('click', () => {
-    const { activeSlotId, playerName } = state.getGameState();
-    ui.exportLogToFile(activeSlotId, playerName);
-});
-
-// ★★★ ランディングページ関連の処理 ★★★
-const landingPage = document.getElementById('landing-page');
-const startGameButton = document.getElementById('start-game-button');
-const gameWrapper = document.getElementById('game-wrapper');
-
-if (landingPage && startGameButton && gameWrapper) {
+    // 「ゲームを開始する」ボタンがクリックされた時の処理だけを設定
     startGameButton.addEventListener('click', () => {
-        landingPage.classList.add('hidden');
-        gameWrapper.classList.remove('hidden');
+        document.body.classList.add('game-active');
+        // ゲーム画面が表示されてから、ゲームの初期化処理を呼び出す
         initializeGame(); 
     });
-} else {
-    // ランディングページがない場合は、直接ゲームを初期化
-    document.addEventListener('DOMContentLoaded', initializeGame);
-}
+});
 

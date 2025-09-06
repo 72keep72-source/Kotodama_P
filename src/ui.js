@@ -13,7 +13,7 @@ const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
 const hintToggleButton = document.getElementById('hint-toggle-button');
 const adModalOverlay = document.getElementById('ad-modal-overlay');
-const adModalText = document.querySelector('#ad-modal-overlay p'); // ★★★ p要素を取得 ★★★
+const adModalText = document.querySelector('#ad-modal-overlay .ad-modal-text');
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
 const adLoadingSpinner = document.getElementById('ad-loading-spinner');
@@ -131,10 +131,10 @@ export function updateStatusDisplay({ playerStats, modifiedStats }, changes = {}
     }
 }
 
-export function updateActionCountDisplay({ count }) {
-    const limit = 20;
-    actionCountDisplay.textContent = `${count || 0} / ${limit}`;
+export function updateActionCountDisplay({ current, limit }) {
+    actionCountDisplay.textContent = `${current || 0} / ${limit || 50}`;
 }
+
 
 export function updateInventoryDisplay(inventory) {
     inventoryDisplay.innerHTML = '';
@@ -179,7 +179,7 @@ export function clearGameScreen() {
     updateAllDisplays({
         playerStats: {},
         modifiedStats: new Set(),
-        dailyActions: { count: 0 },
+        dailyActions: { current: 0, limit: 50 },
         inventory: [],
         playerName: ''
     });
@@ -225,10 +225,13 @@ export function showTemporaryMessage(message) {
     }, 3000);
 }
 
+// ★★★ 導入メッセージを常に表示するように修正 ★★★
 export function showScenarioSelection(scenarioHandler) {
     clearGameScreen();
+    
     const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
     addLog(scenarioWelcomeMessage, 'ai-response');
+    
     toggleInput(true, '物語を選択してください');
 
     scenarioSelectionContainer.innerHTML = '';
@@ -249,10 +252,11 @@ export function showScenarioSelection(scenarioHandler) {
     });
 }
 
+
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
     updateStatusDisplay(gameState, changes);
-    updateActionCountDisplay(gameState.dailyActions || { count: 0 });
+    updateActionCountDisplay(gameState.dailyActions || { current: 0, limit: 50 });
     updateInventoryDisplay(gameState.inventory || []);
 }
 
@@ -320,12 +324,11 @@ export function initializeAdModal(onConfirm) {
     });
 }
 
-export function showAdModal(scenarioType) { // ★★★ scenarioTypeを受け取る ★★★
-    // ★★★ メッセージを動的に変更 ★★★
+export function showAdModal(scenarioType) {
     let message = '';
     if (scenarioType === 'sf') {
-        message = '警告：精神負荷が臨界点に達しました。<br>これ以上のマトリクスへの接続は、あなたの精神崩壊を招きます。<br>システムは、全ユーザーの接続を強制的にリフレッシュします。<br>ネットワークへの再アクセスは、システムデイリーメンテナンス（毎日午前4時）の完了後に許可されます。';
-    } else { // デフォルトはファンタジー
+        message = '警告：精神負荷が臨界点に達しました。<br>これ以上のマトリクスへの接続は、あなたの精神崩壊を招きます。<br>ネットワークへの再アクセスは、システムデイリーメンテナンス（毎日午前4時）の完了後に許可されます。';
+    } else {
         message = '夜の森を覆う呪いが、あなたの理性を蝕んでいく…<br>これ以上は危険だ。今は身を潜め、心を休めるしかない。<br>呪いが和らぐ夜明け（午前4時）と共に、再びあなたの道は開かれるだろう。';
     }
     adModalText.innerHTML = message;

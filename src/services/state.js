@@ -1,7 +1,8 @@
 // --- グローバル定数 ---
 export const MAX_SAVE_SLOTS = 3;
-const DAILY_ACTION_LIMIT = 20;
-const MAX_INVENTORY_SIZE = 5;
+const DAILY_RECOVERY = 20; // １日の回復量
+const MAX_ACTIONS = 50;    // 行動回数の上限
+const INITIAL_ACTIONS = 50; // 新規ゲーム開始時の行動回数
 const RESET_HOUR_JST = 4; // JSTでのデイリーリセット時刻 (AM 4:00)
 
 // --- ゲーム状態変数 ---
@@ -9,32 +10,55 @@ let gameSlots = [];
 let activeSlotId = null;
 let conversationHistory = [];
 let playerStats = {};
-let dailyActions = { lastActionTimestamp: 0, count: 0 };
+// ★ dailyActionsの構造を変更
+let dailyActions = { lastUpdateTimestamp: 0, current: 0, limit: MAX_ACTIONS };
 let playerName = '';
 let inventory = [];
 let modifiedStats = new Set();
-let activeScenarioType = ''; // ★★★ 現在のシナリオタイプを保持する変数を追加 ★★★
 
 
 /** JSTでの「最後のAM4時」のタイムスタンプを取得する */
-function getLastResetTimestamp() {
-    const now = new Date();
+function getLastResetTimestamp(timestamp) {
+    const date = new Date(timestamp);
     const JST_OFFSET = 9 * 60 * 60 * 1000;
-    const nowJst = new Date(now.getTime() + JST_OFFSET);
+    const dateJst = new Date(date.getTime() + JST_OFFSET);
 
     let resetDate = new Date(Date.UTC(
-        nowJst.getUTCFullYear(),
-        nowJst.getUTCMonth(),
-        nowJst.getUTCDate(),
+        dateJst.getUTCFullYear(),
+        dateJst.getUTCMonth(),
+        dateJst.getUTCDate(),
         RESET_HOUR_JST, 0, 0, 0
     ));
 
-    if (nowJst.getUTCHours() < RESET_HOUR_JST) {
+    if (dateJst.getUTCHours() < RESET_HOUR_JST) {
         resetDate.setUTCDate(resetDate.getUTCDate() - 1);
     }
     
     return resetDate.getTime() - JST_OFFSET;
 }
+
+/** ★★★ 新しい行動回数計算ロジック ★★★ */
+function updateActionsOnLoad(savedActions) {
+    const now = Date.now();
+    let { lastUpdateTimestamp, current, limit } = savedActions;
+    
+    // 最後に更新してから、AM4時を何回またいだかを計算
+    const lastReset = getLastResetTimestamp(lastUpdateTimestamp);
+    const currentReset = getLastResetTimestamp(now);
+
+    if (currentReset > lastReset) {
+        const oneDay = 24 * 60 * 60 * 1000;
+        const daysPassed = Math.floor((currentReset - lastReset) / oneDay);
+        
+        // 経過日数 x 1日の回復量を加算
+        const recoveredAmount = daysPassed * DAILY_RECOVERY;
+        current = Math.min(limit, current + recoveredAmount);
+    }
+
+    // タイムスタンプを現在時刻に更新して返す
+    return { lastUpdateTimestamp: now, current, limit };
+}
+
 
 /** 現在のゲーム状態をオブジェクトとして取得する */
 export function getGameState() {
@@ -72,11 +96,9 @@ export function saveCurrentSlotToStorage() {
         activeSlot.name = playerName;
         activeSlot.inventory = inventory;
         activeSlot.modified = Array.from(modifiedStats);
-        activeSlot.scenarioType = activeScenarioType; // ★★★ シナリオタイプも保存 ★★★
     }
     localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
 }
-
 
 /** 指定されたスロットIDのゲームデータを読み込む */
 export function loadGame(slotId) {
@@ -85,33 +107,29 @@ export function loadGame(slotId) {
 
     activeSlotId = slot.id;
     
-    // ★★★ここから変更★★★
-    // 参照渡しによるバグを防ぐため、JSONを介してデータの完全な複製（ディープコピー）を作成します。
     conversationHistory = JSON.parse(JSON.stringify(slot.history || []));
     playerStats = JSON.parse(JSON.stringify(slot.stats || {}));
-    dailyActions = JSON.parse(JSON.stringify(slot.actions || { lastActionTimestamp: 0, count: 0 }));
+    // ★ ロード時に行動回数を更新
+    dailyActions = updateActionsOnLoad(slot.actions || { lastUpdateTimestamp: Date.now(), current: DAILY_RECOVERY, limit: MAX_ACTIONS });
     playerName = slot.name || '（名前未設定）';
     inventory = JSON.parse(JSON.stringify(slot.inventory || []));
     modifiedStats = new Set(slot.modified || []);
-    // ★★★ここまで変更★★★
-    activeScenarioType = slot.scenarioType || 'fantasy'; // ★★★ シナリオタイプを読み込む ★★★
     
     return getGameState();
 }
 
-
-
-
 /** 新しいゲームを作成し、その状態を返す */
-export function createNewGame(rulebook) {
-     const newSlot = {
+export function createNewGame(rulebook, scenarioType) {
+    const newSlot = {
         id: Date.now(),
         name: '（名前未設定）',
         stats: generateStats(),
         history: [],
         inventory: [],
-        actions: { lastActionTimestamp: Date.now(), count: 0 },
-        modified: []
+        // ★ 新規ゲーム時の行動回数を設定
+        actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
+        modified: [],
+        scenarioType: scenarioType
     };
     newSlot.history.push({
         role: 'user',
@@ -122,13 +140,7 @@ export function createNewGame(rulebook) {
     activeSlotId = newSlot.id;
     
     // グローバル変数を新しいスロットの状態に更新
-    conversationHistory = newSlot.history;
-    playerStats = newSlot.stats;
-    dailyActions = newSlot.actions;
-    playerName = newSlot.name;
-    inventory = newSlot.inventory;
-    modifiedStats = new Set(newSlot.modified);
-    activeScenarioType = newSlot.scenarioType; // ★★★
+    loadGame(activeSlotId);
     
     saveCurrentSlotToStorage();
     return getGameState();
@@ -184,7 +196,7 @@ export function parseAIResponse(fullAiText) {
     const itemAddRegex = /\[ITEM_ADD\]\s*(.+)/g;
     let itemAddMatch;
     while((itemAddMatch = itemAddRegex.exec(storyText)) !== null) {
-        if (inventory.length < MAX_INVENTORY_SIZE) inventory.push(itemAddMatch[1].trim());
+        if (inventory.length < 5) inventory.push(itemAddMatch[1].trim());
     }
     storyText = storyText.replace(itemAddRegex, '').trim();
     
@@ -209,24 +221,22 @@ function generateStats() {
     return { "HP": { current: initialHP, max: initialHP }, "STR": roll3d6(), "DEX": roll3d6(), "CON": roll3d6(), "INT": roll3d6(), "WIS": roll3d6(), "CHA": roll3d6() };
 }
 
-/** 行動回数が上限に達したかチェックし、必要ならリセットする */
-export function checkAndResetActions() {
-    const lastReset = getLastResetTimestamp();
-    if (dailyActions.lastActionTimestamp < lastReset) {
-        dailyActions.count = 0;
-    }
-    return dailyActions.count >= DAILY_ACTION_LIMIT;
+/** 行動回数が残っているかチェックし、必要ならリセットする */
+export function hasActionsLeft() {
+    dailyActions = updateActionsOnLoad(dailyActions);
+    return dailyActions.current > 0;
 }
 
 export function recoverActions(amount) {
-    dailyActions.count = Math.max(0, dailyActions.count - amount);
+    dailyActions.current = Math.min(MAX_ACTIONS, dailyActions.current + amount);
     saveCurrentSlotToStorage();
 }
 
-/** 行動回数を1増やし、タイムスタンプを更新する */
-export function incrementDailyActions() {
-    dailyActions.count++;
-    dailyActions.lastActionTimestamp = Date.now();
+/** 行動回数を1減らす */
+export function decrementActions() {
+    if (dailyActions.current > 0) {
+        dailyActions.current--;
+    }
 }
 
 /** 会話履歴を追加する */
