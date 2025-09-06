@@ -13,7 +13,7 @@ const slotSelector = document.getElementById('slot-selector');
 const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
 const hintToggleButton = document.getElementById('hint-toggle-button');
 const adModalOverlay = document.getElementById('ad-modal-overlay');
-const adModalText = document.querySelector('#ad-modal-overlay p'); // ★★★ p要素を取得 ★★★
+const adModalText = document.querySelector('#ad-modal-overlay .ad-modal-text');
 const adConfirmButton = document.getElementById('ad-confirm-button');
 const adCancelButton = document.getElementById('ad-cancel-button');
 const adLoadingSpinner = document.getElementById('ad-loading-spinner');
@@ -39,23 +39,19 @@ export function addLog(text, className) {
     gameLog.scrollTop = gameLog.scrollHeight;
     return p;
 }
-
 export function updateThinkingMessage(newText) {
     const thinkingElement = Array.from(gameLog.getElementsByTagName('p')).find(p => p.textContent.trim() === '考え中...');
     if (thinkingElement) {
         thinkingElement.innerHTML = newText.replace(/\n/g, '<br>');
     }
 }
-
 export function clearInput() {
     userInput.value = '';
     userInput.style.height = 'auto';
 }
-
 export function clearActions() {
     actionsContainer.innerHTML = '';
 }
-
 export function updateSlotSelector({ gameSlots, maxSlots }) {
     slotSelector.innerHTML = '';
     
@@ -85,12 +81,9 @@ export function updateSlotSelector({ gameSlots, maxSlots }) {
         slotSelector.value = lastSelectedId;
     }
 }
-
-
 export function updatePlayerNameDisplay(name) {
     playerNameDisplay.textContent = name;
 }
-
 export function updateStatusDisplay({ playerStats, modifiedStats }, changes = {}) {
     statusDisplay.innerHTML = '';
     if (!playerStats || Object.keys(playerStats).length === 0) return;
@@ -130,12 +123,10 @@ export function updateStatusDisplay({ playerStats, modifiedStats }, changes = {}
         statusDisplay.appendChild(p);
     }
 }
-
-export function updateActionCountDisplay({ count }) {
-    const limit = 20;
-    actionCountDisplay.textContent = `${count || 0} / ${limit}`;
+// ★★★ 行動回数表示のロジックを修正 ★★★
+export function updateActionCountDisplay({ current, limit }) {
+    actionCountDisplay.textContent = `${current || 0} / ${limit || 20}`;
 }
-
 export function updateInventoryDisplay(inventory) {
     inventoryDisplay.innerHTML = '';
     if (!inventory || inventory.length === 0) {
@@ -148,7 +139,6 @@ export function updateInventoryDisplay(inventory) {
         });
     }
 }
-
 export function displayActions(actions, commandHandler) {
     actionsContainer.innerHTML = '';
     if (actions && actions.length > 0) {
@@ -165,13 +155,11 @@ export function displayActions(actions, commandHandler) {
         });
     }
 }
-
 export function toggleInput(disabled, placeholderText = '') {
     userInput.disabled = disabled;
     sendButton.disabled = disabled;
     userInput.placeholder = placeholderText || (disabled ? '' : 'どうする？ (Ctrl+Enterで送信)');
 }
-
 export function clearGameScreen() {
     gameLog.innerHTML = '';
     scenarioSelectionContainer.innerHTML = '';
@@ -179,12 +167,11 @@ export function clearGameScreen() {
     updateAllDisplays({
         playerStats: {},
         modifiedStats: new Set(),
-        dailyActions: { count: 0 },
+        dailyActions: { current: 0, limit: 50 },
         inventory: [],
         playerName: ''
     });
 }
-
 export function rebuildLog(conversationHistory) {
     gameLog.innerHTML = '';
     (conversationHistory || []).slice(1).forEach(turn => {
@@ -201,7 +188,6 @@ export function rebuildLog(conversationHistory) {
         }
     });
 }
-
 export function showWelcomeScreen(hasSaveData) {
     clearGameScreen();
     
@@ -212,7 +198,6 @@ export function showWelcomeScreen(hasSaveData) {
     addLog(welcomeMessage, 'ai-response');
     toggleInput(true, 'データを選択して「決定」してください');
 }
-
 export function showTemporaryMessage(message) {
     const existingMessage = document.querySelector('.temp-message');
     if (existingMessage) existingMessage.remove();
@@ -224,7 +209,6 @@ export function showTemporaryMessage(message) {
         }
     }, 3000);
 }
-
 export function showScenarioSelection(scenarioHandler) {
     clearGameScreen();
     const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
@@ -236,7 +220,6 @@ export function showScenarioSelection(scenarioHandler) {
         { name: '剣と魔法の世界', type: 'fantasy', description: '呪われた森で失われた記憶の《コア》を探す、王道ファンタジー。' },
         { name: 'AIが管理する未来的な世界', type: 'sf', description: '巨大サイバー都市で失われた記憶《媒体》を探す、SFアドベンチャー。' }
     ];
-
     scenarios.forEach(scenario => {
         const card = document.createElement('div');
         card.className = 'scenario-card';
@@ -248,14 +231,12 @@ export function showScenarioSelection(scenarioHandler) {
         scenarioSelectionContainer.appendChild(card);
     });
 }
-
 export function updateAllDisplays(gameState, changes = {}) {
     updatePlayerNameDisplay(gameState.playerName || '');
     updateStatusDisplay(gameState, changes);
-    updateActionCountDisplay(gameState.dailyActions || { count: 0 });
+    updateActionCountDisplay(gameState.dailyActions || { current: 0, limit: 20 });
     updateInventoryDisplay(gameState.inventory || []);
 }
-
 export function exportLogToFile(activeSlotId, playerName) {
     if (!activeSlotId) {
         showTemporaryMessage('エクスポートするゲームデータがありません。');
@@ -274,15 +255,12 @@ export function exportLogToFile(activeSlotId, playerName) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
-
 export function initializeHintButton() {
     if (!hintToggleButton) { 
         console.error("ヒントボタンの要素が見つかりません。");
         return;
     }
-    
     let hintsVisible = localStorage.getItem('hintsVisible') === 'true';
-
     const updateHintState = () => {
         if (hintsVisible) {
             hintToggleButton.textContent = 'ヒントを隠す';
@@ -294,23 +272,19 @@ export function initializeHintButton() {
             actionsContainer.style.display = 'none';
         }
     };
-    
     hintToggleButton.addEventListener('click', () => {
         hintsVisible = !hintsVisible;
         localStorage.setItem('hintsVisible', hintsVisible);
         updateHintState();
     });
-
     updateHintState();
 }
-
 export function initializeAdModal(onConfirm) {
     adCancelButton.addEventListener('click', () => adModalOverlay.classList.remove('visible'));
     adConfirmButton.addEventListener('click', () => {
         adLoadingSpinner.style.display = 'block';
         adConfirmButton.style.display = 'none';
         adCancelButton.style.display = 'none';
-        
         onConfirm(() => {
             adModalOverlay.classList.remove('visible');
             adLoadingSpinner.style.display = 'none';
@@ -319,13 +293,11 @@ export function initializeAdModal(onConfirm) {
         });
     });
 }
-
-export function showAdModal(scenarioType) { // ★★★ scenarioTypeを受け取る ★★★
-    // ★★★ メッセージを動的に変更 ★★★
+export function showAdModal(scenarioType) {
     let message = '';
     if (scenarioType === 'sf') {
         message = '警告：精神負荷が臨界点に達しました。<br>これ以上のマトリクスへの接続は、あなたの精神崩壊を招きます。<br>システムは、全ユーザーの接続を強制的にリフレッシュします。<br>ネットワークへの再アクセスは、システムデイリーメンテナンス（毎日午前4時）の完了後に許可されます。';
-    } else { // デフォルトはファンタジー
+    } else {
         message = '夜の森を覆う呪いが、あなたの理性を蝕んでいく…<br>これ以上は危険だ。今は身を潜め、心を休めるしかない。<br>呪いが和らぐ夜明け（午前4時）と共に、再びあなたの道は開かれるだろう。';
     }
     adModalText.innerHTML = message;
