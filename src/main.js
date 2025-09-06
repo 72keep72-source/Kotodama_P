@@ -60,11 +60,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const command = commandFromButton || userInput.value.trim();
         if (command === '') return;
 
+        // ★★★ エラー修正：正しい関数名 hasActionsLeft に変更 ★★★
         if (!state.hasActionsLeft()) {
             ui.showAdModal(state.getGameState().activeScenarioType);
             return;
         }
         
+        // ★★★ エラー修正：正しい関数名 decrementActions に変更 ★★★
         state.decrementActions();
         ui.updateActionCountDisplay(state.getGameState().dailyActions);
         

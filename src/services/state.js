@@ -261,11 +261,15 @@ export function getActiveSlotData() {
 
 /** 外部のセーブデータをインポートする */
 export function importSlot(importedSlot) {
-    if (gameSlots.some(s => s.id == importedSlot.id)) {
-        // IDが重複している場合は上書き
-        gameSlots = gameSlots.filter(s => s.id != importedSlot.id);
+    // IDが重複している場合は上書き
+    const existingSlotIndex = gameSlots.findIndex(s => s.id == importedSlot.id);
+    if (existingSlotIndex !== -1) {
+        gameSlots[existingSlotIndex] = importedSlot;
+        saveCurrentSlotToStorage();
+        return { success: true, importedSlot };
     }
     
+    // 新規スロットとして追加
     if (gameSlots.length >= MAX_SAVE_SLOTS) {
         return { success: false, reason: 'slot_full' };
     }
@@ -279,9 +283,22 @@ export function importSlot(importedSlot) {
 export function createSlotFromTxt(txtContent, rulebook) {
     const lines = txtContent.split('\n').filter(line => line.trim() !== '');
     
-    const restoredHistory = [];
+    let restoredHistory = [];
     let currentParts = [];
-    let playerNameFromTxt = "（名前不明）";
+    let playerNameFromTxt = "";
+
+    // ログからプレイヤー名を探す
+    for (const line of lines) {
+        const match = line.match(/^> (?:私の名前は「(.+?)」だ|(.+?)です)$/);
+        if (match) {
+            playerNameFromTxt = match[1] || match[2];
+            break;
+        }
+    }
+    if (!playerNameFromTxt) {
+         playerNameFromTxt = "（TXTから）";
+    }
+
 
     lines.forEach(line => {
         if (line.startsWith('> ')) {
@@ -289,12 +306,7 @@ export function createSlotFromTxt(txtContent, rulebook) {
                 restoredHistory.push({ role: 'model', parts: [{ text: currentParts.join('\n') }] });
                 currentParts = [];
             }
-            const userText = line.substring(2);
-            restoredHistory.push({ role: 'user', parts: [{ text: userText }] });
-            if(userText.includes("私の名前は") || userText.includes("です")) {
-                 let tempName = userText.replace("私の名前は", "").replace(/「|」|です/g, "").trim();
-                 if (tempName) playerNameFromTxt = tempName;
-            }
+            restoredHistory.push({ role: 'user', parts: [{ text: line.substring(2) }] });
         } else {
             currentParts.push(line);
         }
@@ -303,23 +315,23 @@ export function createSlotFromTxt(txtContent, rulebook) {
         restoredHistory.push({ role: 'model', parts: [{ text: currentParts.join('\n') }] });
     }
 
-    const finalHistory = [
-        {
-            role: 'user',
-            parts: [{ text: rulebook + `\n\nあなたの能力値は ${JSON.stringify(generateStats())} です。この情報も踏まえて、ゲームマスターとして、ルールに厳密に従ってゲームを開始してください。` }]
-        },
-        ...restoredHistory
-    ];
+    // 会話の最初は必ず'user'でなければならないので、ルールブックを追加
+    const initialUserTurn = {
+        role: 'user',
+        parts: [{ text: rulebook }] // ここではステータスを含めないのが安全
+    };
+
+    const finalHistory = [initialUserTurn, ...restoredHistory];
 
     const newSlot = {
         id: Date.now(),
         name: `${playerNameFromTxt}_txt`,
         stats: generateStats(),
         history: finalHistory,
-        inventory: [],
+        inventory: [], // txtからは復元不可
         actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
         modified: [],
-        scenarioType: 'fantasy'
+        scenarioType: 'fantasy' // TXTはファンタジー固定とする
     };
 
     return newSlot;

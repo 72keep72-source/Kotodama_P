@@ -11,6 +11,7 @@
     --twitter-color: #1DA1F2;
     --subtle-text-color: #aaa;
     --system-warning-color: #ff9800; /* オレンジ色 */
+    --highlight-color: rgba(76, 175, 80, 0.3); /* ハイライト用の色 */
 }
 
 /* --- 基本スタイル --- */
@@ -393,12 +394,21 @@ textarea#user-input {
 }
 
 #import-container {
-    margin-bottom: 20px;
+    margin-top: 10px;
 }
-#import-button {
+.system-button-small {
     width: 100%;
     padding: 10px;
+    background-color: var(--border-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
     font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+.system-button-small:hover {
+    background-color: #555;
 }
 
 

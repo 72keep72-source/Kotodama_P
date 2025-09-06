@@ -40,7 +40,10 @@ const statDescriptions = {
 export function addLog(text, className) {
     const p = document.createElement('p');
     p.innerHTML = text.replace(/\n/g, '<br>');
-    if (className) p.classList.add(className);
+    if (className) {
+        // 複数のクラスを一度に追加できるように修正
+        className.split(' ').forEach(cls => p.classList.add(cls));
+    }
     gameLog.appendChild(p);
     gameLog.scrollTop = gameLog.scrollHeight;
     return p;
