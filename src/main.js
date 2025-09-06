@@ -5,22 +5,6 @@ import { callAI } from './services/api.js';
 import { RULEBOOK as RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 
-
-// --- グローバルDOM要素 (ランディングページ用) ---
-const landingPage = document.getElementById('landing-page');
-const startGameButton = document.getElementById('start-game-button');
-const gameWrapper = document.getElementById('game-wrapper');
-
-// --- DOM要素の取得 ---
-const userInput = document.getElementById('user-input');
-const sendButton = document.getElementById('send-button');
-const confirmButton = document.getElementById('confirm-button');
-const deleteSlotButton = document.getElementById('delete-slot-button');
-const slotSelector = document.getElementById('slot-selector');
-const exportLogButton = document.getElementById('export-log-button');
-
-
-
 // --- ゲームロジック ---
 
 /** AIとの対話処理をまとめた関数 */
@@ -59,11 +43,12 @@ async function handleUserCommand(commandFromButton = null) {
         ui.showTemporaryMessage('「決定」ボタンで新しい冒険を開始するか、続きを遊ぶデータを選択してください。');
         return;
     }
+    const userInput = document.getElementById('user-input'); 
     const command = commandFromButton || userInput.value.trim();
     if (command === '') return;
 
     if (!state.hasActionsLeft()) {
-        ui.showAdModal(state.getGameState().activeScenarioType);
+        ui.showAdModal(state.getGameState().scenarioType);
         return;
     }
     
@@ -103,12 +88,12 @@ function startNewGame(scenarioType) {
 function loadGameFromSlot(slotId) {
     const gameState = state.loadGame(slotId);
     if (!gameState) {
-        // ロードに失敗した場合はウェルカム画面に戻すのが安全
         ui.showWelcomeScreen(state.getGameState().gameSlots.length > 0);
         return;
     }
     
     ui.clearGameScreen();
+    
     ui.updateAllDisplays(gameState);
     
     ui.rebuildLog(gameState.conversationHistory);
@@ -122,6 +107,7 @@ function loadGameFromSlot(slotId) {
 
 /** 選択されたスロットを削除 */
 function deleteSelectedSlot() {
+    const slotSelector = document.getElementById('slot-selector');
     const selectedId = slotSelector.value;
     if (!selectedId || !state.getGameState().gameSlots.some(s => s.id == selectedId)) {
         ui.showTemporaryMessage('削除するセーブデータを選択してください。');
@@ -130,13 +116,11 @@ function deleteSelectedSlot() {
     const slotToDelete = state.getGameState().gameSlots.find(s => s.id == selectedId);
     if (confirm(`本当にセーブデータ「${slotToDelete.name}」を削除しますか？`)) {
         state.deleteSlot(selectedId);
-        initializeGame();
+        initializeGame(); 
     }
 }
 
 // --- 初期化とイベントリスナー ---
-
-/** ゲーム画面が表示された後、最初に行う初期化処理 */
 function initializeGame() {
     state.loadGameSlotsFromStorage();
     const gameState = state.getGameState();
@@ -157,8 +141,34 @@ function initializeGame() {
             onSuccess();
         }, 2000);
     });
+}
 
-    // ゲーム画面専用のイベントリスナーをここで設定
+
+document.addEventListener('DOMContentLoaded', () => {
+    // ★★★ 最初にUIモジュールの初期化を実行 ★★★
+    ui.initializeUI();
+
+    // --- DOM要素の取得 (DOMContentLoaded内で実行) ---
+    const startGameButton = document.getElementById('start-game-button');
+    const body = document.body;
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+    const confirmButton = document.getElementById('confirm-button');
+    const deleteSlotButton = document.getElementById('delete-slot-button');
+    const slotSelector = document.getElementById('slot-selector');
+    const exportButton = document.getElementById('export-log-button');
+    const importButton = document.getElementById('import-button');
+    const importFileInput = document.getElementById('import-file-input');
+
+    // ランディングページの処理
+    if (startGameButton) {
+        startGameButton.addEventListener('click', () => {
+            body.classList.add('game-active');
+            initializeGame();
+        });
+    }
+
+    // ゲーム画面専用のイベントリスナー
     sendButton.addEventListener('click', () => handleUserCommand());
     userInput.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' && event.ctrlKey) {
@@ -172,12 +182,8 @@ function initializeGame() {
     });
     confirmButton.addEventListener('click', () => {
         const selectedValue = slotSelector.value;
-        // ★★★ 既存データがあるかどうかをチェック ★★★
-        const hasSaveData = state.getGameState().gameSlots.length > 0;
-
         if (selectedValue === 'new_game') {
-            // ★★★ 既存データがあるかどうかを引数で渡す ★★★
-            ui.showScenarioSelection(startNewGame, hasSaveData);
+            ui.showScenarioSelection(startNewGame, state.getGameState().gameSlots.length > 0);
         } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
             state.setActiveSlotId(selectedValue);
             loadGameFromSlot(selectedValue);
@@ -186,27 +192,52 @@ function initializeGame() {
         }
     });
     deleteSlotButton.addEventListener('click', deleteSelectedSlot);
-    exportLogButton.addEventListener('click', () => {
-        const { activeSlotId, playerName } = state.getGameState();
-        ui.exportLogToFile(activeSlotId, playerName);
+    
+    exportButton.addEventListener('click', () => {
+        const activeSlotData = state.getActiveSlotData();
+        ui.exportSaveData(activeSlotData);
     });
-}
 
-/** ページの読み込みが完了したら、まずこの処理が実行される */
-document.addEventListener('DOMContentLoaded', () => {
-    // ランディングページがなければ何もしない
-    if (!landingPage || !startGameButton || !gameWrapper) {
-        console.warn("ランディングページの要素が見つからないため、ゲームを直接初期化します。");
-        document.body.classList.add('game-active');
-        initializeGame();
-        return;
-    }
+    importButton.addEventListener('click', () => {
+        importFileInput.click();
+    });
 
-    // 「ゲームを開始する」ボタンがクリックされた時の処理だけを設定
-    startGameButton.addEventListener('click', () => {
-        document.body.classList.add('game-active');
-        // ゲーム画面が表示されてから、ゲームの初期化処理を呼び出す
-        initializeGame(); 
+    importFileInput.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const fileContent = e.target.result;
+            let importedSlot;
+            
+            try {
+                if (file.name.endsWith('.json')) {
+                    importedSlot = JSON.parse(fileContent);
+                } else if (file.name.endsWith('.txt')) {
+                    importedSlot = state.createSlotFromTxt(fileContent);
+                } else {
+                    throw new Error('サポートされていないファイル形式です。');
+                }
+            } catch (error) {
+                alert(`ファイルの読み込みに失敗しました: ${error.message}`);
+                return;
+            }
+
+            if (importedSlot && importedSlot.id && importedSlot.history) {
+                if (state.importSlot(importedSlot)) {
+                    ui.showTemporaryMessage(`データ「${importedSlot.name}」をインポートしました。`);
+                    ui.updateSlotSelector({
+                        gameSlots: state.getGameState().gameSlots,
+                        maxSlots: state.MAX_SAVE_SLOTS
+                    });
+                }
+            } else {
+                alert('無効なセーブデータ形式です。');
+            }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
     });
 });
 

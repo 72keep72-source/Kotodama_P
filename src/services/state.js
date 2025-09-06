@@ -10,7 +10,6 @@ let gameSlots = [];
 let activeSlotId = null;
 let conversationHistory = [];
 let playerStats = {};
-// ★ dailyActionsの構造を変更
 let dailyActions = { lastUpdateTimestamp: 0, current: 0, limit: MAX_ACTIONS };
 let playerName = '';
 let inventory = [];
@@ -37,12 +36,11 @@ function getLastResetTimestamp(timestamp) {
     return resetDate.getTime() - JST_OFFSET;
 }
 
-/** ★★★ 新しい行動回数計算ロジック ★★★ */
+/** 行動回数計算ロジック */
 function updateActionsOnLoad(savedActions) {
     const now = Date.now();
     let { lastUpdateTimestamp, current, limit } = savedActions;
     
-    // 最後に更新してから、AM4時を何回またいだかを計算
     const lastReset = getLastResetTimestamp(lastUpdateTimestamp);
     const currentReset = getLastResetTimestamp(now);
 
@@ -50,12 +48,10 @@ function updateActionsOnLoad(savedActions) {
         const oneDay = 24 * 60 * 60 * 1000;
         const daysPassed = Math.floor((currentReset - lastReset) / oneDay);
         
-        // 経過日数 x 1日の回復量を加算
         const recoveredAmount = daysPassed * DAILY_RECOVERY;
         current = Math.min(limit, current + recoveredAmount);
     }
 
-    // タイムスタンプを現在時刻に更新して返す
     return { lastUpdateTimestamp: now, current, limit };
 }
 
@@ -100,7 +96,6 @@ export function saveCurrentSlotToStorage() {
     localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
 }
 
-/** 指定されたスロットIDのゲームデータを読み込む */
 export function loadGame(slotId) {
     const slot = gameSlots.find(s => s.id == slotId);
     if (!slot) return null;
@@ -109,7 +104,6 @@ export function loadGame(slotId) {
     
     conversationHistory = JSON.parse(JSON.stringify(slot.history || []));
     playerStats = JSON.parse(JSON.stringify(slot.stats || {}));
-    // ★ ロード時に行動回数を更新
     dailyActions = updateActionsOnLoad(slot.actions || { lastUpdateTimestamp: Date.now(), current: DAILY_RECOVERY, limit: MAX_ACTIONS });
     playerName = slot.name || '（名前未設定）';
     inventory = JSON.parse(JSON.stringify(slot.inventory || []));
@@ -118,7 +112,6 @@ export function loadGame(slotId) {
     return getGameState();
 }
 
-/** 新しいゲームを作成し、その状態を返す */
 export function createNewGame(rulebook, scenarioType) {
     const newSlot = {
         id: Date.now(),
@@ -126,7 +119,6 @@ export function createNewGame(rulebook, scenarioType) {
         stats: generateStats(),
         history: [],
         inventory: [],
-        // ★ 新規ゲーム時の行動回数を設定
         actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
         modified: [],
         scenarioType: scenarioType
@@ -139,7 +131,6 @@ export function createNewGame(rulebook, scenarioType) {
     gameSlots.push(newSlot);
     activeSlotId = newSlot.id;
     
-    // グローバル変数を新しいスロットの状態に更新
     loadGame(activeSlotId);
     
     saveCurrentSlotToStorage();
@@ -153,7 +144,6 @@ export function deleteSlot(slotId) {
     localStorage.removeItem('rpgActiveSlotId');
 }
 
-/** AI応答を解析し、ゲームの状態を更新する */
 export function parseAIResponse(fullAiText) {
     let storyText = fullAiText;
     const statChanges = {};
@@ -214,16 +204,13 @@ export function parseAIResponse(fullAiText) {
     return { storyLogText, actions, statChanges };
 }
 
-/** 初期ステータスを生成する */
 function generateStats() {
     const roll3d6 = () => (Math.floor(Math.random() * 6) + 1) + (Math.floor(Math.random() * 6) + 1) + (Math.floor(Math.random() * 6) + 1);
     const initialHP = 100;
     return { "HP": { current: initialHP, max: initialHP }, "STR": roll3d6(), "DEX": roll3d6(), "CON": roll3d6(), "INT": roll3d6(), "WIS": roll3d6(), "CHA": roll3d6() };
 }
 
-/** 行動回数が残っているかチェックし、必要ならリセットする */
 export function hasActionsLeft() {
-    dailyActions = updateActionsOnLoad(dailyActions);
     return dailyActions.current > 0;
 }
 
@@ -232,15 +219,75 @@ export function recoverActions(amount) {
     saveCurrentSlotToStorage();
 }
 
-/** 行動回数を1減らす */
 export function decrementActions() {
     if (dailyActions.current > 0) {
         dailyActions.current--;
+        dailyActions.lastUpdateTimestamp = Date.now();
     }
 }
 
-/** 会話履歴を追加する */
 export function addHistory(turn) {
     conversationHistory.push(turn);
+}
+
+export function getActiveSlotData() {
+    return gameSlots.find(slot => slot.id == activeSlotId);
+}
+
+export function importSlot(importedSlot) {
+    if (!importedSlot || !importedSlot.id) return false;
+
+    const existingSlotIndex = gameSlots.findIndex(slot => slot.id === importedSlot.id);
+
+    if (existingSlotIndex !== -1) {
+        if (confirm(`同じIDのセーブデータ「${gameSlots[existingSlotIndex].name}」が既に存在します。上書きしますか？`)) {
+            gameSlots[existingSlotIndex] = importedSlot;
+        } else {
+            return false;
+        }
+    } else {
+        if (gameSlots.length >= MAX_SAVE_SLOTS) {
+            alert(`セーブスロットがいっぱいです。インポートするには、既存のデータを削除してください。`);
+            return false;
+        }
+        gameSlots.push(importedSlot);
+    }
+    saveCurrentSlotToStorage();
+    return true;
+}
+
+// ★★★ TXTファイルからセーブデータを復元する新機能 ★★★
+export function createSlotFromTxt(logText) {
+    // ログから会話履歴を再構築
+    const history = [];
+    const lines = logText.split('\n');
+    lines.forEach(line => {
+        if (line.startsWith('> ')) {
+            history.push({ role: 'user', parts: [{ text: line.substring(2) }] });
+        } else if (line.trim()) {
+            history.push({ role: 'model', parts: [{ text: line }] });
+        }
+    });
+
+    // ログから名前を探す (見つからなければ「ログからの復元」)
+    let extractedName = 'ログからの復元';
+    const nameMatch = logText.match(/\[NAME\]\s*(.+)/);
+    if (nameMatch) {
+        extractedName = nameMatch[1].trim();
+    }
+
+    // 新しいスロットを生成 (ステータスは新規作成)
+    const newSlot = {
+        id: Date.now(),
+        name: extractedName,
+        stats: generateStats(),
+        history: history,
+        inventory: [], // TXTからはアイテム復元は難しいので初期化
+        actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
+        modified: [],
+        scenarioType: 'fantasy' // デフォルトのシナリオタイプ
+    };
+
+    return newSlot;
 }
 

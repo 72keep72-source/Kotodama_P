@@ -21,35 +21,11 @@ html, body {
     font-family: sans-serif;
 }
 
-header {
-    background-color: var(--container-bg);
-    padding: 10px 20px;
-    text-align: center;
-    border-bottom: 1px solid var(--border-color);
+/* --- レイアウト切り替えのコアロジック --- */
+body {
+    display: flex;
+    flex-direction: column;
 }
-
-header h1 {
-    margin: 0;
-    font-size: 1.2em;
-}
-
-footer {
-    background-color: var(--container-bg);
-    border-top: 1px solid var(--border-color);
-    padding: 20px;
-    text-align: center;
-    font-size: 14px;
-}
-.footer-nav ul { list-style: none; padding: 0; margin: 0 0 10px 0; }
-.footer-nav li { display: inline-block; margin: 0 15px; }
-.footer-nav a { color: var(--text-color); text-decoration: none; transition: color 0.2s ease; }
-.footer-nav a:hover { color: var(--accent-color); }
-.copyright { color: var(--subtle-text-color); margin: 0; }
-
-
-/* --- ★★★ レイアウト切り替えのコアロジック ★★★ --- */
-
-/* デフォルト（ランディングページ）のレイアウト */
 #landing-page {
     display: flex;
     flex-direction: column;
@@ -57,10 +33,8 @@ footer {
     box-sizing: border-box;
 }
 #game-wrapper {
-    display: none; /* ゲーム画面は最初は非表示 */
+    display: none;
 }
-
-/* ゲーム画面に切り替わった時のレイアウト */
 body.game-active #landing-page {
     display: none;
 }
@@ -68,10 +42,36 @@ body.game-active #game-wrapper {
     display: flex;
     flex-direction: column;
     height: 100vh;
-    box-sizing: border-box;
 }
 
-/* --- ★★★ 以前のカッコいいランディングページのスタイルを復元 ★★★ --- */
+
+/* --- ヘッダーとフッター --- */
+header {
+    background-color: var(--container-bg);
+    padding: 10px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+header h1 {
+    margin: 0;
+    font-size: 1.2em;
+}
+footer {
+    background-color: var(--container-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.footer-nav ul { list-style: none; padding: 0; margin: 0 0 10px 0; }
+.footer-nav li { display: inline-block; margin: 0 15px; }
+.footer-nav a { color: var(--text-color); text-decoration: none; transition: color 0.2s ease; }
+.footer-nav a:hover { color: var(--accent-color); }
+.copyright { color: var(--subtle-text-color); margin: 0; }
+
+/* --- ランディングページ --- */
 .game-introduction {
     flex-grow: 1;
     display: flex;
@@ -82,7 +82,7 @@ body.game-active #game-wrapper {
     padding: 20px;
 }
 .game-introduction .landing-title {
-    font-size: clamp(1.8em, 5vw, 2.5em); /* 画面サイズに応じて調整 */
+    font-size: clamp(1.8em, 5vw, 2.5em);
     color: var(--accent-color);
     margin-bottom: 20px;
     line-height: 1.4;
@@ -101,7 +101,7 @@ body.game-active #game-wrapper {
     padding: 15px 40px;
     font-size: 1.2em;
     font-weight: bold;
-    border-radius: 50px; /* 角を丸くしてボタンを柔らかい印象に */
+    border-radius: 50px;
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -110,9 +110,7 @@ body.game-active #game-wrapper {
     transform: scale(1.05);
 }
 
-
-
-/* --- ★★★ ゲーム画面のスタイル ★★★ --- */
+/* --- ゲーム画面 --- */
 #game-content-wrapper {
     display: flex;
     width: 100%;
@@ -141,53 +139,6 @@ body.game-active #game-wrapper {
 .ai-response { color: var(--ai-text); }
 .user-command { color: var(--user-text); }
 .system-warning { color: var(--system-warning-color) !important; font-weight: bold; }
-/* ( ... その他のゲーム内スタイル ... ) */
-
-#game-wrapper {
-    display: flex;
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-    box-sizing: border-box;
-    flex-grow: 1;
-    overflow: hidden;
-}
-
-#game-container {
-    width: 70%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background-color: var(--container-bg);
-    border: 1px solid var(--border-color);
-}
-
-#game-log {
-    flex-grow: 1;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    position: relative;
-    padding: 20px;
-}
-
-.ai-response {
-    color: var(--ai-text);
-}
-
-.user-command {
-    color: var(--user-text);
-}
-
-.system-message {
-    color: var(--system-message-color); 
-    background-color: rgba(255, 152, 0, 0.1);
-    border: 1px solid var(--system-message-color);
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 5px;
-}
-
 
 #scenario-selection-container {
     display: flex;
@@ -244,8 +195,9 @@ body.game-active #game-wrapper {
 }
 
 #intro-toggle-button,
+
 #hint-toggle-button {
-    flex: 1; /* ★flexを使って均等に配置 */
+     flex: 1; /* ★flexを使って均等に配置 */
     background-color: var(--container-bg);
     color: var(--subtle-text-color);
     border: 1px solid var(--border-color);
@@ -257,50 +209,25 @@ body.game-active #game-wrapper {
     box-sizing: border-box; 
     text-align: center;
 }
-
-#intro-toggle-button:hover,
 #hint-toggle-button:hover {
     background-color: var(--border-color);
     color: var(--text-color);
 }
-
-#intro-toggle-button.active,
 #hint-toggle-button.active {
     background-color: var(--accent-color-dark);
     border-color: var(--accent-color);
     color: white;
 }
 
-#intro-text-container {
-    display: none;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid var(--border-color);
-    border-radius: 5px;
-    background-color: rgba(0,0,0,0.2);
-    font-size: 0.9em;
-    line-height: 1.6;
-    color: var(--subtle-text-color);
-}
-
-#intro-text-container.visible {
-    display: block;
-}
-
-
 #actions-container {
-    padding: 0; 
-    border-bottom: 1px solid var(--border-color); 
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
     margin-bottom: 10px;
     display: none;
-    flex-shrink: 0; 
 }
-
-
 #actions-container.visible {
     display: block;
 }
-
 .action-button {
     background-color: var(--accent-color);
     color: white;
@@ -312,20 +239,12 @@ body.game-active #game-wrapper {
     border-radius: 5px;
     transition: all 0.2s ease;
 }
-
-.action-button:hover {
-    filter: brightness(1.2);
-}
-
-.action-button.fade-out {
-    animation: fadeOut 0.5s ease-in-out forwards;
-}
+.action-button:hover { filter: brightness(1.2); }
+.action-button.fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
 
 #input-area {
     display: flex;
-    padding: 0;
 }
-
 textarea#user-input {
     flex-grow: 1;
     background-color: #333;
@@ -338,14 +257,8 @@ textarea#user-input {
     line-height: 1.5;
     max-height: 150px;
     overflow-y: auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
 }
-
-#user-input:disabled {
-    background-color: #444;
-    cursor: not-allowed;
-}
+#user-input:disabled { background-color: #444; cursor: not-allowed; }
 
 #export-log-button {
     background-color: var(--border-color);
@@ -358,9 +271,7 @@ textarea#user-input {
     border-radius: 5px;
     transition: background-color 0.2s ease;
 }
-#export-log-button:hover {
-    background-color: #555;
-}
+#export-log-button:hover { background-color: #555; }
 
 #send-button {
     background-color: var(--accent-color);
@@ -371,7 +282,7 @@ textarea#user-input {
     font-size: 16px;
 }
 
-
+/* --- サイドバー --- */
 #sidebar {
     width: 30%;
     height: 100%;
@@ -379,7 +290,6 @@ textarea#user-input {
     display: flex;
     flex-direction: column;
 }
-
 #status-container {
     flex-grow: 1;
     padding: 20px;
@@ -388,18 +298,13 @@ textarea#user-input {
     overflow-y: auto;
     margin-bottom: 20px;
 }
-
 #status-container h2 {
     color: var(--accent-color);
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 10px;
     margin-top: 20px;
 }
-
-#status-container h2:first-child {
-    margin-top: 0;
-}
-
+#status-container h2:first-child { margin-top: 0; }
 #player-name-display {
     font-size: 1.5em;
     color: var(--accent-color);
@@ -407,75 +312,45 @@ textarea#user-input {
     margin-bottom: 20px;
     word-break: break-all;
 }
-
 #status-display p {
     display: flex;
     justify-content: space-between;
     margin: 10px 0;
     font-size: 16px;
 }
-
-#status-display span {
-    font-weight: bold;
-}
-
-.stat-value {
-    color: var(--user-text);
-}
-
+#status-display span { font-weight: bold; }
+.stat-value { color: var(--user-text); }
 .stat-change {
     margin-left: 10px;
     color: var(--ai-text);
     animation: fadeInAndOut 2s ease-in-out forwards;
 }
-
-.tooltip {
-    position: relative;
-    cursor: help;
-}
- 
+.tooltip { position: relative; cursor: help; }
 .tooltip::after {
     content: attr(data-tooltip);
     position: fixed;
-    top: auto;
-    bottom: 20px;
-    right: 20px;
+    top: auto; bottom: 20px; right: 20px;
     transform: none;
-    
     background-color: var(--main-bg);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-radius: 5px;
     padding: 8px 12px;
-    
-    width: auto;
-    max-width: 300px;
-    min-width: 150px;
+    width: auto; max-width: 300px; min-width: 150px;
     font-size: 14px;
     line-height: 1.4;
     text-align: left;
-    
-    opacity: 0;
-    visibility: hidden;
+    opacity: 0; visibility: hidden;
     transition: opacity 0.2s, visibility 0.2s;
     z-index: 1000;
 }
- 
-.tooltip:hover::after {
-    opacity: 1;
-    visibility: visible;
-}
-
+.tooltip:hover::after { opacity: 1; visibility: visible; }
 #inventory-display p {
     color: var(--text-color);
     font-size: 15px;
     margin: 5px 0;
 }
-
-#system-menu {
-    flex-shrink: 0;
-}
-
+#system-menu { flex-shrink: 0; }
 .system-button {
     width: 100%;
     padding: 15px;
@@ -490,20 +365,13 @@ textarea#user-input {
     display: block;
     box-sizing: border-box;
 }
-
-.system-button.share {
-    background-color: var(--twitter-color);
-}
-
-.system-button.share:hover {
-    background-color: #0c85d0;
-}
+.system-button.share { background-color: var(--twitter-color); }
+.system-button.share:hover { background-color: #0c85d0; }
 
 #slot-selector-container {
     display: flex;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
 }
-
 #slot-selector {
     flex-grow: 1;
     background-color: #333;
@@ -512,7 +380,6 @@ textarea#user-input {
     padding: 8px;
     font-size: 14px;
 }
-
 #confirm-button, #delete-slot-button {
     color: white;
     border: none;
@@ -522,33 +389,41 @@ textarea#user-input {
     font-size: 14px;
     border-radius: 5px;
 }
+#confirm-button { background-color: var(--accent-color); }
+#delete-slot-button { background-color: var(--danger-color); }
 
-#confirm-button {
-    background-color: var(--accent-color);
+/* ★★★ インポートボタンのスタイルを追加 ★★★ */
+#import-container {
+    margin-top: 10px;
+}
+.system-button-small {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--border-color);
+    color: var(--text-color);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+.system-button-small:hover {
+    background-color: #555;
 }
 
-#delete-slot-button {
-    background-color: var(--danger-color);
-}
 
-
+/* --- 広告モーダル --- */
 .ad-modal-overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     background-color: rgba(0, 0, 0, 0.7);
     display: none;
     justify-content: center;
     align-items: center;
     z-index: 2000;
 }
-
-.ad-modal-overlay.visible {
-    display: flex;
-}
-
+.ad-modal-overlay.visible { display: flex; }
 .ad-modal-content {
     background-color: var(--container-bg);
     padding: 30px;
@@ -558,19 +433,16 @@ textarea#user-input {
     width: 90%;
     max-width: 400px;
 }
-
 .ad-modal-content h3 {
     margin-top: 0;
     color: var(--accent-color);
 }
-
 .ad-modal-buttons {
     margin-top: 20px;
     display: flex;
     justify-content: center;
     gap: 15px;
 }
-
 .ad-modal-button {
     padding: 10px 20px;
     border: none;
@@ -579,100 +451,25 @@ textarea#user-input {
     cursor: pointer;
     transition: background-color 0.2s;
 }
-.ad-modal-button.confirm {
-    background-color: var(--accent-color);
-    color: white;
-}
-.ad-modal-button.confirm:hover {
-    background-color: var(--accent-color-dark);
-}
-.ad-modal-button.cancel {
-    background-color: var(--border-color);
-    color: var(--text-color);
-}
-.ad-modal-button.cancel:hover {
-    background-color: #555;
-}
+.ad-modal-button.confirm { background-color: var(--accent-color); color: white; }
+.ad-modal-button.confirm:hover { background-color: var(--accent-color-dark); }
+.ad-modal-button.cancel { background-color: var(--border-color); color: var(--text-color); }
+.ad-modal-button.cancel:hover { background-color: #555; }
 
 #ad-loading-spinner {
     border: 4px solid #f3f3f3;
     border-top: 4px solid var(--accent-color);
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
+    width: 30px; height: 30px;
     animation: spin 1s linear infinite;
     margin: 20px auto;
     display: none;
 }
 
-footer {
-    background-color: var(--container-bg);
-    border-top: 1px solid var(--border-color);
-    padding: 20px;
-    text-align: center;
-    flex-shrink: 0;
-    font-size: 14px;
-}
-
-.footer-nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 10px 0;
-}
-
-.footer-nav li {
-    display: inline-block;
-    margin: 0 15px;
-}
-
-.footer-nav a {
-    color: var(--text-color);
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.footer-nav a:hover {
-    color: var(--accent-color);
-}
-
-.copyright {
-    color: #888;
-    margin: 0;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-@keyframes fadeOut {
-    0% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    100% {
-        opacity: 0;
-        transform: scale(0.95);
-    }
-}
-
-@keyframes fadeInAndOut {
-    0% {
-        opacity: 0;
-        transform: translateY(5px);
-    }
-    20% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    80% {
-        opacity: 1;
-    }
-    100% {
-        opacity: 0;
-    }
-}
-
+/* --- アニメーション --- */
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.95); } }
+@keyframes fadeInAndOut { 0% { opacity: 0; transform: translateY(5px); } 20% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; } 100% { opacity: 0; } }
 
 /* --- スマホ表示 --- */
 @media (max-width: 800px) {

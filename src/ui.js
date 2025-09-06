@@ -1,22 +1,27 @@
 import { calculateModifier } from './services/state.js';
 
-// --- DOM要素の取得 ---
-const gameLog = document.getElementById('game-log');
-const userInput = document.getElementById('user-input');
-const sendButton = document.getElementById('send-button');
-const statusDisplay = document.getElementById('status-display');
-const actionCountDisplay = document.getElementById('action-count-display');
-const actionsContainer = document.getElementById('actions-container');
-const playerNameDisplay = document.getElementById('player-name-display');
-const inventoryDisplay = document.getElementById('inventory-display');
-const slotSelector = document.getElementById('slot-selector');
-const scenarioSelectionContainer = document.getElementById('scenario-selection-container');
-const hintToggleButton = document.getElementById('hint-toggle-button');
-const adModalOverlay = document.getElementById('ad-modal-overlay');
-const adModalText = document.querySelector('#ad-modal-overlay .ad-modal-text');
-const adConfirmButton = document.getElementById('ad-confirm-button');
-const adCancelButton = document.getElementById('ad-cancel-button');
-const adLoadingSpinner = document.getElementById('ad-loading-spinner');
+// --- DOM要素の保持用変数 (letに変更) ---
+let gameLog, userInput, sendButton, statusDisplay, actionCountDisplay, actionsContainer, playerNameDisplay, inventoryDisplay, slotSelector, scenarioSelectionContainer, hintToggleButton, adModalOverlay, adModalText, adConfirmButton, adCancelButton, adLoadingSpinner;
+
+// ★★★ UIモジュールを初期化し、DOM要素を取得する新しい関数 ★★★
+export function initializeUI() {
+    gameLog = document.getElementById('game-log');
+    userInput = document.getElementById('user-input');
+    sendButton = document.getElementById('send-button');
+    statusDisplay = document.getElementById('status-display');
+    actionCountDisplay = document.getElementById('action-count-display');
+    actionsContainer = document.getElementById('actions-container');
+    playerNameDisplay = document.getElementById('player-name-display');
+    inventoryDisplay = document.getElementById('inventory-display');
+    slotSelector = document.getElementById('slot-selector');
+    scenarioSelectionContainer = document.getElementById('scenario-selection-container');
+    hintToggleButton = document.getElementById('hint-toggle-button');
+    adModalOverlay = document.getElementById('ad-modal-overlay');
+    adModalText = document.querySelector('#ad-modal-overlay p.ad-modal-text');
+    adConfirmButton = document.getElementById('ad-confirm-button');
+    adCancelButton = document.getElementById('ad-cancel-button');
+    adLoadingSpinner = document.getElementById('ad-loading-spinner');
+}
 
 // 各ステータスの説明文を定義
 const statDescriptions = {
@@ -173,6 +178,7 @@ export function toggleInput(disabled, placeholderText = '') {
 }
 
 export function clearGameScreen() {
+    if(!gameLog || !scenarioSelectionContainer || !actionsContainer) return;
     gameLog.innerHTML = '';
     scenarioSelectionContainer.innerHTML = '';
     actionsContainer.innerHTML = '';
@@ -225,13 +231,14 @@ export function showTemporaryMessage(message) {
     }, 3000);
 }
 
-// ★★★ 導入メッセージを常に表示するように修正 ★★★
-export function showScenarioSelection(scenarioHandler) {
+export function showScenarioSelection(scenarioHandler, hasSaveData) {
     clearGameScreen();
+
+    const scenarioWelcomeMessage = hasSaveData
+        ? '▼ 始めたい物語を、下から選択してください。'
+        : '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
     
-    const scenarioWelcomeMessage = '冷たい石の感触。失われた記憶。<br>あなたは石碑の前で倒れている。<br>ここが剣と魔法の世界なのか、AIが支配する未来なのか…<br>それすら、まだ決まってはいない。<br>すべては、あなたの最初の「言霊」から始まる。<br>▼ 始めたい物語を、下から選択してください。';
     addLog(scenarioWelcomeMessage, 'ai-response');
-    
     toggleInput(true, '物語を選択してください');
 
     scenarioSelectionContainer.innerHTML = '';
@@ -245,7 +252,6 @@ export function showScenarioSelection(scenarioHandler) {
         card.className = 'scenario-card';
         card.innerHTML = `<h3>${scenario.name}</h3><p>${scenario.description}</p>`;
         card.onclick = () => {
-            scenarioSelectionContainer.innerHTML = '';
             scenarioHandler(scenario.type);
         };
         scenarioSelectionContainer.appendChild(card);
@@ -260,24 +266,27 @@ export function updateAllDisplays(gameState, changes = {}) {
     updateInventoryDisplay(gameState.inventory || []);
 }
 
-export function exportLogToFile(activeSlotId, playerName) {
-    if (!activeSlotId) {
+export function exportSaveData(activeSlotData) {
+    if (!activeSlotData) {
         showTemporaryMessage('エクスポートするゲームデータがありません。');
         return;
     }
-    const logText = gameLog.innerText;
-    const blob = new Blob([logText], { type: 'text/plain;charset=utf-8' });
+    const saveDataJson = JSON.stringify(activeSlotData, null, 2);
+    const blob = new Blob([saveDataJson], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
+    
     const a = document.createElement('a');
     a.href = url;
     const date = new Date();
     const formattedDate = `${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
-    a.download = `${playerName || 'log'}_${formattedDate}.txt`;
+    a.download = `${activeSlotData.name || 'save'}_${formattedDate}.json`; 
+    
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
+
 
 export function initializeHintButton() {
     if (!hintToggleButton) { 
