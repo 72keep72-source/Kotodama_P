@@ -283,6 +283,7 @@ textarea#user-input {
 }
 
 /* --- サイドバー --- */
+/* --- サイドバー --- */
 #sidebar {
     width: 30%;
     height: 100%;
@@ -379,7 +380,28 @@ textarea#user-input {
     border: 1px solid #555;
     padding: 8px;
     font-size: 14px;
+    transition: background-color 0.3s;
 }
+/* ★★★ ハイライト用のスタイルを追加 ★★★ */
+#slot-selector.highlight {
+    background-color: var(--highlight-color);
+    animation: highlight-fade 2s ease-out;
+}
+@keyframes highlight-fade {
+    from { background-color: var(--highlight-color); }
+    to { background-color: #333; }
+}
+
+#import-container {
+    margin-bottom: 20px;
+}
+#import-button {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+}
+
+
 #confirm-button, #delete-slot-button {
     color: white;
     border: none;

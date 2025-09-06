@@ -1,9 +1,9 @@
 import { calculateModifier } from './services/state.js';
 
-// --- DOM要素の保持用変数 (letに変更) ---
+// --- DOM要素の保持用変数 ---
 let gameLog, userInput, sendButton, statusDisplay, actionCountDisplay, actionsContainer, playerNameDisplay, inventoryDisplay, slotSelector, scenarioSelectionContainer, hintToggleButton, adModalOverlay, adModalText, adConfirmButton, adCancelButton, adLoadingSpinner;
 
-// ★★★ UIモジュールを初期化し、DOM要素を取得する新しい関数 ★★★
+// --- 初期化 ---
 export function initializeUI() {
     gameLog = document.getElementById('game-log');
     userInput = document.getElementById('user-input');
@@ -23,7 +23,7 @@ export function initializeUI() {
     adLoadingSpinner = document.getElementById('ad-loading-spinner');
 }
 
-// 各ステータスの説明文を定義
+// --- ヘルパー関数 ---
 const statDescriptions = {
     HP: "ヒットポイント：キャラクターの生命力。0になると倒れる。",
     STR: "筋力 (Strength)：腕力や、物理的な攻撃の強さに影響する。",
@@ -33,6 +33,7 @@ const statDescriptions = {
     WIS: "判断力 (Wisdom)：直感や、知恵の深さに影響する。",
     CHA: "魅力 (Charisma)：人を惹きつける力や、交渉能力に影響する。"
 };
+
 
 // --- UI更新関数 ---
 
@@ -342,5 +343,17 @@ export function showAdModal(scenarioType) {
     }
     adModalText.innerHTML = message;
     adModalOverlay.classList.add('visible');
+}
+
+/** インポートされたスロットをハイライト表示する */
+export function highlightSlot(slotId) {
+    const option = slotSelector.querySelector(`option[value="${slotId}"]`);
+    if (option) {
+        slotSelector.value = slotId; // 自動で選択状態にする
+        slotSelector.classList.add('highlight');
+        setTimeout(() => {
+            slotSelector.classList.remove('highlight');
+        }, 2000); // 2秒後にハイライトを消す
+    }
 }
 

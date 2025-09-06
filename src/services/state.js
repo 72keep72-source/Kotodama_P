@@ -1,7 +1,7 @@
 // --- グローバル定数 ---
 export const MAX_SAVE_SLOTS = 3;
 const DAILY_RECOVERY = 20; // １日の回復量
-const MAX_ACTIONS = 50;    // 行動回数の上限
+const MAX_ACTIONS = 50;    // 行動回数の上限
 const INITIAL_ACTIONS = 50; // 新規ゲーム開始時の行動回数
 const RESET_HOUR_JST = 4; // JSTでのデイリーリセット時刻 (AM 4:00)
 
@@ -191,6 +191,17 @@ export function parseAIResponse(fullAiText) {
     }
     storyText = storyText.replace(damageRegex, '').trim();
 
+    const healRegex = /\[HEAL\]\s*(\d+)/g;
+    let healMatch;
+    while ((healMatch = healRegex.exec(storyText))) {
+        if (playerStats.HP) {
+            const heal = parseInt(healMatch[1], 10);
+            playerStats.HP.current += heal;
+            if (playerStats.HP.current > playerStats.HP.max) playerStats.HP.current = playerStats.HP.max;
+        }
+    }
+    storyText = storyText.replace(healRegex, '').trim();
+
     const itemAddRegex = /\[ITEM_ADD\]\s*(.+)/g;
     let itemAddMatch;
     while((itemAddMatch = itemAddRegex.exec(storyText)) !== null) {
@@ -245,55 +256,53 @@ export function addHistory(turn) {
 /** 現在のアクティブなセーブデータを取得する */
 export function getActiveSlotData() {
     if (!activeSlotId) return null;
-    return gameSlots.find(slot => slot.id == activeSlotId);
+    return JSON.parse(JSON.stringify(gameSlots.find(slot => slot.id == activeSlotId)));
 }
 
 /** 外部のセーブデータをインポートする */
 export function importSlot(importedSlot) {
-    if (gameSlots.length >= MAX_SAVE_SLOTS) {
-        alert(`セーブスロットは${MAX_SAVE_SLOTS}つまでです。既存のデータを削除してください。`);
-        return false;
-    }
     if (gameSlots.some(s => s.id == importedSlot.id)) {
-        if (!confirm('同じIDのセーブデータが既に存在します。上書きしますか？')) {
-            return false;
-        }
+        // IDが重複している場合は上書き
         gameSlots = gameSlots.filter(s => s.id != importedSlot.id);
     }
+    
+    if (gameSlots.length >= MAX_SAVE_SLOTS) {
+        return { success: false, reason: 'slot_full' };
+    }
+
     gameSlots.push(importedSlot);
     saveCurrentSlotToStorage();
-    return true;
+    return { success: true, importedSlot };
 }
 
-// ★★★ ここからがTXT互換性のための新しい関数 ★★★
 /** .txtファイルの内容から、新しいセーブデータスロットを作成する */
 export function createSlotFromTxt(txtContent, rulebook) {
     const lines = txtContent.split('\n').filter(line => line.trim() !== '');
     
-    // 会話履歴を復元
     const restoredHistory = [];
-    let currentRole = 'model'; // ログは常にAIの応答から始まると仮定
     let currentParts = [];
+    let playerNameFromTxt = "（名前不明）";
 
     lines.forEach(line => {
         if (line.startsWith('> ')) {
-            // ユーザーの入力を見つけたら、それまでのAIの応答を確定
             if (currentParts.length > 0) {
                 restoredHistory.push({ role: 'model', parts: [{ text: currentParts.join('\n') }] });
                 currentParts = [];
             }
-            restoredHistory.push({ role: 'user', parts: [{ text: line.substring(2) }] });
+            const userText = line.substring(2);
+            restoredHistory.push({ role: 'user', parts: [{ text: userText }] });
+            if(userText.includes("私の名前は") || userText.includes("です")) {
+                 let tempName = userText.replace("私の名前は", "").replace(/「|」|です/g, "").trim();
+                 if (tempName) playerNameFromTxt = tempName;
+            }
         } else {
-            // AIの応答行を追加
             currentParts.push(line);
         }
     });
-    // 最後のAIの応答を確定
     if (currentParts.length > 0) {
         restoredHistory.push({ role: 'model', parts: [{ text: currentParts.join('\n') }] });
     }
 
-    // ★★★ エラー修正：必ずルールブックを先頭に追加 ★★★
     const finalHistory = [
         {
             role: 'user',
@@ -302,16 +311,15 @@ export function createSlotFromTxt(txtContent, rulebook) {
         ...restoredHistory
     ];
 
-    // 新しいスロットを作成
     const newSlot = {
         id: Date.now(),
-        name: `(TXTから) ${new Date().toLocaleString()}`,
-        stats: generateStats(), // ステータスは新規作成
+        name: `${playerNameFromTxt}_txt`,
+        stats: generateStats(),
         history: finalHistory,
-        inventory: [], // 持ち物はリセット
+        inventory: [],
         actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
         modified: [],
-        scenarioType: 'fantasy' // TXTはファンタジーと仮定
+        scenarioType: 'fantasy'
     };
 
     return newSlot;
