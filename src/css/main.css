@@ -20,6 +20,7 @@ html, body {
     background-color: var(--main-bg);
     color: var(--text-color);
     font-family: sans-serif;
+    height: 100%;
 }
 
 /* --- レイアウト切り替えのコアロジック --- */
@@ -27,26 +28,9 @@ body {
     display: flex;
     flex-direction: column;
 }
-#landing-page {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    box-sizing: border-box;
-}
-#game-wrapper {
-    display: none;
-}
-body.game-active #landing-page {
-    display: none;
-}
-body.game-active #game-wrapper {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
-
 
 /* --- ヘッダーとフッター --- */
+
 header {
     background-color: var(--container-bg);
     padding: 10px 20px;
@@ -54,10 +38,12 @@ header {
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
 }
+
 header h1 {
     margin: 0;
     font-size: 1.2em;
 }
+
 footer {
     background-color: var(--container-bg);
     border-top: 1px solid var(--border-color);
@@ -72,27 +58,32 @@ footer {
 .footer-nav a:hover { color: var(--accent-color); }
 .copyright { color: var(--subtle-text-color); margin: 0; }
 
+.hidden {
+    display: none !important;
+}
+
 /* --- ランディングページ --- */
-.game-introduction {
+main#landing-page {
     flex-grow: 1;
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
     padding: 20px;
 }
-.game-introduction .landing-title {
+.landing-content {
+    max-width: 700px;
+}
+.landing-title {
     font-size: clamp(1.8em, 5vw, 2.5em);
     color: var(--accent-color);
     margin-bottom: 20px;
     line-height: 1.4;
 }
-.game-introduction .landing-description {
+.landing-description {
     font-size: clamp(1em, 2.5vw, 1.1em);
     line-height: 1.8;
     margin-bottom: 40px;
-    max-width: 700px;
     color: var(--subtle-text-color);
 }
 #start-game-button {
@@ -112,6 +103,10 @@ footer {
 }
 
 /* --- ゲーム画面 --- */
+#game-wrapper {
+    flex-grow: 1;
+    overflow: hidden; /* game-wrapper自身はスクロールしない */
+}
 #game-content-wrapper {
     display: flex;
     width: 100%;
@@ -119,8 +114,7 @@ footer {
     margin: 0 auto;
     padding: 20px;
     box-sizing: border-box;
-    flex-grow: 1;
-    overflow: hidden;
+    height: 100%;
 }
 #game-container {
     width: 70%;
@@ -133,8 +127,6 @@ footer {
 #game-log {
     flex-grow: 1;
     overflow-y: auto;
-    white-space: pre-wrap;
-    position: relative;
     padding: 20px;
 }
 .ai-response { color: var(--ai-text); }
@@ -147,7 +139,6 @@ footer {
     justify-content: center;
     align-items: center;
     padding: 40px 20px;
-    box-sizing: border-box;
     flex-grow: 1;
 }
 
@@ -163,19 +154,15 @@ footer {
     max-width: 400px;
     text-align: center;
 }
-
 .scenario-card:hover {
     background-color: var(--border-color);
     transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
-
 .scenario-card h3 {
     margin: 0 0 10px 0;
     font-size: 1.2em;
     color: var(--accent-color);
 }
-
 .scenario-card p {
     margin: 0;
     color: var(--subtle-text-color);
@@ -185,20 +172,15 @@ footer {
 #input-container {
     padding: 10px;
     border-top: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column; 
+    flex-shrink: 0;
 }
-
 #intro-and-hint-buttons {
     display: flex;
     gap: 10px;
     margin-bottom: 10px;
 }
-
-#intro-toggle-button,
-
 #hint-toggle-button {
-     flex: 1; /* ★flexを使って均等に配置 */
+    flex: 1;
     background-color: var(--container-bg);
     color: var(--subtle-text-color);
     border: 1px solid var(--border-color);
@@ -207,8 +189,6 @@ footer {
     font-size: 0.8em;
     border-radius: 5px;
     transition: all 0.2s ease;
-    box-sizing: border-box; 
-    text-align: center;
 }
 #hint-toggle-button:hover {
     background-color: var(--border-color);
@@ -219,7 +199,6 @@ footer {
     border-color: var(--accent-color);
     color: white;
 }
-
 #actions-container {
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
@@ -240,12 +219,7 @@ footer {
     border-radius: 5px;
     transition: all 0.2s ease;
 }
-.action-button:hover { filter: brightness(1.2); }
-.action-button.fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
-
-#input-area {
-    display: flex;
-}
+#input-area { display: flex; }
 textarea#user-input {
     flex-grow: 1;
     background-color: #333;
@@ -253,37 +227,25 @@ textarea#user-input {
     border: 1px solid #555;
     padding: 10px;
     font-size: 16px;
-    font-family: sans-serif;
     resize: none;
-    line-height: 1.5;
     max-height: 150px;
-    overflow-y: auto;
 }
-#user-input:disabled { background-color: #444; cursor: not-allowed; }
-
-#export-log-button {
-    background-color: var(--border-color);
-    color: var(--text-color);
-    border: 1px solid #555;
-    padding: 10px 15px;
-    margin: 0 10px;
-    cursor: pointer;
-    font-size: 14px;
-    border-radius: 5px;
-    transition: background-color 0.2s ease;
-}
-#export-log-button:hover { background-color: #555; }
-
-#send-button {
-    background-color: var(--accent-color);
-    color: white;
+#export-log-button, #send-button {
     border: none;
-    padding: 10px 20px;
+    padding: 10px;
     cursor: pointer;
     font-size: 16px;
 }
+#export-log-button {
+    background-color: var(--border-color);
+    color: var(--text-color);
+    margin: 0 10px;
+}
+#send-button {
+    background-color: var(--accent-color);
+    color: white;
+}
 
-/* --- サイドバー --- */
 /* --- サイドバー --- */
 #sidebar {
     width: 30%;
@@ -424,25 +386,6 @@ textarea#user-input {
 #confirm-button { background-color: var(--accent-color); }
 #delete-slot-button { background-color: var(--danger-color); }
 
-/* ★★★ インポートボタンのスタイルを追加 ★★★ */
-#import-container {
-    margin-top: 10px;
-}
-.system-button-small {
-    width: 100%;
-    padding: 10px;
-    background-color: var(--border-color);
-    color: var(--text-color);
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s ease;
-}
-.system-button-small:hover {
-    background-color: #555;
-}
-
 
 /* --- 広告モーダル --- */
 .ad-modal-overlay {
@@ -456,6 +399,10 @@ textarea#user-input {
     z-index: 2000;
 }
 .ad-modal-overlay.visible { display: flex; }
+body:not(.game-active) .ad-modal-overlay {
+    display: none !important;
+}
+
 .ad-modal-content {
     background-color: var(--container-bg);
     padding: 30px;
@@ -502,20 +449,26 @@ textarea#user-input {
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.95); } }
 @keyframes fadeInAndOut { 0% { opacity: 0; transform: translateY(5px); } 20% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes highlight-fade {
+    from { background-color: var(--highlight-color); }
+    to { background-color: #333; }
+}
+
 
 /* --- スマホ表示 --- */
 @media (max-width: 800px) {
-    body.game-active {
+    body {
         height: auto;
         overflow: auto;
     }
-    .landing-title {
-        font-size: 1.8em;
+    #game-wrapper {
+        overflow: visible;
+        height: auto;
     }
     #game-content-wrapper {
         flex-direction: column;
         padding: 10px;
-        overflow: visible;
+        height: auto;
     }
     #game-container, 
     #sidebar {
@@ -524,7 +477,8 @@ textarea#user-input {
         height: auto;
     }
     #game-log {
-        min-height: 300px;
+        min-height: 50vh;
+        height: 50vh;
     }
     #sidebar {
         margin-top: 20px;

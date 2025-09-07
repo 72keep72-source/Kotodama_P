@@ -41,7 +41,6 @@ export function addLog(text, className) {
     const p = document.createElement('p');
     p.innerHTML = text.replace(/\n/g, '<br>');
     if (className) {
-        // 複数のクラスを一度に追加できるように修正
         className.split(' ').forEach(cls => p.classList.add(cls));
     }
     gameLog.appendChild(p);
@@ -348,15 +347,15 @@ export function showAdModal(scenarioType) {
     adModalOverlay.classList.add('visible');
 }
 
-/** インポートされたスロットをハイライト表示する */
 export function highlightSlot(slotId) {
+    if (!slotSelector) return;
     const option = slotSelector.querySelector(`option[value="${slotId}"]`);
     if (option) {
-        slotSelector.value = slotId; // 自動で選択状態にする
+        slotSelector.value = slotId;
         slotSelector.classList.add('highlight');
         setTimeout(() => {
             slotSelector.classList.remove('highlight');
-        }, 2000); // 2秒後にハイライトを消す
+        }, 2000);
     }
 }
 

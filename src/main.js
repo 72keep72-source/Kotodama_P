@@ -2,20 +2,24 @@
 import * as state from './services/state.js';
 import * as ui from './ui.js';
 import { callAI } from './services/api.js';
+// ★★★ 2つのルールブックの読み込み方を統一 ★★★
 import { RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 
-// --- 初期化 ---
+// --- 初期化処理 ---
+// ページのHTMLが全て読み込まれた後に、一度だけ実行される
 document.addEventListener('DOMContentLoaded', () => {
-    ui.initializeUI();
     
-    // --- DOM要素の取得 (UI初期化後) ---
-    const startGameButton = document.getElementById('start-game-button');
+    // --- DOM要素の取得 ---
     const body = document.body;
+    const landingPage = document.getElementById('landing-page');
+    const startGameButton = document.getElementById('start-game-button');
+    const gameWrapper = document.getElementById('game-wrapper');
     const userInput = document.getElementById('user-input');
     const sendButton = document.getElementById('send-button');
     const confirmButton = document.getElementById('confirm-button');
     const deleteSlotButton = document.getElementById('delete-slot-button');
+    const slotSelector = document.getElementById('slot-selector');
     const exportButton = document.getElementById('export-log-button');
     const importButton = document.getElementById('import-button');
     const importFileInput = document.getElementById('import-file-input');
@@ -61,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (command === '') return;
 
         if (!state.hasActionsLeft()) {
-            ui.showAdModal(state.getGameState().activeScenarioType);
+            ui.showAdModal(state.getGameState().scenarioType);
             return;
         }
         
@@ -109,13 +113,11 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateAllDisplays(gameState);
         ui.rebuildLog(gameState.conversationHistory);
         
-        // ★★★ 修正点：ロード後は、必ずAIに次の行動を尋ねる ★★★
         processAIturn();
     }
 
     /** 選択されたスロットを削除 */
     function deleteSelectedSlot() {
-        const slotSelector = document.getElementById('slot-selector');
         const selectedId = slotSelector.value;
         if (!selectedId || selectedId === 'new_game' || !state.getGameState().gameSlots.some(s => s.id == selectedId)) {
             ui.showTemporaryMessage('削除するセーブデータを選択してください。');
@@ -124,12 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const slotToDelete = state.getGameState().gameSlots.find(s => s.id == selectedId);
         if (confirm(`本当にセーブデータ「${slotToDelete.name}」を削除しますか？`)) {
             state.deleteSlot(selectedId);
-            initializeGame(); 
+            initializeGame(); // ★ window.location.reload() から変更
         }
     }
 
     /** ゲーム画面の初期化 */
     function initializeGame() {
+        ui.initializeUI();
         state.loadGameSlotsFromStorage();
         const gameState = state.getGameState();
         ui.updateSlotSelector({ 
@@ -151,10 +154,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- イベントリスナー ---
+    // --- イベントリスナーの設定 ---
     if (startGameButton) {
         startGameButton.addEventListener('click', () => {
-            document.body.classList.add('game-active');
+            // ★★★ hiddenクラスを剥がす処理を追加 ★★★
+            landingPage.classList.add('hidden');
+            gameWrapper.classList.remove('hidden');
+            body.classList.add('game-active');
             initializeGame();
         });
     }
@@ -171,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
         userInput.style.height = `${userInput.scrollHeight}px`;
     });
     confirmButton.addEventListener('click', () => {
-        const slotSelector = document.getElementById('slot-selector');
         const selectedValue = slotSelector.value;
 
         if (selectedValue === 'new_game') {
@@ -217,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (importedSlot && importedSlot.id && importedSlot.history) {
                 const importResult = state.importSlot(importedSlot);
                 if (importResult.success) {
-                    ui.showTemporaryMessage(`データ「${importedSlot.name}」をインポートしました。`);
                     initializeGame();
                     ui.highlightSlot(importResult.importedSlot.id);
                     loadGameFromSlot(importResult.importedSlot.id);
