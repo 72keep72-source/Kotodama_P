@@ -10,11 +10,11 @@ let gameSlots = [];
 let activeSlotId = null;
 let conversationHistory = [];
 let playerStats = {};
-// ★ dailyActionsの構造を変更
 let dailyActions = { lastUpdateTimestamp: 0, current: 0, limit: MAX_ACTIONS };
 let playerName = '';
 let inventory = [];
 let modifiedStats = new Set();
+let activeScenarioType = 'fantasy'; // デフォルト
 
 
 /** JSTでの「最後のAM4時」のタイムスタンプを取得する */
@@ -37,12 +37,11 @@ function getLastResetTimestamp(timestamp) {
     return resetDate.getTime() - JST_OFFSET;
 }
 
-/** ★★★ 新しい行動回数計算ロジック ★★★ */
+/** 行動回数計算ロジック */
 function updateActionsOnLoad(savedActions) {
     const now = Date.now();
     let { lastUpdateTimestamp, current, limit } = savedActions;
     
-    // 最後に更新してから、AM4時を何回またいだかを計算
     const lastReset = getLastResetTimestamp(lastUpdateTimestamp);
     const currentReset = getLastResetTimestamp(now);
 
@@ -50,12 +49,10 @@ function updateActionsOnLoad(savedActions) {
         const oneDay = 24 * 60 * 60 * 1000;
         const daysPassed = Math.floor((currentReset - lastReset) / oneDay);
         
-        // 経過日数 x 1日の回復量を加算
         const recoveredAmount = daysPassed * DAILY_RECOVERY;
         current = Math.min(limit, current + recoveredAmount);
     }
 
-    // タイムスタンプを現在時刻に更新して返す
     return { lastUpdateTimestamp: now, current, limit };
 }
 
@@ -64,7 +61,7 @@ function updateActionsOnLoad(savedActions) {
 export function getGameState() {
     return {
         gameSlots, activeSlotId, conversationHistory, playerStats,
-        dailyActions, playerName, inventory, modifiedStats
+        dailyActions, playerName, inventory, modifiedStats, activeScenarioType
     };
 }
 
@@ -96,6 +93,7 @@ export function saveCurrentSlotToStorage() {
         activeSlot.name = playerName;
         activeSlot.inventory = inventory;
         activeSlot.modified = Array.from(modifiedStats);
+        activeSlot.scenarioType = activeScenarioType;
     }
     localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
 }
@@ -109,11 +107,11 @@ export function loadGame(slotId) {
     
     conversationHistory = JSON.parse(JSON.stringify(slot.history || []));
     playerStats = JSON.parse(JSON.stringify(slot.stats || {}));
-    // ★ ロード時に行動回数を更新
     dailyActions = updateActionsOnLoad(slot.actions || { lastUpdateTimestamp: Date.now(), current: DAILY_RECOVERY, limit: MAX_ACTIONS });
     playerName = slot.name || '（名前未設定）';
     inventory = JSON.parse(JSON.stringify(slot.inventory || []));
     modifiedStats = new Set(slot.modified || []);
+    activeScenarioType = slot.scenarioType || 'fantasy';
     
     return getGameState();
 }
@@ -126,7 +124,6 @@ export function createNewGame(rulebook, scenarioType) {
         stats: generateStats(),
         history: [],
         inventory: [],
-        // ★ 新規ゲーム時の行動回数を設定
         actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
         modified: [],
         scenarioType: scenarioType
@@ -139,7 +136,6 @@ export function createNewGame(rulebook, scenarioType) {
     gameSlots.push(newSlot);
     activeSlotId = newSlot.id;
     
-    // グローバル変数を新しいスロットの状態に更新
     loadGame(activeSlotId);
     
     saveCurrentSlotToStorage();
@@ -148,9 +144,11 @@ export function createNewGame(rulebook, scenarioType) {
 
 export function deleteSlot(slotId) {
     gameSlots = gameSlots.filter(s => s.id != slotId);
-    activeSlotId = null;
+    if (activeSlotId == slotId) {
+        activeSlotId = null;
+        localStorage.removeItem('rpgActiveSlotId');
+    }
     saveCurrentSlotToStorage();
-    localStorage.removeItem('rpgActiveSlotId');
 }
 
 /** AI応答を解析し、ゲームの状態を更新する */
@@ -193,6 +191,17 @@ export function parseAIResponse(fullAiText) {
     }
     storyText = storyText.replace(damageRegex, '').trim();
 
+    const healRegex = /\[HEAL\]\s*(\d+)/g;
+    let healMatch;
+    while ((healMatch = healRegex.exec(storyText))) {
+        if (playerStats.HP) {
+            const heal = parseInt(healMatch[1], 10);
+            playerStats.HP.current += heal;
+            if (playerStats.HP.current > playerStats.HP.max) playerStats.HP.current = playerStats.HP.max;
+        }
+    }
+    storyText = storyText.replace(healRegex, '').trim();
+
     const itemAddRegex = /\[ITEM_ADD\]\s*(.+)/g;
     let itemAddMatch;
     while((itemAddMatch = itemAddRegex.exec(storyText)) !== null) {
@@ -221,7 +230,7 @@ function generateStats() {
     return { "HP": { current: initialHP, max: initialHP }, "STR": roll3d6(), "DEX": roll3d6(), "CON": roll3d6(), "INT": roll3d6(), "WIS": roll3d6(), "CHA": roll3d6() };
 }
 
-/** 行動回数が残っているかチェックし、必要ならリセットする */
+/** 行動回数が残っているかチェック */
 export function hasActionsLeft() {
     dailyActions = updateActionsOnLoad(dailyActions);
     return dailyActions.current > 0;
@@ -242,5 +251,88 @@ export function decrementActions() {
 /** 会話履歴を追加する */
 export function addHistory(turn) {
     conversationHistory.push(turn);
+}
+
+/** 現在のアクティブなセーブデータを取得する */
+export function getActiveSlotData() {
+    if (!activeSlotId) return null;
+    return JSON.parse(JSON.stringify(gameSlots.find(slot => slot.id == activeSlotId)));
+}
+
+/** 外部のセーブデータをインポートする */
+export function importSlot(importedSlot) {
+    const existingSlotIndex = gameSlots.findIndex(s => s.id == importedSlot.id);
+    if (existingSlotIndex !== -1) {
+        gameSlots[existingSlotIndex] = importedSlot;
+        saveCurrentSlotToStorage();
+        return { success: true, importedSlot };
+    }
+    
+    if (gameSlots.length >= MAX_SAVE_SLOTS) {
+        return { success: false, reason: 'slot_full' };
+    }
+
+    gameSlots.push(importedSlot);
+    saveCurrentSlotToStorage();
+    return { success: true, importedSlot };
+}
+
+/** .txtファイルの内容から、新しいセーブデータスロットを作成する */
+export function createSlotFromTxt(txtContent, rulebook) {
+    const lines = txtContent.split('\n').filter(line => line.trim() !== '');
+    
+    let restoredHistory = [];
+    let currentParts = [];
+    let playerNameFromTxt = "";
+
+    // ★★★ ログからプレイヤー名を正規表現で探す ★★★
+    for (const line of lines) {
+        // 例: 「> 私の名前は「リヒト」だ」 or 「> sosogiです」
+        const nameMatch = line.match(/^>\s*(?:私の名前は「(.+?)」だ|(.+?)です)/);
+        if (nameMatch) {
+            // マッチした部分 (リヒト or sosogi) を取得
+            playerNameFromTxt = nameMatch[1] || nameMatch[2];
+            break; // 最初に見つかった名前を採用
+        }
+    }
+    // 見つからなかった場合のフォールバック
+    if (!playerNameFromTxt) {
+         playerNameFromTxt = "（TXTから）";
+    }
+
+    lines.forEach(line => {
+        if (line.startsWith('> ')) {
+            if (currentParts.length > 0) {
+                restoredHistory.push({ role: 'model', parts: [{ text: currentParts.join('\n') }] });
+                currentParts = [];
+            }
+            restoredHistory.push({ role: 'user', parts: [{ text: line.substring(2) }] });
+        } else {
+            currentParts.push(line);
+        }
+    });
+    if (currentParts.length > 0) {
+        restoredHistory.push({ role: 'model', parts: [{ text: currentParts.join('\n') }] });
+    }
+
+    const initialUserTurn = {
+        role: 'user',
+        parts: [{ text: rulebook }] 
+    };
+
+    const finalHistory = [initialUserTurn, ...restoredHistory];
+
+    const newSlot = {
+        id: Date.now(),
+        name: `${playerNameFromTxt}_txt`, // ★★★ 抽出した名前を使用 ★★★
+        stats: generateStats(),
+        history: finalHistory,
+        inventory: [],
+        actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
+        modified: [],
+        scenarioType: 'fantasy' 
+    };
+
+    return newSlot;
 }
 
