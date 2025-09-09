@@ -14,19 +14,48 @@
     <!-- ★★★ ヘッダーとフッターをページの基本骨格として配置 ★★★ -->
     <header><h1>言霊のプロトコル</h1></header>
 
-    <!-- ▼▼▼ ここから画面の中身（最初はランディングページ） ▼▼▼ -->
+    <!-- ▼▼▼ ここから画面の中身 ▼▼▼ -->
     <main id="landing-page">
-        <div class="game-introduction">
+        <!-- ヒーローセクション -->
+        <section class="game-introduction">
             <div class="landing-content">
                 <h2 class="landing-title">物語に、レールは要らない。<br>あなたの「言葉」が、世界を創る。</h2>
                 <p class="landing-description">
                     『言霊のプロトコル』は、あなたの入力した「言葉」で物語を紡ぐ、新世代のテキストRPGです。<br>
-                    AIゲームマスターが、あなたのどんな無茶な行動にもリアルタイムで応答し、世界は二度と同じ顔を見せません。<br>
-                    さあ、あなただけの伝説を、その手で紡ぎ出してください。
+                    AIゲームマスターが、あなたのどんな無茶な行動にもリアルタイムで応答し、世界は二度と同じ顔を見せません。
                 </p>
-                <button id="start-game-button">ゲームを開始する</button>
+                <button id="start-game-button">さあ、冒険を始める</button>
             </div>
-        </div>
+        </section>
+
+        <!-- ★★★ ここから追加コンテンツ ★★★ -->
+        <section class="content-section">
+            <div class="content-inner">
+                <h3>『言霊のプロトコル』とは？</h3>
+                <p>本作は、あらかじめ用意された選択肢を選ぶだけのゲームではありません。あなたが頭に思い描いた行動やセリフを自由に入力することで、AIがその場で物語を生成します。「王女になった次の瞬間、父王を鞭打つ」ような、あなただけの予測不能な化学反応をお楽しみください。</p>
+            </div>
+        </section>
+        
+        <section class="content-section feature-section">
+            <div class="content-inner">
+                <h3>ゲームの特徴</h3>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>無限の物語体験</h4>
+                        <p>AIがプレイするたびに異なるシナリオを生成。あなたの冒険は、完全にあなただけのものです。</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>完全な自由</h4>
+                        <p>「あたりを見渡す」といった王道な行動から、「突然踊りだす」といった奇抜な行動まで、あなたの思いつきが世界に反映されます。</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>選べる世界観</h4>
+                        <p>ゲーム開始時に「剣と魔法」や「SF」など、好みのシナリオを選択可能。今後も新しい世界が追加されていきます。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- ★★★ ここまで追加コンテンツ ★★★ -->
     </main>
 
     <div id="game-wrapper" class="hidden">
@@ -36,7 +65,7 @@
                 <div id="scenario-selection-container"></div>
                 <div id="input-container">
                     <div id="intro-and-hint-buttons">
-                        <button id="hint-toggle-button">ヒントを表示</button>
+                         <button id="hint-toggle-button">ヒントを表示</button>
                     </div>
                     <div id="actions-container"></div>
                     <div id="input-area">
@@ -74,8 +103,7 @@
             </div>
         </div>
     </div>
-    <!-- ▲▲▲ ここまで画面の中身 ▲▲▲ -->
-
+    
     <!-- 広告モーダル -->
     <div id="ad-modal-overlay" class="ad-modal-overlay">
         <div class="ad-modal-content">
@@ -114,4 +142,3 @@
     </script>
 </body>
 </html>
-

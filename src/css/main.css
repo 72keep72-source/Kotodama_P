@@ -66,16 +66,20 @@ footer {
 main#landing-page {
     flex-grow: 1;
     display: flex;
+    flex-direction: column; /* ★縦にセクションを並べる */
+}
+.game-introduction { /* ヒーローセクション */
+    display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 20px;
+    padding: 5vh 20px; /* ★上下の余白を調整 */
+    background: radial-gradient(circle, #2b2b2b 0%, #1a1a1a 80%);
 }
-.landing-content {
-    max-width: 700px;
-}
+.landing-content { max-width: 700px; }
 .landing-title {
-    font-size: clamp(1.8em, 5vw, 2.5em);
+    font-size: clamp(1.8em, 5vw, 2.8em);
     color: var(--accent-color);
     margin-bottom: 20px;
     line-height: 1.4;
@@ -100,6 +104,40 @@ main#landing-page {
 #start-game-button:hover {
     background-color: var(--accent-color-dark);
     transform: scale(1.05);
+}
+
+/* ★★★ 追加コンテンツのスタイル ★★★ */
+.content-section {
+    padding: 40px 20px;
+}
+.content-section.feature-section {
+    background-color: var(--container-bg);
+}
+.content-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+}
+.content-inner h3 {
+    font-size: 1.8em;
+    color: var(--accent-color);
+    margin-top: 0;
+    margin-bottom: 30px;
+}
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    text-align: left;
+}
+.feature-item h4 {
+    font-size: 1.2em;
+    margin: 0 0 10px 0;
+}
+.feature-item p {
+    margin: 0;
+    color: var(--subtle-text-color);
+    line-height: 1.6;
 }
 
 /* --- ゲーム画面 --- */
@@ -460,6 +498,9 @@ body:not(.game-active) .ad-modal-overlay {
     body {
         height: auto;
         overflow: auto;
+    }
+    .landing-title {
+        font-size: 1.8em;
     }
     #game-wrapper {
         overflow: visible;
