@@ -1,21 +1,21 @@
 {
     "name": "言霊のプロトコル",
     "short_name": "言霊のプロトコル",
-    "start_url": ".",
+    "start_url": "/",
     "display": "standalone",
     "background_color": "#1a1a1a",
     "theme_color": "#1a1a1a",
-    "description": "あなたの「言葉」が、世界を創る。新世代のテキストRPG。",
     "icons": [
         {
-            "src": "src/assets/image/Kotodama_P.gif",
+            "src": "src/assets/image/Kotodama_P_toka.png",
             "sizes": "192x192",
-            "type": "image/gif"
+            "type": "image/png"
         },
         {
-            "src": "src/assets/image/Kotodama_P.gif",
+            "src": "src/assets/image/Kotodama_P_toka.png",
             "sizes": "512x512",
-            "type": "image/gif"
+            "type": "image/png"
         }
     ]
 }
+

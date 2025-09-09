@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kotodama-protocol-cache-v1';
+const CACHE_NAME = 'kotodama-protocol-cache-v2'; // ★キャッシュバージョンを更新
 // キャッシュするファイルのリスト
 const urlsToCache = [
     '/',
@@ -11,9 +11,23 @@ const urlsToCache = [
     '/src/assets/data/rulebook_1st.js',
     '/src/assets/data/rulebook_SF_AI.js',
     '/manifest.json',
-    '/src/assets/image/Kotodama_P_toka.png', // <-- この行を追加
-    // favicon.ico やアイコン画像などもここに追加すると良い
+    'src/assets/image/Kotodama_P_toka.png' // ★新しいPNGアイコンをキャッシュ
 ];
+
+// --- (以降のサービスワーカーのコードは変更ありません) ---
+
+// 古いキャッシュを削除する処理を追加すると、より確実です
+self.addEventListener('activate', event => {
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.filter(name => name !== CACHE_NAME)
+                          .map(name => caches.delete(name))
+            );
+        })
+    );
+});
+
 
 // インストール時に、ファイルをキャッシュする
 self.addEventListener('install', event => {
@@ -30,20 +44,17 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
     const requestUrl = new URL(event.request.url);
 
-    // ★★★ APIへのリクエストはキャッシュせず、常にネットワークに接続する ★★★
+    // APIへのリクエストはキャッシュせず、常にネットワークに接続する
     if (requestUrl.pathname.startsWith('/.netlify/functions/')) {
-        // 何もせず、ブラウザのデフォルトのネットワーク処理に任せる
         return; 
     }
 
     event.respondWith(
         caches.match(event.request)
             .then(response => {
-                // キャッシュにヒットした場合、それを返す
                 if (response) {
                     return response;
                 }
-                // キャッシュになかった場合、ネットワークにリクエストしに行く
                 return fetch(event.request);
             })
     );
