@@ -113,7 +113,22 @@ document.addEventListener('DOMContentLoaded', () => {
         ui.updateAllDisplays(gameState);
         ui.rebuildLog(gameState.conversationHistory);
         
-        processAIturn();
+        // ★★★ ここからが修正点 ★★★
+        const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
+
+        if (lastTurn && lastTurn.role === 'model') {
+            // 最後にAIが応答した場合：その時の選択肢を再表示して、プレイヤーの入力を待つ
+            const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
+            ui.displayActions(parsedData.actions, handleUserCommand);
+            ui.toggleInput(false); 
+        } else if (lastTurn && lastTurn.role === 'user') {
+            // プレイヤーが入力した直後だった場合：AIに応答を生成させる
+            processAIturn();
+        } else {
+            // それ以外（ゲーム開始直後など）
+            ui.toggleInput(false);
+        }
+        // ★★★ ここまでが修正点 ★★★
     }
 
     /** 選択されたスロットを削除 */
