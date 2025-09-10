@@ -220,6 +220,7 @@ export function parseAIResponse(fullAiText) {
     return { storyLogText, actions, statChanges, showAdButton }; // ★フラグを返す
 }
 
+
 /** 初期ステータスを生成する */
 function generateStats() {
     const roll3d6 = () => (Math.floor(Math.random() * 6) + 1) + (Math.floor(Math.random() * 6) + 1) + (Math.floor(Math.random() * 6) + 1);

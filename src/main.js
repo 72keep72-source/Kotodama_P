@@ -47,12 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const parsedData = state.parseAIResponse(fullAiText);
 
             ui.updateThinkingMessage(parsedData.storyLogText);
-            ui.displayActions(parsedData.actions, handleUserCommand);
-           
-        // ★ テストシナリオ完了ボタンの表示処理
+
+            // ★ テストシナリオ完了ボタンの表示処理
             if (parsedData.showAdButton) {
                 ui.showNextScenarioButton(() => {
-                    ui.showAdModal(state.getGameState().activeScenarioType);
+                    // ここでは広告モーダルを直接表示するのではなく、
+                    // 例えば新しいシナリオ選択画面に戻るなどの処理を実装できる
+                    initializeGame(); 
                 });
             } else {
                 ui.displayActions(parsedData.actions, handleUserCommand);
@@ -66,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.toggleInput(false);
         }
     }
+
 
     /** ユーザーのコマンドを処理 */
     async function handleUserCommand(commandFromButton = null) {

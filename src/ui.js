@@ -360,3 +360,13 @@ export function highlightSlot(slotId) {
     }
 }
 
+// ★★★ テストシナリオ完了ボタンを表示する新しい関数 ★★★
+export function showNextScenarioButton(onClick) {
+    actionsContainer.innerHTML = ''; // 既存の[ACTION]ボタンはクリア
+    const button = document.createElement('button');
+    button.textContent = '次の物語へ進む';
+    button.className = 'next-scenario-button'; // 新しいCSSクラスを適用
+    button.addEventListener('click', onClick);
+    actionsContainer.appendChild(button);
+    actionsContainer.style.display = 'block'; // コンテナを表示状態にする
+}
