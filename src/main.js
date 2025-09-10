@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (command === '') return;
 
         // テストシナリオでは行動回数を消費しない
-        if (state.getGameState().activeScenarioType !== 'test') {
+        if (state.getGameState().activeScenarioType !== 'testS') {
             if (!state.hasActionsLeft()) {
                 ui.showAdModal(state.getGameState().activeScenarioType);
                 return;
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.updateActionCountDisplay(state.getGameState().dailyActions);
         }
 
-        
+
         ui.addLog(`> ${command}`, 'user-command');
         ui.clearInput();
         ui.clearActions();
