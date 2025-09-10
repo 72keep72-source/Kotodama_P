@@ -48,10 +48,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         ui.updateThinkingMessage(parsedData.storyLogText);
 
-        // ★ テストシナリオ完了ボタンの表示処理
+        /**
+          ★ ここが元のコードです ★
+          if (parsedData.showAdButton) {
+          ui.showNextScenarioButton(() => {
+          initializeGame(); 
+          });
+          } else {
+          ui.displayActions(parsedData.actions, handleUserCommand);
+          }
+         */
+
+        // ▼▼▼ ここからが修正後のコードです ▼▼▼
         if (parsedData.showAdButton) {
             ui.showNextScenarioButton(() => {
-                // 先に広告モーダルを表示し、成功したらゲームを初期化
+                // 「次の物語へ」ボタンが押されたら、広告モーダルを表示する。
+                // 広告が成功した後の処理として、initializeGame を渡す。
                 ui.showAdModal(state.getGameState().activeScenarioType, () => {
                     initializeGame();
                 });
@@ -59,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             ui.displayActions(parsedData.actions, handleUserCommand);
         }
+        // ▲▲▲ ここまでが修正後のコードです ▲▲▲
         
         ui.updateAllDisplays(state.getGameState(), parsedData.statChanges);
         state.saveCurrentSlotToStorage();
@@ -143,6 +156,19 @@ document.addEventListener('DOMContentLoaded', () => {
     ui.updateAllDisplays(gameState);
     ui.rebuildLog(gameState.conversationHistory);
     
+    // ▼▼▼ この中のロジックも、processAIturnと同様に修正します ▼▼▼
+        if (parsedData.showAdButton) {
+             ui.showNextScenarioButton(() => {
+                ui.showAdModal(state.getGameState().activeScenarioType, () => {
+                    initializeGame();
+                });
+            });
+        } else {
+            ui.displayActions(parsedData.actions, handleUserCommand);
+        }
+        // ▲▲▲ ここまで修正 ▲▲▲
+
+        /**
     const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
     if (lastTurn && lastTurn.role === 'model') {
         const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
@@ -156,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             ui.displayActions(parsedData.actions, handleUserCommand);
         }
-    }
+    } */
     
     ui.toggleInput(false);
 }
