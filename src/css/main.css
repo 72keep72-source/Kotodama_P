@@ -261,16 +261,23 @@ main#landing-page {
 .action-button:hover { filter: brightness(1.2); }
 .action-button.fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
 
+
 /* ★★★ テストシナリオ完了ボタンのスタイル ★★★ */
 .next-scenario-button {
-    width: 80%;
-    max-width: 400px;
+    width: 100%;
+    background-color: var(--twitter-color);
+    color: white;
+    border: none;
     padding: 15px;
+    margin-bottom: 10px; /* 下に余白を追加 */
     font-size: 1.1em;
     font-weight: bold;
-    background: linear-gradient(45deg, var(--accent-color), var(--accent-color-dark));
-    margin: 20px auto;
-    display: block;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.next-scenario-button:hover {
+    filter: brightness(1.2);
 }
 
 

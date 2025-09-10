@@ -30,43 +30,46 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** AIとの対話処理をまとめた関数 */
     async function processAIturn() {
-        ui.addLog('考え中...', 'ai-response');
-        ui.toggleInput(true, 'AIが応答を考えています…');
+    ui.addLog('考え中...', 'ai-response');
+    ui.toggleInput(true, 'AIが応答を考えています…');
 
-        const currentHistory = state.getGameState().conversationHistory;
-        if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
-            console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
-            ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
-            ui.toggleInput(false);
-            return; 
-        }
-
-        try {
-            const fullAiText = await callAI(currentHistory);
-            state.addHistory({ role: 'model', parts: [{ text: fullAiText }] });
-            const parsedData = state.parseAIResponse(fullAiText);
-
-            ui.updateThinkingMessage(parsedData.storyLogText);
-
-            // ★ テストシナリオ完了ボタンの表示処理
-            if (parsedData.showAdButton) {
-                ui.showNextScenarioButton(() => {
-                    // ここでは広告モーダルを直接表示するのではなく、
-                    // 例えば新しいシナリオ選択画面に戻るなどの処理を実装できる
-                    initializeGame(); 
-                });
-            } else {
-                ui.displayActions(parsedData.actions, handleUserCommand);
-            }
-            
-            ui.updateAllDisplays(state.getGameState(), parsedData.statChanges);
-            state.saveCurrentSlotToStorage();
-        } catch (error) {
-            ui.updateThinkingMessage('エラーが発生しました: ' + error.message);
-        } finally {
-            ui.toggleInput(false);
-        }
+    const currentHistory = state.getGameState().conversationHistory;
+    if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
+        console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
+        ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
+        ui.toggleInput(false);
+        return; 
     }
+
+    try {
+        const fullAiText = await callAI(currentHistory);
+        state.addHistory({ role: 'model', parts: [{ text: fullAiText }] });
+        const parsedData = state.parseAIResponse(fullAiText);
+
+        ui.updateThinkingMessage(parsedData.storyLogText);
+
+        // ★ テストシナリオ完了ボタンの表示処理
+        if (parsedData.showAdButton) {
+            ui.showNextScenarioButton(() => {
+                // 先に広告モーダルを表示し、成功したらゲームを初期化
+                ui.showAdModal(state.getGameState().activeScenarioType, () => {
+                    initializeGame();
+                });
+            });
+        } else {
+            ui.displayActions(parsedData.actions, handleUserCommand);
+        }
+        
+        ui.updateAllDisplays(state.getGameState(), parsedData.statChanges);
+        state.saveCurrentSlotToStorage();
+    } catch (error) {
+        ui.updateThinkingMessage('エラーが発生しました: ' + error.message);
+    } finally {
+        ui.toggleInput(false);
+    }
+}
+
+
 
 
     /** ユーザーのコマンドを処理 */
@@ -130,33 +133,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** セーブデータからゲームをロードする */
     function loadGameFromSlot(slotId) {
-        const gameState = state.loadGame(slotId);
-        if (!gameState) {
-            initializeGame();
-            return;
-        }
-        
-        ui.clearGameScreen();
-        ui.updateAllDisplays(gameState);
-        ui.rebuildLog(gameState.conversationHistory);
-        
-        // ★★★ ここからが修正点 ★★★
-        const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
-
-        if (lastTurn && lastTurn.role === 'model') {
-            // 最後にAIが応答した場合：その時の選択肢を再表示して、プレイヤーの入力を待つ
-            const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
-            ui.displayActions(parsedData.actions, handleUserCommand);
-            ui.toggleInput(false); 
-        } else if (lastTurn && lastTurn.role === 'user') {
-            // プレイヤーが入力した直後だった場合：AIに応答を生成させる
-            processAIturn();
-        } else {
-            // それ以外（ゲーム開始直後など）
-            ui.toggleInput(false);
-        }
-        // ★★★ ここまでが修正点 ★★★
+    const gameState = state.loadGame(slotId);
+    if (!gameState) {
+        initializeGame();
+        return;
     }
+    
+    ui.clearGameScreen();
+    ui.updateAllDisplays(gameState);
+    ui.rebuildLog(gameState.conversationHistory);
+    
+    const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
+    if (lastTurn && lastTurn.role === 'model') {
+        const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
+        if (parsedData.showAdButton) {
+             ui.showNextScenarioButton(() => {
+                // 先に広告モーダルを表示し、成功したらゲームを初期化
+                ui.showAdModal(state.getGameState().activeScenarioType, () => {
+                    initializeGame();
+                });
+            });
+        } else {
+            ui.displayActions(parsedData.actions, handleUserCommand);
+        }
+    }
+    
+    ui.toggleInput(false);
+}
 
     /** 選択されたスロットを削除 */
     function deleteSelectedSlot() {
