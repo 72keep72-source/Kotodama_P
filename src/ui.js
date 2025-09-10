@@ -341,7 +341,10 @@ export function showAdModal(scenarioType) {
     let message = '';
     if (scenarioType === 'sf') {
         message = '警告：精神負荷が臨界点に達しました。<br>これ以上のマトリクスへの接続は、あなたの精神崩壊を招きます。<br>ネットワークへの再アクセスは、システムデイリーメンテナンス（毎日午前4時）の完了後に許可されます。';
-    } else {
+    }else if (scenarioType === 'testS') {
+                    message = 'お試しプレイありがとうございます！<br>広告を見ることでゲーム選択画面に戻ります。'; 
+                }
+    else {
         message = '夜の森を覆う呪いが、あなたの理性を蝕んでいく…<br>これ以上は危険だ。今は身を潜め、心を休めるしかない。<br>呪いが和らぐ夜明け（午前4時）と共に、再びあなたの道は開かれるだろう。';
     }
     adModalText.innerHTML = message;
