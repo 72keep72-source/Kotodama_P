@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+
     /** ユーザーのコマンドを処理 */
     async function handleUserCommand(commandFromButton = null) {
         if (!state.getActiveSlotId()) {
@@ -156,7 +157,11 @@ document.addEventListener('DOMContentLoaded', () => {
     ui.updateAllDisplays(gameState);
     ui.rebuildLog(gameState.conversationHistory);
     
-    // ▼▼▼ この中のロジックも、processAIturnと同様に修正します ▼▼▼
+    const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
+    if (lastTurn && lastTurn.role === 'model') {
+        const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
+        
+        // ▼▼▼ この中のロジックも、processAIturnと同様に修正します ▼▼▼
         if (parsedData.showAdButton) {
              ui.showNextScenarioButton(() => {
                 ui.showAdModal(state.getGameState().activeScenarioType, () => {
@@ -167,25 +172,25 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.displayActions(parsedData.actions, handleUserCommand);
         }
         // ▲▲▲ ここまで修正 ▲▲▲
-
-        /**
-    const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
-    if (lastTurn && lastTurn.role === 'model') {
-        const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
-        if (parsedData.showAdButton) {
-             ui.showNextScenarioButton(() => {
-                // 先に広告モーダルを表示し、成功したらゲームを初期化
-                ui.showAdModal(state.getGameState().activeScenarioType, () => {
-                    initializeGame();
-                });
-            });
-        } else {
-            ui.displayActions(parsedData.actions, handleUserCommand);
-        }
-    } */
+    }
+        /**const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
+    *if (lastTurn && lastTurn.role === 'model') {
+        *const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
+       * if (parsedData.showAdButton) {
+       *      ui.showNextScenarioButton(() => {
+       *         先に広告モーダルを表示し、成功したらゲームを初期化
+        *        ui.showAdModal(state.getGameState().activeScenarioType, () => {
+       *             initializeGame();
+      *          });
+      *      });
+      *  } else {
+      *      ui.displayActions(parsedData.actions, handleUserCommand);
+     *   }
+   * } */
     
     ui.toggleInput(false);
 }
+
 
     /** 選択されたスロットを削除 */
     function deleteSelectedSlot() {
@@ -307,4 +312,3 @@ document.addEventListener('DOMContentLoaded', () => {
         event.target.value = '';
     });
 });
-

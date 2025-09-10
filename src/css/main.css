@@ -109,6 +109,7 @@ main#landing-page {
 /* ★★★ 追加コンテンツのスタイル ★★★ */
 .content-section {
     padding: 40px 20px;
+    border-top: 1px solid var(--border-color);
 }
 .content-section.feature-section {
     background-color: var(--container-bg);
@@ -121,23 +122,38 @@ main#landing-page {
 .content-inner h3 {
     font-size: 1.8em;
     color: var(--accent-color);
+    text-align: center;
     margin-top: 0;
     margin-bottom: 30px;
 }
+.content-section p {
+    line-height: 1.8;
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
 .feature-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 30px;
-    text-align: left;
+    margin-top: 40px;
 }
+
+.feature-item {
+    text-align: center;
+}
+
 .feature-item h4 {
     font-size: 1.2em;
+    color: var(--ai-text);
     margin: 0 0 10px 0;
 }
+
 .feature-item p {
-    margin: 0;
+    font-size: 0.95em;
     color: var(--subtle-text-color);
-    line-height: 1.6;
+    text-align: center;
 }
 
 /* --- ゲーム画面 --- */
@@ -165,6 +181,8 @@ main#landing-page {
 #game-log {
     flex-grow: 1;
     overflow-y: auto;
+    white-space: pre-wrap;
+    position: relative;
     padding: 20px;
 }
 .ai-response { color: var(--ai-text); }
