@@ -483,6 +483,19 @@ body:not(.game-active) .ad-modal-overlay {
     display: none;
 }
 
+
+/* ★★★ テストシナリオ完了ボタンのスタイル ★★★ */
+.next-scenario-button {
+    width: 80%;
+    max-width: 400px;
+    padding: 15px;
+    font-size: 1.1em;
+    font-weight: bold;
+    background: linear-gradient(45deg, var(--accent-color), var(--accent-color-dark));
+    margin: 20px auto;
+    display: block;
+}
+
 /* --- アニメーション --- */
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.95); } }

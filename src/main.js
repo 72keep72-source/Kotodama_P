@@ -5,10 +5,12 @@ import { callAI } from './services/api.js';
 // ★★★ 2つのルールブックの読み込み方を統一 ★★★
 import { RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
+import { RULEBOOK_TEST } from './assets/data/rulebook_Otameshi.js';
 
 // --- 初期化処理 ---
 // ページのHTMLが全て読み込まれた後に、一度だけ実行される
 document.addEventListener('DOMContentLoaded', () => {
+    ui.initializeUI();
     
     // --- DOM要素の取得 ---
     const body = document.body;
@@ -46,6 +48,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ui.updateThinkingMessage(parsedData.storyLogText);
             ui.displayActions(parsedData.actions, handleUserCommand);
+           
+        // ★ テストシナリオ完了ボタンの表示処理
+            if (parsedData.showAdButton) {
+                ui.showNextScenarioButton(() => {
+                    ui.showAdModal(state.getGameState().activeScenarioType);
+                });
+            } else {
+                ui.displayActions(parsedData.actions, handleUserCommand);
+            }
+            
             ui.updateAllDisplays(state.getGameState(), parsedData.statChanges);
             state.saveCurrentSlotToStorage();
         } catch (error) {
@@ -64,13 +76,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const command = commandFromButton || userInput.value.trim();
         if (command === '') return;
 
-        if (!state.hasActionsLeft()) {
-            ui.showAdModal(state.getGameState().scenarioType);
-            return;
+        // テストシナリオでは行動回数を消費しない
+        if (state.getGameState().activeScenarioType !== 'test') {
+            if (!state.hasActionsLeft()) {
+                ui.showAdModal(state.getGameState().activeScenarioType);
+                return;
+            }
+            state.decrementActions();
+            ui.updateActionCountDisplay(state.getGameState().dailyActions);
         }
-        
-        state.decrementActions();
-        ui.updateActionCountDisplay(state.getGameState().dailyActions);
+
         
         ui.addLog(`> ${command}`, 'user-command');
         ui.clearInput();
@@ -86,7 +101,17 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.showTemporaryMessage(`セーブスロットは${state.MAX_SAVE_SLOTS}つまでです。`);
             return;
         }
-        const rulebook = scenarioType === 'sf' ? RULEBOOK_SF_AI : RULEBOOK_1ST;
+        // ▼▼▼ ここからが修正箇所です ▼▼▼
+            let rulebook;
+            if (scenarioType === 'sf') {
+                rulebook = RULEBOOK_SF_AI;
+        } else if (scenarioType === 'testS') { // ★テストシナリオ用の分岐を追加
+                rulebook = RULEBOOK_TEST;
+        } else { // デフォルトはファンタジー
+            rulebook = RULEBOOK_1ST;
+        }
+        // ▲▲▲ ここまでが修正箇所です ▲▲▲
+    
         
         const newGameState = state.createNewGame(rulebook, scenarioType);
         
