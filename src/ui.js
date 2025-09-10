@@ -323,6 +323,35 @@ export function initializeHintButton() {
 
 export function initializeAdModal(onConfirm) {
     adCancelButton.addEventListener('click', () => adModalOverlay.classList.remove('visible'));
+    
+    adConfirmButton.addEventListener('click', () => {
+        // --- ▼▼▼ ここからがテスト用の仮表示ロジックです ▼▼▼ ---
+
+        // 1. ローディングスピナーを表示し、ボタンを隠す
+        adLoadingSpinner.style.display = 'block';
+        adConfirmButton.style.display = 'none';
+        adCancelButton.style.display = 'none';
+
+        // 2. 3秒待ってから、広告が成功したと仮定する
+        setTimeout(() => {
+            // 3. onConfirmコールバックを呼び出して、報酬を付与する
+            onConfirm(() => {
+                // 4. モーダルを閉じ、UIを元に戻す（この部分はonConfirmに渡されたコールバックが実行）
+                adModalOverlay.classList.remove('visible');
+                adLoadingSpinner.style.display = 'none';
+                adConfirmButton.style.display = 'inline-block';
+                adCancelButton.style.display = 'inline-block';
+            });
+        }, 3000); // 3000ミリ秒 = 3秒
+
+        // --- ▲▲▲ ここまでがテスト用の仮表示ロジックです ▲▲▲ ---
+    });
+}
+
+
+/**本番用こめんとあうと
+export function initializeAdModal(onConfirm) {
+    adCancelButton.addEventListener('click', () => adModalOverlay.classList.remove('visible'));
     adConfirmButton.addEventListener('click', () => {
         adLoadingSpinner.style.display = 'block';
         adConfirmButton.style.display = 'none';
@@ -335,7 +364,7 @@ export function initializeAdModal(onConfirm) {
             adCancelButton.style.display = 'inline-block';
         });
     });
-}
+}　**/
 
 export function showAdModal(scenarioType) {
     let message = '';
