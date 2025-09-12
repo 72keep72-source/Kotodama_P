@@ -188,6 +188,10 @@ export function clearGameScreen() {
     gameLog.innerHTML = '';
     scenarioSelectionContainer.innerHTML = '';
     actionsContainer.innerHTML = '';
+     // ★★★ 修正点：古い完了ボタンが残っていたら、それも削除する ★★★
+    const nextScenarioBtn = document.querySelector('.next-scenario-button');
+    if(nextScenarioBtn) nextScenarioBtn.remove();
+
     updateAllDisplays({
         playerStats: {},
         modifiedStats: new Set(),
@@ -427,8 +431,9 @@ export function showNextScenarioButton(onClick) {
     button.className = 'next-scenario-button';
     button.addEventListener('click', onClick);
     
-    const inputContainer = document.getElementById('input-container');
-    inputContainer.insertBefore(button, actionsContainer);
+    // ★★★ 修正点：input-containerではなく、game-containerを基準にする ★★★
+    const gameContainer = document.getElementById('game-container');
+    gameContainer.appendChild(button);
 }
 
 /**
