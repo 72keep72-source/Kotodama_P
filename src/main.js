@@ -97,10 +97,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // テストシナリオでは行動回数を消費しない
         if (state.getGameState().activeScenarioType !== 'testS') {
+            // ★★★ 修正点1: 正しい関数名 hasActionsLeft を使用 ★★★
             if (!state.hasActionsLeft()) {
-                ui.showAdModal(state.getGameState().activeScenarioType);
+                ui.showAdModal(state.getGameState().activeScenarioType, () => {
+                    state.recoverActions(5); // 広告成功時のコールバックで回復
+                    ui.updateActionCountDisplay(state.getGameState().dailyActions);
+                    ui.addLog('【システム】行動回数が5回分回復しました。', 'ai-response');
+                });
                 return;
             }
+            // ★★★ 修正点2: 正しい関数名 decrementActions を使用 ★★★
             state.decrementActions();
             ui.updateActionCountDisplay(state.getGameState().dailyActions);
         }
