@@ -94,6 +94,7 @@ export function saveCurrentSlotToStorage() {
         activeSlot.inventory = inventory;
         activeSlot.modified = Array.from(modifiedStats);
         activeSlot.scenarioType = activeScenarioType;
+        
     }
     localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
 }
@@ -155,6 +156,13 @@ export function deleteSlot(slotId) {
 export function parseAIResponse(fullAiText) {
     let storyText = fullAiText;
     const statChanges = {};
+    let showAdButton = false; // ★テストシナリオ用フラグ
+
+    // ★SHOW_AD_BUTTONタグをチェック
+    if (storyText.includes('[SHOW_AD_BUTTON]')) {
+        showAdButton = true;
+        storyText = storyText.replace('[SHOW_AD_BUTTON]', '').trim();
+    }
 
     const nameMatch = storyText.match(/\[NAME\]\s*(.+)/);
     if (nameMatch) {
@@ -191,17 +199,6 @@ export function parseAIResponse(fullAiText) {
     }
     storyText = storyText.replace(damageRegex, '').trim();
 
-    const healRegex = /\[HEAL\]\s*(\d+)/g;
-    let healMatch;
-    while ((healMatch = healRegex.exec(storyText))) {
-        if (playerStats.HP) {
-            const heal = parseInt(healMatch[1], 10);
-            playerStats.HP.current += heal;
-            if (playerStats.HP.current > playerStats.HP.max) playerStats.HP.current = playerStats.HP.max;
-        }
-    }
-    storyText = storyText.replace(healRegex, '').trim();
-
     const itemAddRegex = /\[ITEM_ADD\]\s*(.+)/g;
     let itemAddMatch;
     while((itemAddMatch = itemAddRegex.exec(storyText)) !== null) {
@@ -220,8 +217,9 @@ export function parseAIResponse(fullAiText) {
     const storyLogText = lines.filter(line => !line.startsWith('[ACTION]')).join('\n').trim();
     const actions = lines.filter(line => line.startsWith('[ACTION]')).map(line => line.replace('[ACTION] ', ''));
 
-    return { storyLogText, actions, statChanges };
+    return { storyLogText, actions, statChanges, showAdButton }; // ★フラグを返す
 }
+
 
 /** 初期ステータスを生成する */
 function generateStats() {
@@ -230,7 +228,7 @@ function generateStats() {
     return { "HP": { current: initialHP, max: initialHP }, "STR": roll3d6(), "DEX": roll3d6(), "CON": roll3d6(), "INT": roll3d6(), "WIS": roll3d6(), "CHA": roll3d6() };
 }
 
-/** 行動回数が残っているかチェック */
+/** 行動回数が残っているかチェックする */
 export function hasActionsLeft() {
     dailyActions = updateActionsOnLoad(dailyActions);
     return dailyActions.current > 0;
@@ -277,62 +275,43 @@ export function importSlot(importedSlot) {
     return { success: true, importedSlot };
 }
 
-/** .txtファイルの内容から、新しいセーブデータスロットを作成する */
-export function createSlotFromTxt(txtContent, rulebook) {
-    const lines = txtContent.split('\n').filter(line => line.trim() !== '');
+/** TXTからセーブデータを生成する */
+export function createSlotFromTxt(txtContent, fantasyRulebook, sfRulebook) {
+    const lines = txtContent.split('\n');
+    let extractedName = `(TXTから) ${new Date().toLocaleString('ja-JP')}`;
     
-    let restoredHistory = [];
-    let currentParts = [];
-    let playerNameFromTxt = "";
-
-    // ★★★ ログからプレイヤー名を正規表現で探す ★★★
-    for (const line of lines) {
-        // 例: 「> 私の名前は「リヒト」だ」 or 「> sosogiです」
-        const nameMatch = line.match(/^>\s*(?:私の名前は「(.+?)」だ|(.+?)です)/);
-        if (nameMatch) {
-            // マッチした部分 (リヒト or sosogi) を取得
-            playerNameFromTxt = nameMatch[1] || nameMatch[2];
-            break; // 最初に見つかった名前を採用
-        }
+    // シナリオタイプを推測
+    let detectedScenarioType = 'fantasy'; // デフォルトはファンタジー
+    const sfKeywords = ['ネオ・TOKYO', 'コールサイン', 'マトリクス', '媒体'];
+    if (sfKeywords.some(keyword => txtContent.includes(keyword))) {
+        detectedScenarioType = 'sf';
     }
-    // 見つからなかった場合のフォールバック
-    if (!playerNameFromTxt) {
-         playerNameFromTxt = "（TXTから）";
-    }
+    
+    const rulebook = detectedScenarioType === 'sf' ? sfRulebook : fantasyRulebook;
+    const history = [{ role: 'user', parts: [{ text: rulebook }] }];
 
     lines.forEach(line => {
         if (line.startsWith('> ')) {
-            if (currentParts.length > 0) {
-                restoredHistory.push({ role: 'model', parts: [{ text: currentParts.join('\n') }] });
-                currentParts = [];
-            }
-            restoredHistory.push({ role: 'user', parts: [{ text: line.substring(2) }] });
-        } else {
-            currentParts.push(line);
+            history.push({ role: 'user', parts: [{ text: line.substring(2) }] });
+        } else if (line.trim() !== '') {
+            history.push({ role: 'model', parts: [{ text: line }] });
         }
     });
-    if (currentParts.length > 0) {
-        restoredHistory.push({ role: 'model', parts: [{ text: currentParts.join('\n') }] });
+
+    const nameLine = lines.find(line => line.includes('良い名だ') || line.includes('登録完了'));
+    if (nameLine) {
+        const match = nameLine.match(/「(.+?)」/);
+        if (match) extractedName = `${match[1]}_txt`;
     }
 
-    const initialUserTurn = {
-        role: 'user',
-        parts: [{ text: rulebook }] 
-    };
-
-    const finalHistory = [initialUserTurn, ...restoredHistory];
-
-    const newSlot = {
+    return {
         id: Date.now(),
-        name: `${playerNameFromTxt}_txt`, // ★★★ 抽出した名前を使用 ★★★
+        name: extractedName,
         stats: generateStats(),
-        history: finalHistory,
+        history: history,
         inventory: [],
         actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
         modified: [],
-        scenarioType: 'fantasy' 
+        scenarioType: detectedScenarioType // ★推測したシナリオタイプを設定
     };
-
-    return newSlot;
 }
-

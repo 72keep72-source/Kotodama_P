@@ -3,6 +3,7 @@ import { calculateModifier } from './services/state.js';
 // --- DOM要素の保持用変数 ---
 let gameLog, userInput, sendButton, statusDisplay, actionCountDisplay, actionsContainer, playerNameDisplay, inventoryDisplay, slotSelector, scenarioSelectionContainer, hintToggleButton, adModalOverlay, adModalText, adConfirmButton, adCancelButton, adLoadingSpinner;
 
+
 // --- 初期化 ---
 export function initializeUI() {
     gameLog = document.getElementById('game-log');
@@ -22,6 +23,8 @@ export function initializeUI() {
     adCancelButton = document.getElementById('ad-cancel-button');
     adLoadingSpinner = document.getElementById('ad-loading-spinner');
 }
+
+let onAdSuccessCallback = null;
 
 // --- ヘルパー関数 ---
 const statDescriptions = {
@@ -185,6 +188,10 @@ export function clearGameScreen() {
     gameLog.innerHTML = '';
     scenarioSelectionContainer.innerHTML = '';
     actionsContainer.innerHTML = '';
+     // ★★★ 修正点：古い完了ボタンが残っていたら、それも削除する ★★★
+    const nextScenarioBtn = document.querySelector('.next-scenario-button');
+    if(nextScenarioBtn) nextScenarioBtn.remove();
+
     updateAllDisplays({
         playerStats: {},
         modifiedStats: new Set(),
@@ -246,6 +253,7 @@ export function showScenarioSelection(scenarioHandler, hasSaveData) {
 
     scenarioSelectionContainer.innerHTML = '';
     const scenarios = [
+        { name: 'お手軽ゲーム', type: 'testS', description: '森でとらわれてる狼にあなたはどう行動を起こす？AIの反応お試し用' },
         { name: '剣と魔法の世界', type: 'fantasy', description: '呪われた森で失われた記憶の《コア》を探す、王道ファンタジー。' },
         { name: 'AIが管理する未来的な世界', type: 'sf', description: '巨大サイバー都市で失われた記憶《媒体》を探す、SFアドベンチャー。' }
     ];
@@ -322,6 +330,37 @@ export function initializeHintButton() {
 
 export function initializeAdModal(onConfirm) {
     adCancelButton.addEventListener('click', () => adModalOverlay.classList.remove('visible'));
+    
+    adConfirmButton.addEventListener('click', () => {
+        // --- ▼▼▼ ここからがテスト用の仮表示ロジックです ▼▼▼ ---
+
+        // 1. ローディングスピナーを表示し、ボタンを隠す
+        adLoadingSpinner.style.display = 'block';
+        adConfirmButton.style.display = 'none';
+        adCancelButton.style.display = 'none';
+
+        // 2. 3秒待ってから、広告が成功したと仮定する
+        setTimeout(() => {
+            // 3. onAdSuccessCallbackに関数が保存されていれば、それを実行する
+            if (onAdSuccessCallback) {
+                onAdSuccessCallback();
+            }
+
+            // 4. モーダルを閉じ、UIを元に戻す
+            adModalOverlay.classList.remove('visible');
+            adLoadingSpinner.style.display = 'none';
+            adConfirmButton.style.display = 'inline-block';
+            adCancelButton.style.display = 'inline-block';
+        }, 3000); // 3000ミリ秒 = 3秒
+
+        // --- ▲▲▲ ここまでがテスト用の仮表示ロジックです ▲▲▲ ---
+    });
+}
+
+
+/**本番用こめんとあうと
+export function initializeAdModal(onConfirm) {
+    adCancelButton.addEventListener('click', () => adModalOverlay.classList.remove('visible'));
     adConfirmButton.addEventListener('click', () => {
         adLoadingSpinner.style.display = 'block';
         adConfirmButton.style.display = 'none';
@@ -334,18 +373,42 @@ export function initializeAdModal(onConfirm) {
             adCancelButton.style.display = 'inline-block';
         });
     });
-}
+}　*/
 
-export function showAdModal(scenarioType) {
+
+export function showAdModal(scenarioType, successCallback) {
+    // 成功した時に実行したい処理を、グローバル変数に保存
+    onAdSuccessCallback = successCallback;
+
     let message = '';
     if (scenarioType === 'sf') {
         message = '警告：精神負荷が臨界点に達しました。<br>これ以上のマトリクスへの接続は、あなたの精神崩壊を招きます。<br>ネットワークへの再アクセスは、システムデイリーメンテナンス（毎日午前4時）の完了後に許可されます。';
+    } else if (scenarioType === 'testS') {
+        message = 'お試しプレイありがとうございます！<br>広告を見ることでゲーム選択画面に戻ります。'; 
     } else {
         message = '夜の森を覆う呪いが、あなたの理性を蝕んでいく…<br>これ以上は危険だ。今は身を潜め、心を休めるしかない。<br>呪いが和らぐ夜明け（午前4時）と共に、再びあなたの道は開かれるだろう。';
     }
     adModalText.innerHTML = message;
     adModalOverlay.classList.add('visible');
 }
+
+/**
+ * 広告通ったらこれにする。
+ * export function showAdModal(scenarioType) {
+    let message = '';
+    if (scenarioType === 'sf') {
+        message = '警告：精神負荷が臨界点に達しました。<br>これ以上のマトリクスへの接続は、あなたの精神崩壊を招きます。<br>ネットワークへの再アクセスは、システムデイリーメンテナンス（毎日午前4時）の完了後に許可されます。';
+    }else if (scenarioType === 'testS') {
+                    message = 'お試しプレイありがとうございます！<br>広告を見ることでゲーム選択画面に戻ります。'; 
+                }
+    else {
+        message = '夜の森を覆う呪いが、あなたの理性を蝕んでいく…<br>これ以上は危険だ。今は身を潜め、心を休めるしかない。<br>呪いが和らぐ夜明け（午前4時）と共に、再びあなたの道は開かれるだろう。';
+    }
+    adModalText.innerHTML = message;
+    adModalOverlay.classList.add('visible');
+}*/
+
+
 
 export function highlightSlot(slotId) {
     if (!slotSelector) return;
@@ -359,3 +422,32 @@ export function highlightSlot(slotId) {
     }
 }
 
+
+export function showNextScenarioButton(onClick) {
+    actionsContainer.innerHTML = '';
+    
+    const button = document.createElement('button');
+    button.textContent = '次の物語へ進む（広告を見る）';
+    button.className = 'next-scenario-button';
+    button.addEventListener('click', onClick);
+    
+    // ★★★ 修正点：input-containerではなく、game-containerを基準にする ★★★
+    const gameContainer = document.getElementById('game-container');
+    gameContainer.appendChild(button);
+}
+
+/**
+ * 広告通ったらこれにする。★★★ テストシナリオ完了ボタンを表示する新しい関数 ★★★
+export function showNextScenarioButton(onClick) {
+    // 既存の[ACTION]ボタンは全てクリアする
+    actionsContainer.innerHTML = '';
+    
+    const button = document.createElement('button');
+    button.textContent = '次の物語へ進む（広告を見る）';
+    button.className = 'next-scenario-button'; // 新しいCSSクラスを適用
+    button.addEventListener('click', onClick);
+    
+    // input-container内のactions-containerの上に追加する
+    const inputContainer = document.getElementById('input-container');
+    inputContainer.insertBefore(button, actionsContainer);
+}*/

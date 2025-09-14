@@ -5,10 +5,12 @@ import { callAI } from './services/api.js';
 // ★★★ 2つのルールブックの読み込み方を統一 ★★★
 import { RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
+import { RULEBOOK_TEST } from './assets/data/rulebook_Otameshi.js';
 
 // --- 初期化処理 ---
 // ページのHTMLが全て読み込まれた後に、一度だけ実行される
 document.addEventListener('DOMContentLoaded', () => {
+    ui.initializeUI();
     
     // --- DOM要素の取得 ---
     const body = document.body;
@@ -28,32 +30,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** AIとの対話処理をまとめた関数 */
     async function processAIturn() {
-        ui.addLog('考え中...', 'ai-response');
-        ui.toggleInput(true, 'AIが応答を考えています…');
+    ui.addLog('考え中...', 'ai-response');
+    ui.toggleInput(true, 'AIが応答を考えています…');
 
-        const currentHistory = state.getGameState().conversationHistory;
-        if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
-            console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
-            ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
-            ui.toggleInput(false);
-            return; 
-        }
-
-        try {
-            const fullAiText = await callAI(currentHistory);
-            state.addHistory({ role: 'model', parts: [{ text: fullAiText }] });
-            const parsedData = state.parseAIResponse(fullAiText);
-
-            ui.updateThinkingMessage(parsedData.storyLogText);
-            ui.displayActions(parsedData.actions, handleUserCommand);
-            ui.updateAllDisplays(state.getGameState(), parsedData.statChanges);
-            state.saveCurrentSlotToStorage();
-        } catch (error) {
-            ui.updateThinkingMessage('エラーが発生しました: ' + error.message);
-        } finally {
-            ui.toggleInput(false);
-        }
+    const currentHistory = state.getGameState().conversationHistory;
+    if (!currentHistory || !Array.isArray(currentHistory) || currentHistory.length === 0) {
+        console.error("API呼び出し前に不正な会話履歴が検出されました:", currentHistory);
+        ui.updateThinkingMessage('エラーが発生しました: 送信する会話履歴がありません。');
+        ui.toggleInput(false);
+        return; 
     }
+
+    try {
+        const fullAiText = await callAI(currentHistory);
+        state.addHistory({ role: 'model', parts: [{ text: fullAiText }] });
+        const parsedData = state.parseAIResponse(fullAiText);
+
+        ui.updateThinkingMessage(parsedData.storyLogText);
+
+        /**
+          ★ ここが元のコードです ★
+          if (parsedData.showAdButton) {
+          ui.showNextScenarioButton(() => {
+          initializeGame(); 
+          });
+          } else {
+          ui.displayActions(parsedData.actions, handleUserCommand);
+          }
+         */
+
+        // ▼▼▼ ここからが修正後のコードです ▼▼▼
+        if (parsedData.showAdButton) {
+            ui.showNextScenarioButton(() => {
+                // 「次の物語へ」ボタンが押されたら、広告モーダルを表示する。
+                // 広告が成功した後の処理として、initializeGame を渡す。
+                ui.showAdModal(state.getGameState().activeScenarioType, () => {
+                    initializeGame();
+                });
+            });
+        } else {
+            ui.displayActions(parsedData.actions, handleUserCommand);
+        }
+        // ▲▲▲ ここまでが修正後のコードです ▲▲▲
+        
+        ui.updateAllDisplays(state.getGameState(), parsedData.statChanges);
+        state.saveCurrentSlotToStorage();
+    } catch (error) {
+        ui.updateThinkingMessage('エラーが発生しました: ' + error.message);
+    } finally {
+        ui.toggleInput(false);
+    }
+}
+
+
+
+
 
     /** ユーザーのコマンドを処理 */
     async function handleUserCommand(commandFromButton = null) {
@@ -64,14 +95,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const command = commandFromButton || userInput.value.trim();
         if (command === '') return;
 
-        if (!state.hasActionsLeft()) {
-            ui.showAdModal(state.getGameState().scenarioType);
-            return;
+        // テストシナリオでは行動回数を消費しない
+        if (state.getGameState().activeScenarioType !== 'testS') {
+            // ★★★ 修正点1: 正しい関数名 hasActionsLeft を使用 ★★★
+            if (!state.hasActionsLeft()) {
+                ui.showAdModal(state.getGameState().activeScenarioType, () => {
+                    state.recoverActions(5); // 広告成功時のコールバックで回復
+                    ui.updateActionCountDisplay(state.getGameState().dailyActions);
+                    ui.addLog('【システム】行動回数が5回分回復しました。', 'ai-response');
+                });
+                return;
+            }
+            // ★★★ 修正点2: 正しい関数名 decrementActions を使用 ★★★
+            state.decrementActions();
+            ui.updateActionCountDisplay(state.getGameState().dailyActions);
         }
-        
-        state.decrementActions();
-        ui.updateActionCountDisplay(state.getGameState().dailyActions);
-        
+
+
         ui.addLog(`> ${command}`, 'user-command');
         ui.clearInput();
         ui.clearActions();
@@ -86,7 +126,17 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.showTemporaryMessage(`セーブスロットは${state.MAX_SAVE_SLOTS}つまでです。`);
             return;
         }
-        const rulebook = scenarioType === 'sf' ? RULEBOOK_SF_AI : RULEBOOK_1ST;
+        // ▼▼▼ ここからが修正箇所です ▼▼▼
+            let rulebook;
+            if (scenarioType === 'sf') {
+                rulebook = RULEBOOK_SF_AI;
+        } else if (scenarioType === 'testS') { // ★テストシナリオ用の分岐を追加
+                rulebook = RULEBOOK_TEST;
+        } else { // デフォルトはファンタジー
+            rulebook = RULEBOOK_1ST;
+        }
+        // ▲▲▲ ここまでが修正箇所です ▲▲▲
+    
         
         const newGameState = state.createNewGame(rulebook, scenarioType);
         
@@ -103,33 +153,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /** セーブデータからゲームをロードする */
     function loadGameFromSlot(slotId) {
-        const gameState = state.loadGame(slotId);
-        if (!gameState) {
-            initializeGame();
-            return;
-        }
-        
-        ui.clearGameScreen();
-        ui.updateAllDisplays(gameState);
-        ui.rebuildLog(gameState.conversationHistory);
-        
-        // ★★★ ここからが修正点 ★★★
-        const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
-
-        if (lastTurn && lastTurn.role === 'model') {
-            // 最後にAIが応答した場合：その時の選択肢を再表示して、プレイヤーの入力を待つ
-            const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
-            ui.displayActions(parsedData.actions, handleUserCommand);
-            ui.toggleInput(false); 
-        } else if (lastTurn && lastTurn.role === 'user') {
-            // プレイヤーが入力した直後だった場合：AIに応答を生成させる
-            processAIturn();
-        } else {
-            // それ以外（ゲーム開始直後など）
-            ui.toggleInput(false);
-        }
-        // ★★★ ここまでが修正点 ★★★
+    const gameState = state.loadGame(slotId);
+    if (!gameState) {
+        initializeGame();
+        return;
     }
+    
+    ui.clearGameScreen();
+    ui.updateAllDisplays(gameState);
+    ui.rebuildLog(gameState.conversationHistory);
+    
+    const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
+    if (lastTurn && lastTurn.role === 'model') {
+        const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
+        
+        // ▼▼▼ この中のロジックも、processAIturnと同様に修正します ▼▼▼
+        if (parsedData.showAdButton) {
+             ui.showNextScenarioButton(() => {
+                ui.showAdModal(state.getGameState().activeScenarioType, () => {
+                    initializeGame();
+                });
+            });
+        } else {
+            ui.displayActions(parsedData.actions, handleUserCommand);
+        }
+        // ▲▲▲ ここまで修正 ▲▲▲
+    }
+        /**const lastTurn = gameState.conversationHistory[gameState.conversationHistory.length - 1];
+    *if (lastTurn && lastTurn.role === 'model') {
+        *const parsedData = state.parseAIResponse(lastTurn.parts[0].text);
+       * if (parsedData.showAdButton) {
+       *      ui.showNextScenarioButton(() => {
+       *         先に広告モーダルを表示し、成功したらゲームを初期化
+        *        ui.showAdModal(state.getGameState().activeScenarioType, () => {
+       *             initializeGame();
+      *          });
+      *      });
+      *  } else {
+      *      ui.displayActions(parsedData.actions, handleUserCommand);
+     *   }
+   * } */
+    
+    ui.toggleInput(false);
+}
+
 
     /** 選択されたスロットを削除 */
     function deleteSelectedSlot() {
@@ -251,4 +318,3 @@ document.addEventListener('DOMContentLoaded', () => {
         event.target.value = '';
     });
 });
-
