@@ -570,3 +570,40 @@ body:not(.game-active) .ad-modal-overlay {
     }
 }
 
+/* ★★★ お知らせセクションのスタイル ★★★ */
+.blog-post-list {
+    text-align: left;
+    max-width: 700px;
+    margin: 30px auto 0;
+}
+
+.blog-post-item {
+    display: block;
+    background-color: var(--container-bg);
+    padding: 15px 20px;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--text-color);
+    border-left: 5px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.blog-post-item:hover {
+    border-left-color: var(--accent-color);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.post-date {
+    font-size: 0.85em;
+    color: var(--subtle-text-color);
+    margin-right: 15px;
+}
+
+.post-title {
+    display: inline;
+    font-size: 1.1em;
+    font-weight: normal;
+    margin: 0;
+}
