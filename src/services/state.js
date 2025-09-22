@@ -1,61 +1,75 @@
-// --- グローバル定数 ---
-export const MAX_SAVE_SLOTS = 3;
-const DAILY_RECOVERY = 20; // １日の回復量
-const MAX_ACTIONS = 50;    // 行動回数の上限
-const INITIAL_ACTIONS = 50; // 新規ゲーム開始時の行動回数
-const RESET_HOUR_JST = 4; // JSTでのデイリーリセット時刻 (AM 4:00)
+/**
+ * state.js
+ * ゲームの全ての状態（セーブデータ、プレイヤー情報など）を管理する、言わば「金庫番」です。
+ * データの読み込み、保存、更新は全てここが担当します。
+ */
 
-// --- ゲーム状態変数 ---
+// --- グローバル定数 ---
+export const MAX_SAVE_SLOTS = 3; // 最大セーブ数
+const DAILY_RECOVERY = 20;      // １日の行動回数回復量
+const MAX_ACTIONS = 50;         // 行動回数のストック上限
+const INITIAL_ACTIONS = 50;     // 新規ゲーム開始時の行動回数
+const RESET_HOUR_JST = 4;       // JSTでのデイリーリセット時刻 (AM 4:00)
+
+// --- ゲーム状態を保持する変数 ---
+// これらの変数が、ゲームの現在の状態を全て保持します。
 let gameSlots = [];
 let activeSlotId = null;
 let conversationHistory = [];
 let playerStats = {};
-let dailyActions = { lastUpdateTimestamp: 0, current: 0, limit: MAX_ACTIONS };
+let dailyActions = { lastRecovery: 0, current: 0, limit: MAX_ACTIONS }; // ※lastUpdateTimestampからlastRecoveryに名称変更
 let playerName = '';
 let inventory = [];
 let modifiedStats = new Set();
-let activeScenarioType = 'fantasy'; // デフォルト
+let activeScenarioType = 'fantasy';
 
-
-/** JSTでの「最後のAM4時」のタイムスタンプを取得する */
-function getLastResetTimestamp(timestamp) {
-    const date = new Date(timestamp);
+/**
+ * ページロード時に、最後の回復からの経過日数に応じて行動回数を回復させる関数
+ * @param {object} savedDailyActions - 保存されていた dailyActions オブジェクト
+ * @returns {object} - 更新された新しい dailyActions オブジェクト
+ */
+function recoverActionsOnLoad(savedDailyActions) {
+    // 日本時間の午前4時を日付の区切りとするためのオフセット(ミリ秒)
+    // Dateオブジェクトは標準時(UTC)で動くので、日本時間(JST)の午前4時は、UTCだと前日の19時。
+    // その差を調整するための値です。
     const JST_OFFSET = 9 * 60 * 60 * 1000;
-    const dateJst = new Date(date.getTime() + JST_OFFSET);
+    const JST_RESET_HOUR_OFFSET = RESET_HOUR_JST * 60 * 60 * 1000;
 
-    let resetDate = new Date(Date.UTC(
-        dateJst.getUTCFullYear(),
-        dateJst.getUTCMonth(),
-        dateJst.getUTCDate(),
-        RESET_HOUR_JST, 0, 0, 0
-    ));
+    // タイムスタンプからリセット日の基準値（その日のJST午前4時のタイムスタンプ）を計算する内部関数
+    const getLastResetTimestamp = (timestamp) => {
+        const date = new Date(timestamp - JST_RESET_HOUR_OFFSET + JST_OFFSET);
+        date.setUTCHours(0, 0, 0, 0);
+        return date.getTime() + JST_RESET_HOUR_OFFSET - JST_OFFSET;
+    };
 
-    if (dateJst.getUTCHours() < RESET_HOUR_JST) {
-        resetDate.setUTCDate(resetDate.getUTCDate() - 1);
-    }
-    
-    return resetDate.getTime() - JST_OFFSET;
-}
-
-/** 行動回数計算ロジック */
-function updateActionsOnLoad(savedActions) {
     const now = Date.now();
-    let { lastUpdateTimestamp, current, limit } = savedActions;
-    
-    const lastReset = getLastResetTimestamp(lastUpdateTimestamp);
+    // 引数で受け取った保存データから、現在の値を取り出す
+    let { current, limit, lastRecovery } = savedDailyActions;
+
+    // 最後にリセットされた日と、今日のリセット日を比較
+    const lastReset = getLastResetTimestamp(lastRecovery || 0);
     const currentReset = getLastResetTimestamp(now);
 
+    // もし今日のリセット時刻が、最後の回復リセット時刻より後なら（＝日付が変わったなら）
     if (currentReset > lastReset) {
+        // 経過日数を計算
         const oneDay = 24 * 60 * 60 * 1000;
         const daysPassed = Math.floor((currentReset - lastReset) / oneDay);
         
+        // 経過日数 x 1日の回復量 を計算
         const recoveredAmount = daysPassed * DAILY_RECOVERY;
+        
+        // 回復量を加算する。ただし上限(limit)は超えないようにMath.minで制御
         current = Math.min(limit, current + recoveredAmount);
     }
 
-    return { lastUpdateTimestamp: now, current, limit };
+    // 計算が終わった新しいオブジェクトを返す
+    return {
+        current: current,
+        limit: limit,
+        lastRecovery: now // 最終回復日時を「今」に更新
+    };
 }
-
 
 /** 現在のゲーム状態をオブジェクトとして取得する */
 export function getGameState() {
@@ -64,60 +78,92 @@ export function getGameState() {
         dailyActions, playerName, inventory, modifiedStats, activeScenarioType
     };
 }
+/**
+ * 現在アクティブなスロットIDを取得する
+ * @returns {number | null} アクティブなスロットのID
+ */
+export function getActiveSlotId() {
+    return activeSlotId;
+}
 
-export function getActiveSlotId() { return activeSlotId; }
+/**
+ * アクティブなスロットIDを設定し、ローカルストレージにも保存する
+ * @param {number} id - 新しくアクティブにするスロットのID
+ */
 export function setActiveSlotId(id) {
     activeSlotId = id;
     localStorage.setItem('rpgActiveSlotId', activeSlotId);
 }
-
-/** ステータス値から修正値を計算する */
+/**
+ * ステータス値から、D&Dなどで使われる「修正値」を計算して文字列で返す
+ * 例: 10 -> "", 12 -> "+1", 8 -> "-1"
+ * @param {number} statValue - 計算元のステータス値
+ * @returns {string} - 計算後の修正値文字列
+ */
 export function calculateModifier(statValue) {
     const modifier = Math.floor((statValue - 10) / 2);
     if (modifier === 0) return "";
     return modifier > 0 ? `+${modifier}` : `${modifier}`;
 }
 
-// --- 主要関数 ---
+// --- 主要なセーブ・ロード処理 ---
 
+/** ローカルストレージから全セーブデータを読み込む */
 export function loadGameSlotsFromStorage() {
     gameSlots = JSON.parse(localStorage.getItem('rpgGameSlots')) || [];
 }
 
+/** 現在プレイ中のスロットのデータをローカルストレージに保存する */
 export function saveCurrentSlotToStorage() {
     const activeSlot = gameSlots.find(slot => slot.id == activeSlotId);
     if (activeSlot) {
+        // 現在のゲーム状態をアクティブなスロットデータに書き込む
         activeSlot.history = conversationHistory;
         activeSlot.stats = playerStats;
-        activeSlot.actions = dailyActions;
+        activeSlot.dailyActions = dailyActions; // ★キーを「dailyActions」に統一
         activeSlot.name = playerName;
         activeSlot.inventory = inventory;
         activeSlot.modified = Array.from(modifiedStats);
         activeSlot.scenarioType = activeScenarioType;
-        
     }
+    // 全スロットデータをJSON形式でローカルストレージに保存
     localStorage.setItem('rpgGameSlots', JSON.stringify(gameSlots));
 }
 
-/** 指定されたスロットIDのゲームデータを読み込む */
+/** 指定されたスロットIDのゲームデータを読み込んで、現在のゲーム状態に反映させる */
 export function loadGame(slotId) {
     const slot = gameSlots.find(s => s.id == slotId);
     if (!slot) return null;
 
+    // --- ▼▼▼【重要】古いセーブデータ形式からの自動変換ロジック ▼▼▼ ---
+    // もし新しい「dailyActions」がなく、古い「actions」が存在していたら…
+    if (slot && !slot.dailyActions && slot.actions) {
+        console.log('古い形式のセーブデータ(actions)を検出。新しい形式(dailyActions)に変換します。');
+        // 古いactionsオブジェクトを新しいdailyActionsにコピー
+        slot.dailyActions = { ...slot.actions }; 
+        // 混乱を避けるため、古いactionsキーは削除
+        delete slot.actions; 
+    }
+    // --- ▲▲▲ 自動変換ロジックここまで ▲▲▲ ---
+
+    // 読み込んだスロットのデータを現在のゲーム状態変数にセットしていく
     activeSlotId = slot.id;
-    
     conversationHistory = JSON.parse(JSON.stringify(slot.history || []));
     playerStats = JSON.parse(JSON.stringify(slot.stats || {}));
-    dailyActions = updateActionsOnLoad(slot.actions || { lastUpdateTimestamp: Date.now(), current: DAILY_RECOVERY, limit: MAX_ACTIONS });
+    
+    // ★行動回数を、回復処理を通してからセットする
+    dailyActions = recoverActionsOnLoad(slot.dailyActions || { lastRecovery: 0, current: INITIAL_ACTIONS, limit: MAX_ACTIONS });
+
     playerName = slot.name || '（名前未設定）';
     inventory = JSON.parse(JSON.stringify(slot.inventory || []));
     modifiedStats = new Set(slot.modified || []);
     activeScenarioType = slot.scenarioType || 'fantasy';
     
+    // セットし終わった現在のゲーム状態を返す
     return getGameState();
 }
 
-/** 新しいゲームを作成し、その状態を返す */
+/** 新しいゲームデータを作成して、その状態を返す */
 export function createNewGame(rulebook, scenarioType) {
     const newSlot = {
         id: Date.now(),
@@ -125,7 +171,8 @@ export function createNewGame(rulebook, scenarioType) {
         stats: generateStats(),
         history: [],
         inventory: [],
-        actions: { lastUpdateTimestamp: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
+        // ★キーを「dailyActions」に統一
+        dailyActions: { lastRecovery: Date.now(), current: INITIAL_ACTIONS, limit: MAX_ACTIONS },
         modified: [],
         scenarioType: scenarioType
     };
