@@ -79,6 +79,18 @@ export function getGameState() {
     };
 }
 
+/**
+ * ステータス値から、D&Dなどで使われる「修正値」を計算して文字列で返す
+ * 例: 10 -> "", 12 -> "+1", 8 -> "-1"
+ * @param {number} statValue - 計算元のステータス値
+ * @returns {string} - 計算後の修正値文字列
+ */
+export function calculateModifier(statValue) {
+    const modifier = Math.floor((statValue - 10) / 2);
+    if (modifier === 0) return "";
+    return modifier > 0 ? `+${modifier}` : `${modifier}`;
+}
+
 // --- 主要なセーブ・ロード処理 ---
 
 /** ローカルストレージから全セーブデータを読み込む */
