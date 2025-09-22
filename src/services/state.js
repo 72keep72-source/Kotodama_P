@@ -78,7 +78,22 @@ export function getGameState() {
         dailyActions, playerName, inventory, modifiedStats, activeScenarioType
     };
 }
+/**
+ * 現在アクティブなスロットIDを取得する
+ * @returns {number | null} アクティブなスロットのID
+ */
+export function getActiveSlotId() {
+    return activeSlotId;
+}
 
+/**
+ * アクティブなスロットIDを設定し、ローカルストレージにも保存する
+ * @param {number} id - 新しくアクティブにするスロットのID
+ */
+export function setActiveSlotId(id) {
+    activeSlotId = id;
+    localStorage.setItem('rpgActiveSlotId', activeSlotId);
+}
 /**
  * ステータス値から、D&Dなどで使われる「修正値」を計算して文字列で返す
  * 例: 10 -> "", 12 -> "+1", 8 -> "-1"
