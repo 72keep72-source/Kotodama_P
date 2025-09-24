@@ -6,7 +6,6 @@ import { callAI } from './services/api.js';
 import { RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 import { RULEBOOK_TEST } from './assets/data/rulebook_Otameshi.js';
-import { RULEBOOK_guildKURAGE } from './assets/data/rurebook_guildKURAGE.js';
 
 // --- 初期化処理 ---
 // ページのHTMLが全て読み込まれた後に、一度だけ実行される
@@ -132,9 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (scenarioType === 'sf') {
                 rulebook = RULEBOOK_SF_AI;
         } else if (scenarioType === 'testS') { // ★テストシナリオ用の分岐を追加
-                rulebook = RULEBOOK_TEST;} 
-            else if (scenarioType === 'guildKURAGE') { // ★くらげ氏のシナリオ追加
-                rulebook = RULEBOOK_guildKURAGE;
+                rulebook = RULEBOOK_TEST;
         } else { // デフォルトはファンタジー
             rulebook = RULEBOOK_1ST;
         }

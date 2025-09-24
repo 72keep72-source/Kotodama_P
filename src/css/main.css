@@ -194,19 +194,19 @@ main#landing-page {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 8px 5px;
+    padding: 40px 20px;
     flex-grow: 1;
 }
 
 .scenario-card {
     background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color);
-    padding: 10px 15px;
-    margin: 5px;
+    padding: 20px 30px;
+    margin: 10px;
     cursor: pointer;
     border-radius: 8px;
     transition: all 0.3s ease;
-    width: 75%;
+    width: 80%;
     max-width: 400px;
     text-align: center;
 }
@@ -215,7 +215,7 @@ main#landing-page {
     transform: translateY(-5px);
 }
 .scenario-card h3 {
-    margin: 0 0 7px 0;
+    margin: 0 0 10px 0;
     font-size: 1.2em;
     color: var(--accent-color);
 }

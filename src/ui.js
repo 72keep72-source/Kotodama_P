@@ -254,7 +254,6 @@ export function showScenarioSelection(scenarioHandler, hasSaveData) {
     scenarioSelectionContainer.innerHTML = '';
     const scenarios = [
         { name: 'お手軽ゲーム', type: 'testS', description: '森でとらわれてる狼にあなたはどう行動を起こす？AIの反応お試し用' },
-        { name: 'ギルドで依頼を受けてみる', type: 'guildKURAGE', description: '今日のギルドの掲示板にはなにやら依頼が入っているようだ。byくらげ' },
         { name: '剣と魔法の世界', type: 'fantasy', description: '呪われた森で失われた記憶の《コア》を探す、王道ファンタジー。' },
         { name: 'AIが管理する未来的な世界', type: 'sf', description: '巨大サイバー都市で失われた記憶《媒体》を探す、SFアドベンチャー。' }
     ];
