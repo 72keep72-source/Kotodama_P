@@ -78,6 +78,7 @@ export function getGameState() {
         dailyActions, playerName, inventory, modifiedStats, activeScenarioType
     };
 }
+
 /**
  * 現在アクティブなスロットIDを取得する
  * @returns {number | null} アクティブなスロットのID
@@ -94,6 +95,8 @@ export function setActiveSlotId(id) {
     activeSlotId = id;
     localStorage.setItem('rpgActiveSlotId', activeSlotId);
 }
+
+
 /**
  * ステータス値から、D&Dなどで使われる「修正値」を計算して文字列で返す
  * 例: 10 -> "", 12 -> "+1", 8 -> "-1"
@@ -277,7 +280,8 @@ function generateStats() {
 
 /** 行動回数が残っているかチェックする */
 export function hasActionsLeft() {
-    dailyActions = updateActionsOnLoad(dailyActions);
+    // 呼び出す関数名を、私たちが定義した正しい名前に修正します。
+    dailyActions = recoverActionsOnLoad(dailyActions);
     return dailyActions.current > 0;
 }
 

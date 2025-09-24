@@ -201,47 +201,21 @@ export function clearGameScreen() {
     });
 }
 
-
-/**
- * 会話履歴からゲームログを再構築する（高速版）
- * @param {Array} conversationHistory - 会話履歴の配列
- */
 export function rebuildLog(conversationHistory) {
-    // 最初にログを空にする
     gameLog.innerHTML = '';
-
-    // DocumentFragmentを作成（メモリ上の一時的な入れ物）
-    const fragment = document.createDocumentFragment();
-
-    // conversationHistoryをループ処理
     (conversationHistory || []).slice(1).forEach(turn => {
         if (!turn || !turn.parts || !turn.parts[0]) {
             console.warn('会話履歴に不正なデータが含まれていたため、スキップしました:', turn);
             return;
         }
-        
         const text = turn.parts[0].text;
-        const p = document.createElement('p'); // p要素を作成
-        p.innerHTML = text.replace(/\n/g, '<br>'); // テキストをセット
-
-        // 役割に応じてクラスを設定
         if (turn.role === 'user') {
-            p.classList.add('user-command');
-            // ユーザーコマンドは整形せずにそのまま表示
+            addLog(`> ${text}`, 'user-command');
         } else {
-            p.classList.add('ai-response');
-            // AIの応答はシステムタグを除外して表示
             const storyText = text.split('\n').filter(line => !line.startsWith('[')).join('\n');
-            p.innerHTML = storyText.replace(/\n/g, '<br>');
+            addLog(storyText, 'ai-response');
         }
-        
-        // ★画面に直接追加するのではなく、一時的な入れ物(fragment)に追加する
-        fragment.appendChild(p);
     });
-
-    // ★ループが終わった後、完成したfragmentを「一回だけ」画面に追加する
-    gameLog.appendChild(fragment);
-    gameLog.scrollTop = gameLog.scrollHeight; // ログを一番下にスクロール
 }
 
 export function showWelcomeScreen(hasSaveData) {
