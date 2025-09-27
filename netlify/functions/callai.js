@@ -31,12 +31,9 @@ exports.handler = async (event) => {
     }
     // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-<<<<<<< HEAD
-    // callai.jsの修正案
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-latest" });
-=======
+
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash"});
->>>>>>> 711b407 (AIのモデル修正)
+
     const chat = model.startChat({
       history: conversationHistory.slice(0, -1),
     });
