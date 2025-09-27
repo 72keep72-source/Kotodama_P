@@ -31,7 +31,8 @@ exports.handler = async (event) => {
     }
     // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest"});
+    // callai.jsの修正案
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-latest" });
     const chat = model.startChat({
       history: conversationHistory.slice(0, -1),
     });
