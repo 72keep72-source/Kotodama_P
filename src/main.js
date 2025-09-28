@@ -1,15 +1,17 @@
-// 各モジュールから必要な機能をインポート
+// --- モジュールインポート ---
+// ui.js からは 'ui' という名前で全ての機能をまとめてインポートします。
+// これにより、ui.js内の関数は全て ui.関数名() の形で呼び出すことになります。
 import * as state from './services/state.js';
 import * as ui from './ui.js';
 import { callAI } from './services/api.js';
-// ★★★ 2つのルールブックの読み込み方を統一 ★★★
+// ★ showSpBannerAd を追記
+import { showPcBannerAd, showSpBannerAd } from './ui.js';
 import { RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 import { RULEBOOK_TEST } from './assets/data/rulebook_Otameshi.js';
 import { RULEBOOK_guildKURAGE } from './assets/data/rurebook_guildKURAGE.js';
 
 // --- 初期化処理 ---
-// ページのHTMLが全て読み込まれた後に、一度だけ実行される
 document.addEventListener('DOMContentLoaded', () => {
     ui.initializeUI();
     
@@ -26,7 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportButton = document.getElementById('export-log-button');
     const importButton = document.getElementById('import-button');
     const importFileInput = document.getElementById('import-file-input');
-
     // --- ゲームロジック ---
 
     /** AIとの対話処理をまとめた関数 */
@@ -83,7 +84,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 }
 
-
+/**
+ * デバイス（PC/スマホ）を判定して、適切なバナー広告表示関数を呼び出す
+ */
+function showBannerAdForDevice() {
+    // UserAgentというブラウザの情報から、スマホっぽい文字列があるか判定
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        showSpBannerAd(); // スマホならSP用を呼び出す
+    } else {
+        showPcBannerAd(); // それ以外はPC用を呼び出す
+    }
+}
 
 
 
@@ -239,10 +250,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- イベントリスナーの設定 ---
+   // --- イベントリスナーの設定 ---
     if (startGameButton) {
         startGameButton.addEventListener('click', () => {
-            // ★★★ hiddenクラスを剥がす処理を追加 ★★★
             landingPage.classList.add('hidden');
             gameWrapper.classList.remove('hidden');
             body.classList.add('game-active');
@@ -261,18 +271,26 @@ document.addEventListener('DOMContentLoaded', () => {
         userInput.style.height = 'auto';
         userInput.style.height = `${userInput.scrollHeight}px`;
     });
+
+    // ★ 「決定」ボタンのクリック処理を整理・修正しました
     confirmButton.addEventListener('click', () => {
         const selectedValue = slotSelector.value;
 
         if (selectedValue === 'new_game') {
+            // 新規ゲーム選択時
             ui.showScenarioSelection(startNewGame, state.getGameState().gameSlots.length > 0);
+            ui.showBannerAdForDevice(); // ★ ui. から呼び出し。ここで広告表示
         } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
+            // セーブデータ選択時
             state.setActiveSlotId(selectedValue);
             loadGameFromSlot(selectedValue);
+            ui.showBannerAdForDevice(); // ★ ui. から呼び出し。ここで広告表示
         } else {
+            // 何も選択されていない時
             ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
         }
     });
+    
     deleteSlotButton.addEventListener('click', deleteSelectedSlot);
     
     exportButton.addEventListener('click', () => {
@@ -282,6 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     importButton.addEventListener('click', () => importFileInput.click());
 
+    // ★ インポート処理を修正しました
     importFileInput.addEventListener('change', (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -295,7 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (file.name.endsWith('.json')) {
                     importedSlot = JSON.parse(fileContent);
                 } else if (file.name.endsWith('.txt')) {
-                    importedSlot = state.createSlotFromTxt(fileContent, RULEBOOK_1ST);
+                    // ★ createSlotFromTxtに渡すルールブックが不足していたので追加
+                    importedSlot = state.createSlotFromTxt(fileContent, RULEBOOK_1ST, RULEBOOK_SF_AI);
                 } else {
                     throw new Error('サポートされていないファイル形式です。(.json または .txt)');
                 }
@@ -310,6 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     initializeGame();
                     ui.highlightSlot(importResult.importedSlot.id);
                     loadGameFromSlot(importResult.importedSlot.id);
+                    ui.showBannerAdForDevice(); // ★ ui. から呼び出し。ここで広告表示
                 } else if (importResult.reason === 'slot_full') {
                     ui.showTemporaryMessage('セーブスロットがいっぱいです。既存のデータを削除してください。');
                 }

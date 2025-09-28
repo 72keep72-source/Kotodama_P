@@ -452,3 +452,75 @@ export function showNextScenarioButton(onClick) {
     const inputContainer = document.getElementById('input-container');
     inputContainer.insertBefore(button, actionsContainer);
 }*/
+
+
+/**
+ * i-mobileのPC用バナー広告を表示する
+ */
+export function showPcBannerAd() {
+    // 広告を表示する「箱」を取得
+    const adContainer = document.getElementById('imobile-ad-container');
+    if (!adContainer) return; // 箱がなければ何もしない
+
+    // 念のため、中身を一度空にする
+    adContainer.innerHTML = '';
+
+    // i-mobileから発行されたタグの情報を元に、要素をJavaScriptで組み立てる
+    const adDiv = document.createElement('div');
+    adDiv.id = 'im-30c47d98d75f4ca7ab38835b575c5a1f'; // タグに書かれているdivのID
+
+    const script1 = document.createElement('script');
+    script1.async = true;
+    script1.src = 'https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104';
+
+    const script2 = document.createElement('script');
+    script2.text = `(window.adsbyimobile=window.adsbyimobile||[]).push({
+        pid: 84078,
+        mid: 587426,
+        asid: 1912451,
+        type: "banner",
+        display: "inline",
+        elementid: "im-30c47d98d75f4ca7ab38835b575c5a1f"
+    });`;
+
+    // 組み立てた要素を「箱」の中に入れる
+    adDiv.appendChild(script1);
+    adDiv.appendChild(script2);
+    adContainer.appendChild(adDiv);
+}
+
+/**
+ * i-mobileのSP（スマホ）用バナー広告を表示する
+ */
+export function showSpBannerAd() {
+    // 広告を表示する「箱」を取得
+    const adContainer = document.getElementById('imobile-ad-container');
+    if (!adContainer) return;
+
+    // 中身を一度空にする
+    adContainer.innerHTML = '';
+
+    // ★スマホ用のタグ情報を元に、要素を組み立てる
+    const adDiv = document.createElement('div');
+    adDiv.id = 'im-4b29ea23cd6142b182adcb9a3c9444f5'; // ★スマホ用のdiv ID
+
+    const script1 = document.createElement('script');
+    script1.async = true;
+    script1.src = 'https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104';
+
+    const script2 = document.createElement('script');
+    // ★スマホ用のID（pid, mid, asidなど）に書き換える
+    script2.text = `(window.adsbyimobile=window.adsbyimobile||[]).push({
+        pid: 84078,
+        mid: 587427,
+        asid: 1912452,
+        type: "banner",
+        display: "inline",
+        elementid: "im-4b29ea23cd6142b182adcb9a3c9444f5"
+    });`;
+
+    // 組み立てた要素を「箱」の中に入れる
+    adDiv.appendChild(script1);
+    adDiv.appendChild(script2);
+    adContainer.appendChild(adDiv);
+}
