@@ -1,5 +1,5 @@
 // キャッシュのバージョンを定義。ファイルを更新したら、ここの数字を'v1.1'のように変える
-const CACHE_VERSION = 'v1.5'; 
+const CACHE_VERSION = 'v1.6'; 
 const CACHE_NAME = `kotodama-protocol-cache-${CACHE_VERSION}`;
 
 // キャッシュするファイルのリスト
