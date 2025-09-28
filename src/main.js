@@ -85,14 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 /**
- * デバイス（PC/スマホ）を判定して、適切なバナー広告表示関数を呼び出す
+ * デバイス（PC/スマホ）を判定して、適切なバナー広告表示関数を呼び出す司令塔
  */
 function showBannerAdForDevice() {
     // UserAgentというブラウザの情報から、スマホっぽい文字列があるか判定
     if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        showSpBannerAd(); // スマホならSP用を呼び出す
+        ui.showSpBannerAd(); // スマホなら、ui.jsのスマホ専門家を呼ぶ
     } else {
-        showPcBannerAd(); // それ以外はPC用を呼び出す
+        ui.showPcBannerAd(); // それ以外は、ui.jsのPC専門家を呼ぶ
     }
 }
 
@@ -279,12 +279,12 @@ function showBannerAdForDevice() {
         if (selectedValue === 'new_game') {
             // 新規ゲーム選択時
             ui.showScenarioSelection(startNewGame, state.getGameState().gameSlots.length > 0);
-            ui.showBannerAdForDevice(); // ★ ui. から呼び出し。ここで広告表示
+            showBannerAdForDevice(); // ★ ui. から呼び出し。ここで広告表示
         } else if (selectedValue && state.getGameState().gameSlots.some(s => s.id == selectedValue)) {
             // セーブデータ選択時
             state.setActiveSlotId(selectedValue);
             loadGameFromSlot(selectedValue);
-            ui.showBannerAdForDevice(); // ★ ui. から呼び出し。ここで広告表示
+            showBannerAdForDevice(); // ★ ui. から呼び出し。ここで広告表示
         } else {
             // 何も選択されていない時
             ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
@@ -330,7 +330,7 @@ function showBannerAdForDevice() {
                     initializeGame();
                     ui.highlightSlot(importResult.importedSlot.id);
                     loadGameFromSlot(importResult.importedSlot.id);
-                    ui.showBannerAdForDevice(); // ★ ui. から呼び出し。ここで広告表示
+                    showBannerAdForDevice(); // ★ ui. から呼び出し。ここで広告表示
                 } else if (importResult.reason === 'slot_full') {
                     ui.showTemporaryMessage('セーブスロットがいっぱいです。既存のデータを削除してください。');
                 }
