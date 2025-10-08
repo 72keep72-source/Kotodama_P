@@ -249,6 +249,17 @@ export function parseAIResponse(fullAiText) {
     }
     storyText = storyText.replace(damageRegex, '').trim();
 
+    const healRegex = /\[HEAL\]\s*(\d+)/g;
+    let healMatch;
+    while ((healMatch = healRegex.exec(storyText))) {
+        if (playerStats.HP) {
+            const healAmount = parseInt(healMatch[1], 10);
+            // 上限(max)を超えないように回復させる
+            playerStats.HP.current = Math.min(playerStats.HP.max, playerStats.HP.current + healAmount);
+        }
+    }
+    storyText = storyText.replace(healRegex, '').trim();
+
     const itemAddRegex = /\[ITEM_ADD\]\s*(.+)/g;
     let itemAddMatch;
     while((itemAddMatch = itemAddRegex.exec(storyText)) !== null) {
