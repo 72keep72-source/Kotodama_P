@@ -469,7 +469,7 @@ export function showPcBannerAd() {
 
     // i-mobileから発行されたタグの情報を元に、要素をJavaScriptで組み立てる
     const adDiv = document.createElement('div');
-    adDiv.id = 'im-30c47d98d75f4ca7ab38835b575c5a1f'; // タグに書かれているdivのID
+    adDiv.id = 'im-2a5631435e204978a8d172b117fa1301'; // タグに書かれているdivのID
 
     const script1 = document.createElement('script');
     script1.async = true;
@@ -482,7 +482,7 @@ export function showPcBannerAd() {
         asid: 1912451,
         type: "banner",
         display: "inline",
-        elementid: "im-30c47d98d75f4ca7ab38835b575c5a1f"
+        elementid: "im-2a5631435e204978a8d172b117fa1301"
     });`;
 
     // 組み立てた要素を「箱」の中に入れる
@@ -504,7 +504,7 @@ export function showSpBannerAd() {
 
     // ★スマホ用のタグ情報を元に、要素を組み立てる
     const adDiv = document.createElement('div');
-    adDiv.id = 'im-4b29ea23cd6142b182adcb9a3c9444f5'; // ★スマホ用のdiv ID
+    adDiv.id = 'im-e27a488b6ec3438b925176dbffddb97f'; // ★スマホ用のdiv ID
 
     const script1 = document.createElement('script');
     script1.async = true;
@@ -518,7 +518,7 @@ export function showSpBannerAd() {
         asid: 1912452,
         type: "banner",
         display: "inline",
-        elementid: "im-4b29ea23cd6142b182adcb9a3c9444f5"
+        elementid: "im-e27a488b6ec3438b925176dbffddb97f"
     });`;
 
     // 組み立てた要素を「箱」の中に入れる
