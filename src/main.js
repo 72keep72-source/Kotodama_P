@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 「次の物語へ」ボタンが押されたら、広告モーダルを表示する。
                 // 広告が成功した後の処理として、initializeGame を渡す。
                 ui.showAdModal(state.getGameState().activeScenarioType, () => {
-                    initializeGame();
+                    return;
                 });
             });
         } else {
@@ -192,7 +192,7 @@ function showBannerAdForDevice() {
         if (parsedData.showAdButton) {
              ui.showNextScenarioButton(() => {
                 ui.showAdModal(state.getGameState().activeScenarioType, () => {
-                    initializeGame();
+                    return;
                 });
             });
         } else {
@@ -232,30 +232,56 @@ function showBannerAdForDevice() {
             initializeGame(); // ★ window.location.reload() から変更
         }
     }
+    
+    /** ゲーム画面にもどりたい！ */
+    function consumeRewardIfExists() {
+    const REWARD_STORAGE_KEY = 'kotopro_reward_result';
+    const raw = localStorage.getItem(REWARD_STORAGE_KEY);
+    if (!raw) return;
+
+    try {
+        const rewardData = JSON.parse(raw);
+
+        // 5分以内だけ有効
+        const isFresh = Date.now() - rewardData.ts < 5 * 60 * 1000;
+        if (!rewardData.granted || !isFresh) {
+            localStorage.removeItem(REWARD_STORAGE_KEY);
+            return;
+        }
+
+        state.recoverActions(rewardData.amount || 5);
+        ui.updateActionCountDisplay(state.getGameState().dailyActions);
+        ui.addLog(`【システム】広告報酬により行動回数が${rewardData.amount || 5}回分回復しました。`, 'ai-response');
+
+        localStorage.removeItem(REWARD_STORAGE_KEY);
+    } catch (error) {
+        console.error('報酬データの読み込みに失敗しました:', error);
+        localStorage.removeItem(REWARD_STORAGE_KEY);
+    }
+}
 
     /** ゲーム画面の初期化 */
     function initializeGame() {
-        ui.initializeUI();
-        state.loadGameSlotsFromStorage();
+    ui.initializeUI();
+    state.loadGameSlotsFromStorage();
+
         const gameState = state.getGameState();
         ui.updateSlotSelector({ 
             gameSlots: gameState.gameSlots, 
             maxSlots: state.MAX_SAVE_SLOTS 
-        });
+    });
 
-        const hasSaveData = gameState.gameSlots.length > 0;
-        ui.showWelcomeScreen(hasSaveData);
-        
-        ui.initializeHintButton();
-        ui.initializeAdModal((onSuccess) => {
-            setTimeout(() => {
-                state.recoverActions(5);
-                ui.updateActionCountDisplay(state.getGameState().dailyActions);
-                ui.addLog('【システム】行動回数が5回分回復しました。', 'ai-response');
-                onSuccess();
-            }, 2000);
-        });
-    }
+    const hasSaveData = gameState.gameSlots.length > 0;
+    ui.showWelcomeScreen(hasSaveData);
+
+    ui.initializeHintButton();
+
+    // ここは「広告ページへ飛ばすだけ」の新版にする
+    ui.initializeAdModal();
+
+    // 戻ってきたときの報酬受け取り
+    consumeRewardIfExists();
+}
 
    // --- イベントリスナーの設定 ---
     if (startGameButton) {

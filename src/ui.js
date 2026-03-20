@@ -483,34 +483,20 @@ export function initializeHintButton() {
     updateHintState();
 }
 
-export function initializeAdModal(onConfirm) {
-    adCancelButton.addEventListener('click', () => adModalOverlay.classList.remove('visible'));
-    
+export function initializeAdModal() {
+    adCancelButton.addEventListener('click', () => {
+        adModalOverlay.classList.remove('visible');
+    });
+
     adConfirmButton.addEventListener('click', () => {
-        // --- ▼▼▼ ここからがテスト用の仮表示ロジックです ▼▼▼ ---
+        const scenarioType = adConfirmButton.dataset.scenarioType || 'fantasy';
+        const returnTo = 'index.html';
 
-        // 1. ローディングスピナーを表示し、ボタンを隠す
-        adLoadingSpinner.style.display = 'block';
-        adConfirmButton.style.display = 'none';
-        adCancelButton.style.display = 'none';
-
-        // 2. 3秒待ってから、広告が成功したと仮定する
-        setTimeout(() => {
-            // 3. onAdSuccessCallbackに関数が保存されていれば、それを実行する
-            if (onAdSuccessCallback) {
-                onAdSuccessCallback();
-            }
-
-            // 4. モーダルを閉じ、UIを元に戻す
-            adModalOverlay.classList.remove('visible');
-            adLoadingSpinner.style.display = 'none';
-            adConfirmButton.style.display = 'inline-block';
-            adCancelButton.style.display = 'inline-block';
-        }, 3000); // 3000ミリ秒 = 3秒
-
-        // --- ▲▲▲ ここまでがテスト用の仮表示ロジックです ▲▲▲ ---
+        const url = `ad-reward.html?scenarioType=${encodeURIComponent(scenarioType)}&returnTo=${encodeURIComponent(returnTo)}`;
+        window.location.href = url;
     });
 }
+
 
 
 /**本番用こめんとあうと
@@ -531,22 +517,23 @@ export function initializeAdModal(onConfirm) {
 }　*/
 
 
-export function showAdModal(scenarioType, successCallback) {
-    // 成功した時に実行したい処理を、グローバル変数に保存
-    onAdSuccessCallback = successCallback;
-
+export function showAdModal(scenarioType) {
     let message = '';
     if (scenarioType === 'sf') {
         message = '警告：精神負荷が臨界点に達しました。<br>これ以上のマトリクスへの接続は、あなたの精神崩壊を招きます。<br>ネットワークへの再アクセスは、システムデイリーメンテナンス（毎日午前4時）の完了後に許可されます。';
     } else if (scenarioType === 'testS') {
-        message = 'お試しプレイありがとうございます！<br>広告を見ることでゲーム選択画面に戻ります。'; 
+        message = 'お試しプレイありがとうございます！<br>広告を見ることでゲーム選択画面に戻ります。';
     } else if (scenarioType === 'guildKURAGE') {
-        message = '陽も傾き、今日のギルド活動時間は終了だ。<br>活動の再開は翌朝（午前4時）からとなる。ただし、ギルドの「取引先からの特別な依頼（広告）」をこなすことで、組合から僅かな追加活動時間が許可される。'; 
+        message = '陽も傾き、今日のギルド活動時間は終了だ。<br>活動の再開は翌朝（午前4時）からとなる。ただし、ギルドの「取引先からの特別な依頼（広告）」をこなすことで、組合から僅かな追加活動時間が許可される。';
     } else {
         message = '夜の森を覆う呪いが、あなたの理性を蝕んでいく…<br>これ以上は危険だ。今は身を潜め、心を休めるしかない。<br>呪いが和らぐ夜明け（午前4時）と共に、再びあなたの道は開かれるだろう。';
     }
+
     adModalText.innerHTML = message;
     adModalOverlay.classList.add('visible');
+
+    // ボタンにシナリオ情報を覚えさせる
+    adConfirmButton.dataset.scenarioType = scenarioType;
 }
 
 /**
