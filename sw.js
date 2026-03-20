@@ -1,5 +1,5 @@
 // キャッシュのバージョンを定義。ファイルを更新したら、ここの数字を'v1.1'のように変える
-const CACHE_VERSION = 'v2.6';
+const CACHE_VERSION = 'v2.7';
 const CACHE_NAME = `kotodama-protocol-cache-${CACHE_VERSION}`;
 
 // キャッシュするファイルのリスト
@@ -46,15 +46,37 @@ self.addEventListener('activate', (event) => {
 
 // ファイルのリクエストがあった場合に、キャッシュから返す
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+
+  if (
+    url.origin === 'https://imp-adedge.i-mobile.co.jp' ||
+    url.hostname.includes('i-mobile.co.jp')
+  ) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // キャッシュにあればそれを返す
-        if (response) {
-          return response;
-        }
-        // キャッシュになければ、ネットワークから取得して返す
-        return fetch(event.request);
+        if (response) return response;
+
+        return fetch(event.request).then((networkResponse) => {
+          if (!networkResponse || networkResponse.status !== 200 || networkResponse.type === 'opaque') {
+            return networkResponse;
+          }
+
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache);
+          });
+
+          return networkResponse;
+        });
+      })
+      .catch((error) => {
+        console.error('SW fetch failed:', event.request.url, error);
+        // 必要ならオフラインページ返す
+        throw error;
       })
   );
 });
