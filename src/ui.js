@@ -41,6 +41,21 @@ export function initializeUI() {
     importCancelButton = document.getElementById('import-cancel-button');
 }
 
+function showBannerAdForDevice() {
+    const adContainer = document.getElementById('imobile-ad-container');
+    if (!adContainer) {
+        console.warn('imobile-ad-container が見つかりません');
+        return;
+    }
+
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+    if (isMobile) {
+        ui.showSpBannerAd();
+    } else {
+        ui.showPcBannerAd();
+    }
+}
 let onAdSuccessCallback = null;
 
 // --- ヘルパー関数 ---
@@ -408,12 +423,11 @@ export function showImportModal({ onConvert, onImport }) {
 export function openConvertFullSaveInput() {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.json,application/json.txt';
+    input.accept = '.json,application/json';
 
     input.addEventListener('change', async (event) => {
         const file = event.target.files?.[0];
         if (!file) return;
-        onFileSelected?.(file);
 
         try {
             const text = await file.text();
@@ -579,26 +593,8 @@ export function showNextScenarioButton(onClick) {
     gameContainer.appendChild(button);
 }
 
-/**
- * 広告通ったらこれにする。★★★ テストシナリオ完了ボタンを表示する新しい関数 ★★★
-export function showNextScenarioButton(onClick) {
-    // 既存の[ACTION]ボタンは全てクリアする
-    actionsContainer.innerHTML = '';
-    
-    const button = document.createElement('button');
-    button.textContent = '次の物語へ進む（広告を見る）';
-    button.className = 'next-scenario-button'; // 新しいCSSクラスを適用
-    button.addEventListener('click', onClick);
-    
-    // input-container内のactions-containerの上に追加する
-    const inputContainer = document.getElementById('input-container');
-    inputContainer.insertBefore(button, actionsContainer);
-}*/
 
-
-/**
- * i-mobileのPC用バナー広告を表示する
- */
+//i-mobileのPC用バナー広告を表示する
 export function showPcBannerAd() {
     // 広告を表示する「箱」を取得
     const adContainer = document.getElementById('imobile-ad-container');
@@ -631,9 +627,9 @@ export function showPcBannerAd() {
     adContainer.appendChild(adDiv);
 }
 
-/**
- * i-mobileのSP（スマホ）用バナー広告を表示する
- */
+
+//i-mobileのSP（スマホ）用バナー広告を表示する
+
 export function showSpBannerAd() {
     // 広告を表示する「箱」を取得
     const adContainer = document.getElementById('imobile-ad-container');

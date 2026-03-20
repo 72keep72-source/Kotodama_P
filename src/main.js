@@ -4,8 +4,7 @@
 import * as state from './services/state.js';
 import * as ui from './ui.js';
 import { callAI } from './services/api.js';
-// ★ showSpBannerAd を追記
-import { showPcBannerAd, showSpBannerAd } from './ui.js';
+// ルールブックのインポート
 import { RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 import { RULEBOOK_TEST } from './assets/data/rulebook_Otameshi.js';
@@ -14,6 +13,7 @@ import { RULEBOOK_guildKURAGE } from './assets/data/rurebook_guildKURAGE.js';
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', () => {
     ui.initializeUI();
+   
     
     // --- DOM要素の取得 ---
     const body = document.body;
@@ -84,17 +84,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 }
 
-/**
- * デバイス（PC/スマホ）を判定して、適切なバナー広告表示関数を呼び出す司令塔
- */
+
+//デバイス（PC/スマホ）を判定して、適切なバナー広告表示関数を呼び出す司令塔
 function showBannerAdForDevice() {
-    // UserAgentというブラウザの情報から、スマホっぽい文字列があるか判定
-    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        ui.showSpBannerAd(); // スマホなら、ui.jsのスマホ専門家を呼ぶ
+    const adContainer = document.getElementById('imobile-ad-container');
+    if (!adContainer) {
+        console.warn('imobile-ad-container が見つかりません');
+        return;
+    }
+
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+    if (isMobile) {
+        ui.showSpBannerAd();
     } else {
-        ui.showPcBannerAd(); // それ以外は、ui.jsのPC専門家を呼ぶ
+        ui.showPcBannerAd();
     }
 }
+
 
 
 
@@ -313,8 +320,7 @@ function showBannerAdForDevice() {
             ui.openConvertFullSaveInput();
         },
         onImport: () => {
-            // 既存の通常インポート導線を呼ぶ
-            existingImportButtonHandler();
+            document.getElementById('import-file-input')?.click();
         }
     });
 });
@@ -360,4 +366,6 @@ function showBannerAdForDevice() {
         reader.readAsText(file);
         event.target.value = '';
     });
+    
+    showBannerAdForDevice(); // ★ ページ読み込み時にも広告表示を呼び出す
 });
