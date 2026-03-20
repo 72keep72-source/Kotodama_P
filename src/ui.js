@@ -2,8 +2,9 @@ import {
     calculateModifier,
     buildScenarioReviewText,
     buildCompactSaveData,
-    getExportFileNames
-    } from './services/state.js';
+    getExportFileNames,
+    convertFullSaveToCompactSave
+} from './services/state.js';
 
 // --- DOM要素の保持用変数 ---
 let gameLog, userInput, sendButton, statusDisplay, actionCountDisplay, actionsContainer, playerNameDisplay, inventoryDisplay, slotSelector, scenarioSelectionContainer, hintToggleButton, adModalOverlay, adModalText, adConfirmButton, adCancelButton, adLoadingSpinner,
@@ -402,13 +403,7 @@ export function showImportModal({ onConvert, onImport }) {
     };
 }
 
-import {
-    calculateModifier,
-    buildScenarioReviewText,
-    buildCompactSaveData,
-    getExportFileNames,
-    convertFullSaveToCompactSave
-} from './services/state.js';
+
 
 export function openConvertFullSaveInput() {
     const input = document.createElement('input');
