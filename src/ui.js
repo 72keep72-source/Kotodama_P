@@ -530,10 +530,8 @@ export function showAdModal(scenarioType) {
     }
 
     adModalText.innerHTML = message;
-    adModalOverlay.classList.add('visible');
-
-    // ボタンにシナリオ情報を覚えさせる
     adConfirmButton.dataset.scenarioType = scenarioType;
+    adModalOverlay.classList.add('visible');
 }
 
 /**
