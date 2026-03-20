@@ -7,7 +7,8 @@ import {
 
 // --- DOM要素の保持用変数 ---
 let gameLog, userInput, sendButton, statusDisplay, actionCountDisplay, actionsContainer, playerNameDisplay, inventoryDisplay, slotSelector, scenarioSelectionContainer, hintToggleButton, adModalOverlay, adModalText, adConfirmButton, adCancelButton, adLoadingSpinner,
-exportModalOverlay, exportTxtButton, exportJsonButton, exportCancelButton;
+exportModalOverlay, exportTxtButton, exportJsonButton, exportCancelButton,
+importModalOverlay, convertSaveButton, importNormalButton, importCancelButton;
 
 
 // --- 初期化 ---
@@ -33,6 +34,10 @@ export function initializeUI() {
     exportTxtButton = document.getElementById('export-txt-button');
     exportJsonButton = document.getElementById('export-json-button');
     exportCancelButton = document.getElementById('export-cancel-button');
+    importModalOverlay = document.getElementById('import-modal-overlay');
+    convertSaveButton = document.getElementById('convert-save-button');
+    importNormalButton = document.getElementById('import-normal-button');
+    importCancelButton = document.getElementById('import-cancel-button');
 }
 
 let onAdSuccessCallback = null;
@@ -377,7 +382,68 @@ export function exportCompactSaveData(activeSlotData) {
     );
 }
 
-    //↑追加したセーブデータExpボタンの関数
+export function showImportModal({ onConvert, onImport }) {
+    if (!importModalOverlay) return;
+
+    importModalOverlay.classList.add('visible');
+
+    convertSaveButton.onclick = () => {
+        onConvert?.();
+        importModalOverlay.classList.remove('visible');
+    };
+
+    importNormalButton.onclick = () => {
+        onImport?.();
+        importModalOverlay.classList.remove('visible');
+    };
+
+    importCancelButton.onclick = () => {
+        importModalOverlay.classList.remove('visible');
+    };
+}
+
+import {
+    calculateModifier,
+    buildScenarioReviewText,
+    buildCompactSaveData,
+    getExportFileNames,
+    convertFullSaveToCompactSave
+} from './services/state.js';
+
+export function openConvertFullSaveInput() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json.txt';
+
+    input.addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        onFileSelected?.(file);
+
+        try {
+            const text = await file.text();
+            const importedData = JSON.parse(text);
+
+            const compactData = convertFullSaveToCompactSave(importedData);
+            const filenames = getExportFileNames(compactData);
+
+            downloadTextFile(
+                JSON.stringify(compactData, null, 2),
+                filenames.json,
+                'application/json;charset=utf-8'
+            );
+
+            showTemporaryMessage('軽量セーブデータに変換しました。');
+        } catch (error) {
+            console.error(error);
+            showTemporaryMessage('変換に失敗しました。JSONの形式を確認してください。');
+        }
+    });
+
+    input.click();
+}
+
+    //↑追加したセーブデータExp&importボタンの関数
 
 export function initializeHintButton() {
     if (!hintToggleButton) { 

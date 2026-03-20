@@ -578,6 +578,14 @@ export function getExportFileNames(slot) {
     const baseName = getExportBaseName(slot);
     return {
         txt: `${baseName}.txt`,
-        json: `${baseName}.json`
+        json: `${baseName}_compact.json`
     };
+}
+
+export function convertFullSaveToCompactSave(importedData) {
+    if (!importedData || !importedData.history) {
+        throw new Error('有効な完全セーブデータではありません。');
+    }
+
+    return buildCompactSaveData(importedData);
 }

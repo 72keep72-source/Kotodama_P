@@ -307,7 +307,17 @@ function showBannerAdForDevice() {
     });
 });
 
-    importButton.addEventListener('click', () => importFileInput.click());
+    importButton.addEventListener('click', () => {
+    ui.showImportModal({
+        onConvert: () => {
+            ui.openConvertFullSaveInput();
+        },
+        onImport: () => {
+            // 既存の通常インポート導線を呼ぶ
+            existingImportButtonHandler();
+        }
+    });
+});
 
     // ★ インポート処理を修正しました
     importFileInput.addEventListener('change', (event) => {
