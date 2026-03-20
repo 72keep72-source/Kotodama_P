@@ -131,6 +131,7 @@ function showBannerAdForDevice() {
         state.addHistory({ role: 'user', parts: [{ text: command }] });
 
         await processAIturn();
+        maybeReloadBannerAd();
     }
 
     /** 新しいゲームを開始する */
@@ -318,8 +319,29 @@ function showBannerAdForDevice() {
         ui.showWelcomeScreen(hasSaveData);
         }
     }
+    
+    //共通リロード
+    function reloadBannerAdForDevice() {
+    const adContainer = document.getElementById('imobile-ad-container');
+    if (!adContainer) {
+        console.warn('imobile-ad-container が見つかりません');
+        return;
+    }
 
-   // --- イベントリスナーの設定 ---
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+    // 念のため少し待ってから差し替える
+    setTimeout(() => {
+        if (isMobile) {
+            ui.showSpBannerAd();
+        } else {
+            ui.showPcBannerAd();
+        }
+    }, 100);
+    }
+
+
+    // --- イベントリスナーの設定 ---
     if (startGameButton) {
         startGameButton.addEventListener('click', () => {
             landingPage.classList.add('hidden');
@@ -328,6 +350,17 @@ function showBannerAdForDevice() {
             initializeGame();
         });
     }
+
+    let adRefreshCounter = 0;
+
+    function maybeReloadBannerAd() {
+    adRefreshCounter++;
+
+    // 5回に1回だけ更新
+    if (adRefreshCounter % 5 === 0) {
+        reloadBannerAdForDevice();
+            }
+        }
 
     sendButton.addEventListener('click', () => handleUserCommand());
     userInput.addEventListener('keydown', (event) => {
@@ -358,6 +391,7 @@ function showBannerAdForDevice() {
             // 何も選択されていない時
             ui.showTemporaryMessage('プルダウンからロードするセーブデータ、または「新規ゲームを始める」を選択してください。');
         }
+        reloadBannerAdForDevice(); // ★ 広告のリロードもここで呼び出す
     });
     
     deleteSlotButton.addEventListener('click', deleteSelectedSlot);
