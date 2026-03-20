@@ -376,4 +376,208 @@ export function createSlotFromTxt(txtContent, fantasyRulebook, sfRulebook) {
         modified: [],
         scenarioType: detectedScenarioType // ★推測したシナリオタイプを設定
     };
+
+
+}
+
+// --- Export用ヘルパーここから ---
+
+function formatExportDate(date = new Date()) {
+    const yy = String(date.getFullYear()).slice(-2);
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+}
+
+function sanitizeFileName(name = 'save') {
+    return String(name).replace(/[\\/:*?"<>|]/g, '_').trim() || 'save';
+}
+
+function getExportBaseName(slot) {
+    const safeName = sanitizeFileName(slot?.name || 'save');
+    return `${safeName}_${formatExportDate()}`;
+}
+
+function stripControlTags(text = '') {
+    return text
+        .split('\n')
+        .filter(line => !line.startsWith('['))
+        .join('\n')
+        .trim();
+}
+
+function extractRecentTurns(history, pairCount = 5) {
+    const body = (history || []).slice(1); // 先頭のルール注入は除外
+    const recent = [];
+    let userCount = 0;
+
+    for (let i = body.length - 1; i >= 0; i--) {
+        const turn = body[i];
+        if (!turn || !turn.parts || !turn.parts[0]) continue;
+        recent.unshift(turn);
+
+        if (turn.role === 'user') {
+            userCount++;
+            if (userCount >= pairCount) break;
+        }
+    }
+
+    return recent;
+}
+
+function extractStateChanges(history) {
+    const changes = [];
+
+    (history || []).forEach(turn => {
+        if (!turn || turn.role !== 'model' || !turn.parts || !turn.parts[0]) return;
+        const text = turn.parts[0].text || '';
+
+        const statRegex = /\[STAT\]\s*(\w+)\s*([+\-]?)\s*(\d+)/g;
+        let statMatch;
+        while ((statMatch = statRegex.exec(text)) !== null) {
+            const [, stat, op, value] = statMatch;
+            const label = op ? `${stat} ${op}${value}` : `${stat} = ${value}`;
+            changes.push(`ステータス変化: ${label}`);
+        }
+
+        const damageRegex = /\[DAMAGE\]\s*(\d+)/g;
+        let damageMatch;
+        while ((damageMatch = damageRegex.exec(text)) !== null) {
+            changes.push(`ダメージ: HP -${damageMatch[1]}`);
+        }
+
+        const itemAddRegex = /\[ITEM_ADD\]\s*(.+)/g;
+        let itemAddMatch;
+        while ((itemAddMatch = itemAddRegex.exec(text)) !== null) {
+            changes.push(`アイテム入手: ${itemAddMatch[1].trim()}`);
+        }
+
+        const itemRemoveRegex = /\[ITEM_REMOVE\]\s*(.+)/g;
+        let itemRemoveMatch;
+        while ((itemRemoveMatch = itemRemoveRegex.exec(text)) !== null) {
+            changes.push(`アイテム消費/喪失: ${itemRemoveMatch[1].trim()}`);
+        }
+    });
+
+    // 長くなりすぎないように後ろだけ残す
+    return changes.slice(-12);
+}
+
+function extractStorySummary(history) {
+    const modelTexts = (history || [])
+        .filter(turn => turn?.role === 'model' && turn?.parts?.[0]?.text)
+        .map(turn => stripControlTags(turn.parts[0].text))
+        .filter(Boolean);
+
+    // 直近の物語本文だけを要約代わりに保持
+    return modelTexts.slice(-8).join('\n\n').trim();
+}
+
+function buildCompactPrompt(slot) {
+    const summary = slot.summary || {};
+    const statsText = JSON.stringify(slot.stats || {}, null, 2);
+    const inventoryText = (slot.inventory && slot.inventory.length > 0)
+        ? slot.inventory.join('、')
+        : 'なし';
+
+    const dailyActionsText = slot.dailyActions
+        ? `${slot.dailyActions.current} / ${slot.dailyActions.limit}`
+        : '不明';
+
+    const recentStateChanges = (summary.recentStateChanges || []).length > 0
+        ? summary.recentStateChanges.map(v => `- ${v}`).join('\n')
+        : '- 特になし';
+
+    const storySoFar = summary.storySoFar || '要約なし';
+
+    return [
+        `あなたは「言霊のプロトコル」のゲームマスターです。`,
+        `以下は軽量セーブデータから復元した再開用コンテキストです。`,
+        `厳密な全文履歴ではなく、要約と直近会話をもとに自然に続行してください。`,
+        ``,
+        `【プレイヤー名】`,
+        `${slot.name || '（名前未設定）'}`,
+        ``,
+        `【シナリオタイプ】`,
+        `${slot.scenarioType || 'fantasy'}`,
+        ``,
+        `【現在ステータス】`,
+        `${statsText}`,
+        ``,
+        `【所持品】`,
+        `${inventoryText}`,
+        ``,
+        `【行動回数】`,
+        `${dailyActionsText}`,
+        ``,
+        `【ここまでの物語要約】`,
+        `${storySoFar}`,
+        ``,
+        `【最近の状態変化】`,
+        `${recentStateChanges}`,
+        ``,
+        `この情報と、これに続く直近会話を踏まえてゲームを続けてください。`
+    ].join('\n');
+}
+
+export function buildScenarioReviewText(slot) {
+    if (!slot || !slot.history) return '';
+
+    const lines = [];
+    slot.history.slice(1).forEach(turn => {
+        if (!turn || !turn.parts || !turn.parts[0]) return;
+        const text = turn.parts[0].text || '';
+
+        if (turn.role === 'user') {
+            lines.push(`> ${text}`);
+        } else if (turn.role === 'model') {
+            const storyText = stripControlTags(text);
+            if (storyText) lines.push(storyText);
+        }
+    });
+
+    return lines.join('\n\n');
+}
+
+export function buildCompactSaveData(slot) {
+    if (!slot) return null;
+
+    const recentTurns = extractRecentTurns(slot.history || [], 5);
+    const summary = {
+        storySoFar: extractStorySummary(slot.history || []),
+        recentStateChanges: extractStateChanges(slot.history || [])
+    };
+
+    const compactSlot = {
+        id: slot.id,
+        name: slot.name,
+        stats: JSON.parse(JSON.stringify(slot.stats || {})),
+        inventory: JSON.parse(JSON.stringify(slot.inventory || [])),
+        dailyActions: JSON.parse(JSON.stringify(
+            slot.dailyActions || { lastRecovery: Date.now(), current: 50, limit: 50 }
+        )),
+        modified: JSON.parse(JSON.stringify(slot.modified || [])),
+        scenarioType: slot.scenarioType || 'fantasy',
+        summary,
+        recentTurns: JSON.parse(JSON.stringify(recentTurns))
+    };
+
+    // 既存のload/importに乗せやすいよう、軽量historyも持たせる
+    compactSlot.history = [
+        {
+            role: 'user',
+            parts: [{ text: buildCompactPrompt(compactSlot) }]
+        },
+        ...JSON.parse(JSON.stringify(recentTurns))
+    ];
+
+    return compactSlot;
+}
+
+export function getExportFileNames(slot) {
+    const baseName = getExportBaseName(slot);
+    return {
+        txt: `${baseName}.txt`,
+        json: `${baseName}.json`
+    };
 }

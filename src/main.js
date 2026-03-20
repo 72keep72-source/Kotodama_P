@@ -294,9 +294,18 @@ function showBannerAdForDevice() {
     deleteSlotButton.addEventListener('click', deleteSelectedSlot);
     
     exportButton.addEventListener('click', () => {
-        const activeSlotData = state.getActiveSlotData();
-        ui.exportSaveData(activeSlotData);
+    const activeSlotData = state.getActiveSlotData();
+
+    if (!activeSlotData) {
+        ui.showTemporaryMessage('エクスポートするデータがありません');
+        return;
+    }
+
+    ui.showExportModal({
+        onTxtExport: () => ui.exportScenarioReviewData(activeSlotData),
+        onJsonExport: () => ui.exportCompactSaveData(activeSlotData)
     });
+});
 
     importButton.addEventListener('click', () => importFileInput.click());
 

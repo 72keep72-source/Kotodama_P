@@ -607,3 +607,48 @@ body:not(.game-active) .ad-modal-overlay {
     font-weight: normal;
     margin: 0;
 }
+
+
+.export-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.export-modal-overlay.visible {
+    display: flex;
+}
+
+.export-modal {
+    width: min(100%, 420px);
+    background: var(--container-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.export-choice-button,
+.export-cancel-button {
+    width: 100%;
+    padding: 14px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.export-choice-button {
+    background: var(--accent-color);
+    color: white;
+}
+
+.export-cancel-button {
+    background: var(--border-color);
+}

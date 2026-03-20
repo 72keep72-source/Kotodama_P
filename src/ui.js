@@ -1,7 +1,13 @@
-import { calculateModifier } from './services/state.js';
+import {
+    calculateModifier,
+    buildScenarioReviewText,
+    buildCompactSaveData,
+    getExportFileNames
+    } from './services/state.js';
 
 // --- DOM要素の保持用変数 ---
-let gameLog, userInput, sendButton, statusDisplay, actionCountDisplay, actionsContainer, playerNameDisplay, inventoryDisplay, slotSelector, scenarioSelectionContainer, hintToggleButton, adModalOverlay, adModalText, adConfirmButton, adCancelButton, adLoadingSpinner;
+let gameLog, userInput, sendButton, statusDisplay, actionCountDisplay, actionsContainer, playerNameDisplay, inventoryDisplay, slotSelector, scenarioSelectionContainer, hintToggleButton, adModalOverlay, adModalText, adConfirmButton, adCancelButton, adLoadingSpinner,
+exportModalOverlay, exportTxtButton, exportJsonButton, exportCancelButton;
 
 
 // --- 初期化 ---
@@ -22,6 +28,11 @@ export function initializeUI() {
     adConfirmButton = document.getElementById('ad-confirm-button');
     adCancelButton = document.getElementById('ad-cancel-button');
     adLoadingSpinner = document.getElementById('ad-loading-spinner');
+    //追加要素
+    exportModalOverlay = document.getElementById('export-modal-overlay');
+    exportTxtButton = document.getElementById('export-txt-button');
+    exportJsonButton = document.getElementById('export-json-button');
+    exportCancelButton = document.getElementById('export-cancel-button');
 }
 
 let onAdSuccessCallback = null;
@@ -278,7 +289,8 @@ export function updateAllDisplays(gameState, changes = {}) {
     updateInventoryDisplay(gameState.inventory || []);
 }
 
-export function exportSaveData(activeSlotData) {
+    //今までのセーブデータExpボタンの関数
+/**export function exportSaveData(activeSlotData) {
     if (!activeSlotData) {
         showTemporaryMessage('エクスポートするゲームデータがありません。');
         return;
@@ -297,8 +309,75 @@ export function exportSaveData(activeSlotData) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+} */
+
+function downloadTextFile(content, filename, mimeType = 'text/plain;charset=utf-8') {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
+export function showExportModal({ onTxtExport, onJsonExport }) {
+    if (!exportModalOverlay) return;
+
+    exportModalOverlay.classList.add('visible');
+
+    exportTxtButton.onclick = () => {
+        onTxtExport?.();
+        exportModalOverlay.classList.remove('visible');
+    };
+
+    exportJsonButton.onclick = () => {
+        onJsonExport?.();
+        exportModalOverlay.classList.remove('visible');
+    };
+
+    exportCancelButton.onclick = () => {
+        exportModalOverlay.classList.remove('visible');
+    };
+}
+
+export function exportScenarioReviewData(activeSlotData) {
+    if (!activeSlotData) {
+        showTemporaryMessage('エクスポートするゲームデータがありません。');
+        return;
+    }
+
+    const txt = buildScenarioReviewText(activeSlotData);
+    if (!txt) {
+        showTemporaryMessage('出力できるログがありません。');
+        return;
+    }
+
+    const filenames = getExportFileNames(activeSlotData);
+    downloadTextFile(txt, filenames.txt, 'text/plain;charset=utf-8');
+}
+
+export function exportCompactSaveData(activeSlotData) {
+    if (!activeSlotData) {
+        showTemporaryMessage('エクスポートするゲームデータがありません。');
+        return;
+    }
+
+    const compactData = buildCompactSaveData(activeSlotData);
+    const filenames = getExportFileNames(activeSlotData);
+
+    downloadTextFile(
+        JSON.stringify(compactData, null, 2),
+        filenames.json,
+        'application/json;charset=utf-8'
+    );
+}
+
+    //↑追加したセーブデータExpボタンの関数
 
 export function initializeHintButton() {
     if (!hintToggleButton) { 
