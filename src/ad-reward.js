@@ -11,35 +11,19 @@ function renderImobileAd() {
     if (isSP()) {
         // SP用
         container.innerHTML = `
-            <div id="im-sp-ad">
-                <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"><\/script>
-                <script>
-                    (window.adsbyimobile = window.adsbyimobile || []).push({
-                        pid: 84078,
-                        mid: 587427,
-                        asid: 1926349,
-                        type: "banner",
-                        display: "inline",
-                        elementid: "im-sp-ad"
-                    });
-                <\/script>
-            </div>
+            <div id="im-73fea87efd244ddc934d63b9813c688b">
+            <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"></script>
+            <script>(window.adsbyimobile=window.adsbyimobile||[]).push({pid:84078,mid:587427,asid:1926349,type:"banner",display:"inline",elementid:"im-73fea87efd244ddc934d63b9813c688b"})
+            </script>
+        </div>
         `;
     } else {
         // PC用
         container.innerHTML = `
-            <div id="im-pc-ad">
-                <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"><\/script>
-                <script>
-                    (window.adsbyimobile = window.adsbyimobile || []).push({
-                        pid: 84078,
-                        mid: 587426,
-                        asid: 1926348,
-                        type: "banner",
-                        display: "inline",
-                        elementid: "im-pc-ad"
-                    });
-                <\/script>
+            <div id="im-973bd34a4b634bf6919a1be171760fd4">
+                <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"></script>
+                <script>(window.adsbyimobile=window.adsbyimobile||[]).push({pid:84078,mid:587426,asid:1926348,type:"banner",display:"inline",elementid:"im-973bd34a4b634bf6919a1be171760fd4"})
+                </script>
             </div>
         `;
     }
