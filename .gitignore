@@ -1,4 +1,5 @@
 .vs/slnx.sqlite
+node_modules
 node_modules/.package-lock.json
 node_modules/@google/generative-ai/LICENSE
 node_modules/@google/generative-ai/package.json
