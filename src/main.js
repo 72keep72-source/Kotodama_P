@@ -9,11 +9,13 @@ import { RULEBOOK_1ST } from './assets/data/rulebook_1st.js';
 import { RULEBOOK_SF_AI } from './assets/data/rulebook_SF_AI.js';
 import { RULEBOOK_TEST } from './assets/data/rulebook_Otameshi.js';
 import { RULEBOOK_guildKURAGE } from './assets/data/rurebook_guildKURAGE.js';
+// supabaseのAPI呼び出し関数のインポート
+import { sendPrivateNote } from './services/supabase.js';
 
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', () => {
     ui.initializeUI();
-   
+    
     
     // --- DOM要素の取得 ---
     const body = document.body;
@@ -28,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportButton = document.getElementById('export-log-button');
     const importButton = document.getElementById('import-button');
     const importFileInput = document.getElementById('import-file-input');
+    // テスト用の秘密メモ送信ボタンの取得
+    const testPrivateNoteButton = document.getElementById('test-private-note-button');
     // --- ゲームロジック ---
 
     /** AIとの対話処理をまとめた関数 */
@@ -82,6 +86,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 }
 
+//-- テスト用の秘密メモ送信関数 ---
+async function sendTestPrivateNote() {
+    try {
+        const savedNote = await sendPrivateNote({
+            room_id: '887ccd6d-9b4f-45f9-9241-ad578b44ba50',
+            from_player_id: 'b3302749-f86e-4ee6-bbb5-55a5ca7e196e',
+            to_player_id: 'b3302749-f86e-4ee6-bbb5-55a5ca7e196e',
+            content: 'フロントから送った秘密メモのテストだよ〜'
+        });
+
+        console.log('秘密メモ保存成功:', savedNote);
+        ui.showTemporaryMessage('秘密メモの送信に成功しました。');
+    } catch (error) {
+        console.error('秘密メモ送信失敗:', error);
+        ui.showTemporaryMessage(`秘密メモ送信失敗: ${error.message}`);
+    }
+}
+    if (testPrivateNoteButton) {
+    testPrivateNoteButton.addEventListener('click', async () => {
+        await sendTestPrivateNote();
+    });
+}
+
 
 //デバイス（PC/スマホ）を判定して、適切なバナー広告表示関数を呼び出す司令塔
 function showBannerAdForDevice() {
@@ -101,8 +128,6 @@ function showBannerAdForDevice() {
 }
 
 
-
-
     /** ユーザーのコマンドを処理 */
     async function handleUserCommand(commandFromButton = null) {
         if (!state.getActiveSlotId()) {
@@ -111,6 +136,7 @@ function showBannerAdForDevice() {
         }
         const command = commandFromButton || userInput.value.trim();
         if (command === '') return;
+        
 
         // テストシナリオでは行動回数を消費しない
         if (state.getGameState().activeScenarioType !== 'testS') {
@@ -420,6 +446,8 @@ function showBannerAdForDevice() {
         }
     });
 });
+
+    
 
     // ★ インポート処理を修正しました
     importFileInput.addEventListener('change', (event) => {
