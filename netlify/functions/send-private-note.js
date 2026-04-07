@@ -1,9 +1,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') {
@@ -15,8 +13,8 @@ exports.handler = async (event) => {
   }
 
   try {
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Supabaseの環境変数が設定されていません。');
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+      throw new Error('Supabaseの環境変数が不足しています。');
     }
 
     if (!event.body) {
@@ -42,9 +40,16 @@ exports.handler = async (event) => {
     }
 
     const trimmedContent = String(content).trim();
+
     if (!trimmedContent) {
       throw new Error('メモ内容が空です。');
     }
+
+    if (trimmedContent.length > 1000) {
+      throw new Error('メモは1000文字以内にしてください。');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
     const { data, error } = await supabase
       .from('player_private_notes')
@@ -78,7 +83,9 @@ exports.handler = async (event) => {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        error: { message: error.message || '秘密メモの送信に失敗しました。' }
+        error: {
+          message: error.message || '秘密メモの送信に失敗しました。'
+        }
       })
     };
   }
