@@ -56,6 +56,11 @@ footer {
 .footer-nav li { display: inline-block; margin: 0 15px; }
 .footer-nav a { color: var(--text-color); text-decoration: none; transition: color 0.2s ease; }
 .footer-nav a:hover { color: var(--accent-color); }
+.footer-support {
+    margin-top: 10px;
+    font-size: 12px;
+    opacity: 0.85;
+}
 .copyright { color: var(--subtle-text-color); margin: 0; }
 
 .hidden {
