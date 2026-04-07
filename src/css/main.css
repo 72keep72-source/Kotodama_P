@@ -544,7 +544,12 @@ body:not(.game-active) .ad-modal-overlay {
     margin: 20px auto;
     display: none;
 }
-
+.ad-support-text {
+  margin-top: 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  opacity: 0.85;
+}
 
 
 /* --- アニメーション --- */
