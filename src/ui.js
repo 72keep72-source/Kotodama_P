@@ -11,7 +11,6 @@ let gameLog, userInput, sendButton, statusDisplay, actionCountDisplay, actionsCo
 exportModalOverlay, exportTxtButton, exportJsonButton, exportCancelButton,
 importModalOverlay, convertSaveButton, importNormalButton, importCancelButton;
 
-
 // --- 初期化 ---
 export function initializeUI() {
     gameLog = document.getElementById('game-log');
