@@ -32,8 +32,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const importFileInput = document.getElementById('import-file-input');
     // テスト用の秘密メモ送信ボタンの取得
     const testPrivateNoteButton = document.getElementById('test-private-note-button');
+    const privateMemoToggleButton = document.getElementById('private-memo-button');
+    
     // --- ゲームロジック ---
 
+    
     /** AIとの対話処理をまとめた関数 */
     async function processAIturn() {
     ui.addLog('考え中...', 'ai-response');
@@ -87,28 +90,31 @@ document.addEventListener('DOMContentLoaded', () => {
 }
 
 //-- テスト用の秘密メモ送信関数 ---
-async function sendTestPrivateNote() {
-    try {
-        const savedNote = await sendPrivateNote({
-            room_id: '887ccd6d-9b4f-45f9-9241-ad578b44ba50',
-            from_player_id: 'b3302749-f86e-4ee6-bbb5-55a5ca7e196e',
-            to_player_id: 'b3302749-f86e-4ee6-bbb5-55a5ca7e196e',
-            content: 'フロントから送った秘密メモのテストだよ〜'
-        });
+const params = new URLSearchParams(location.search);
+    currentRoom = {
+        id: params.get('room')
+    };
+    currentPlayer = {
+        id: params.get('player')
+    };
 
-        console.log('秘密メモ保存成功:', savedNote);
-        ui.showTemporaryMessage('秘密メモの送信に成功しました。');
-    } catch (error) {
-        console.error('秘密メモ送信失敗:', error);
-        ui.showTemporaryMessage(`秘密メモ送信失敗: ${error.message}`);
-    }
-}
-    if (testPrivateNoteButton) {
-    testPrivateNoteButton.addEventListener('click', async () => {
-        await sendTestPrivateNote();
+
+// ★ 秘密メモモードのトグルボタンのイベントリスナーを追加
+if (privateMemoToggleButton) {
+    privateMemoToggleButton.addEventListener('click', () => {
+        const nextMode = !ui.isPrivateMemoMode();
+        ui.setPrivateMemoMode(nextMode);
+
+        if (nextMode) {
+            ui.renderPrivateRecipients([
+                { id: 'p1', display_name: '○○さん' },
+                { id: 'p2', display_name: '××さん' },
+                { id: 'p3', display_name: '△△さん' },
+                 { id: 'myPlayerId', display_name: 'あなた', isSelfMemo: true }
+            ]);
+        }
     });
 }
-
 
 //デバイス（PC/スマホ）を判定して、適切なバナー広告表示関数を呼び出す司令塔
 function showBannerAdForDevice() {
@@ -136,6 +142,42 @@ function showBannerAdForDevice() {
         }
         const command = commandFromButton || userInput.value.trim();
         if (command === '') return;
+
+        //送信処理を分岐させて、秘密メモモードならそちらの処理を優先する
+        if (ui.isPrivateMemoMode()) {
+            const target = ui.getSelectedPrivateRecipient();
+
+        if (!target) {
+        ui.showTemporaryMessage('宛先を選択してください。');
+        return;
+        }
+
+        const roomId = currentRoom.id;        // ← 追加
+        const myPlayerId = currentPlayer.id;  // ← 追加
+
+            try {
+                await sendPrivateNote({
+                room_id: roomId,
+                from_player_id: myPlayerId,
+                to_player_id: target.id,
+                content: command
+         });
+
+            if (target.isSelfMemo) {
+                ui.addLog(`【メモ】 ${command}`, 'user-command private-memo-log');
+                ui.showTemporaryMessage('自分用メモを保存しました。');
+            } else {
+                ui.addLog(`【秘密 → ${target.display_name}】 ${command}`, 'user-command private-memo-log');
+             ui.showTemporaryMessage('秘密メモの送信に成功しました。');
+            }
+
+            ui.clearInput();
+             } catch (error) {
+             ui.showTemporaryMessage(`秘密メモ送信失敗: ${error.message}`);
+            }
+
+    return;
+}
         
 
         // テストシナリオでは行動回数を消費しない

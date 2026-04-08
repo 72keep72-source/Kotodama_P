@@ -39,6 +39,12 @@ export function initializeUI() {
     convertSaveButton = document.getElementById('convert-save-button');
     importNormalButton = document.getElementById('import-normal-button');
     importCancelButton = document.getElementById('import-cancel-button');
+    //秘密メモ関連の要素
+    privateMemoBar = document.getElementById('private-memo-bar');
+    privateRecipientList = document.getElementById('private-recipient-list');
+    privateTargetLabel = document.getElementById('private-target-label');
+    privateTargetName = document.getElementById('private-target-name');
+    privateTargetPrefix = document.querySelector('.private-target-prefix');
 }
 
 function showBannerAdForDevice() {
@@ -57,6 +63,113 @@ function showBannerAdForDevice() {
     }
 }
 let onAdSuccessCallback = null;
+
+
+// 秘密メモ関連のUI関数
+let privateMemoBar, privateRecipientList, privateTargetLabel, privateTargetName;
+let privateMemoMode = false;
+let selectedPrivateRecipient = null;
+let privateTargetPrefix;
+
+
+//　ON/OFF切替の関数
+
+export function setPrivateMemoMode(enabled) {
+    privateMemoMode = enabled;
+
+    if (enabled) {
+        privateMemoBar.classList.remove('hidden');
+        privateTargetLabel.classList.remove('hidden');
+        hideHintActionsForPrivateMemo();
+        updatePrivateTargetLabel();
+        toggleInput(false, '秘密メモを入力');
+    } else {
+        privateMemoBar.classList.add('hidden');
+        privateTargetLabel.classList.add('hidden');
+        selectedPrivateRecipient = null;
+        updatePrivateTargetLabel();
+        restoreHintActionsAfterPrivateMemo();
+        toggleInput(false, 'どうする？ (Ctrl+Enterで送信)');
+    }
+}
+
+//宛先一覧描画の関数
+export function renderPrivateRecipients(players) {
+    if (!privateRecipientList) return;
+    privateRecipientList.innerHTML = '';
+
+    players.forEach(player => {
+        const button = document.createElement('button');
+        button.className = 'private-recipient-button';
+        button.textContent = player.isSelfMemo ? '自分用メモ' : player.display_name;
+        button.dataset.playerId = player.id;
+
+        if (selectedPrivateRecipient?.id === player.id) {
+            button.classList.add('active');
+        }
+
+        button.addEventListener('click', () => {
+            selectedPrivateRecipient = player;
+            updatePrivateTargetLabel();
+            renderPrivateRecipients(players);
+        });
+
+        privateRecipientList.appendChild(button);
+    });
+}
+
+//ラベルの更新関数
+export function updatePrivateTargetLabel() {
+    if (!privateTargetName || !privateTargetPrefix) return;
+
+    if (!selectedPrivateRecipient) {
+        privateTargetPrefix.textContent = 'To.';
+        privateTargetName.textContent = '宛先未選択';
+        return;
+    }
+
+    if (selectedPrivateRecipient.isSelfMemo) {
+        privateTargetPrefix.textContent = 'Memo';
+        privateTargetName.textContent = '';
+    } else {
+        privateTargetPrefix.textContent = 'To.';
+        privateTargetName.textContent = selectedPrivateRecipient.display_name;
+    }
+}
+
+//メモ取得の関数
+export function isPrivateMemoMode() {
+    return privateMemoMode;
+}
+
+export function getSelectedPrivateRecipient() {
+    return selectedPrivateRecipient;
+}
+
+export function isSelfMemoRecipient() {
+    return !!selectedPrivateRecipient?.isSelfMemo;
+}
+//ヒント非表示の関数
+function hideHintActionsForPrivateMemo() {
+    if (hintToggleButton) {
+        hintToggleButton.textContent = '秘密メモ';
+        hintToggleButton.classList.add('active');
+    }
+    actionsContainer.style.display = 'none';
+}
+
+function restoreHintActionsAfterPrivateMemo() {
+    const hintsVisible = localStorage.getItem('hintsVisible') === 'true';
+
+    if (hintToggleButton) {
+        hintToggleButton.textContent = hintsVisible ? 'ヒントを隠す' : 'ヒントを表示';
+        hintToggleButton.classList.toggle('active', hintsVisible);
+    }
+
+    actionsContainer.style.display = hintsVisible ? 'block' : 'none';
+}
+
+
 
 // --- ヘルパー関数 ---
 const statDescriptions = {

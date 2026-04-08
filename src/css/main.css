@@ -319,7 +319,11 @@ main#landing-page {
 }
 
 
-#input-area { display: flex; }
+#input-area {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
 textarea#user-input {
     flex-grow: 1;
     background-color: #333;
@@ -344,6 +348,72 @@ textarea#user-input {
 #send-button {
     background-color: var(--accent-color);
     color: white;
+}
+
+#private-memo-button {
+    border: none;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#private-memo-button {
+    background-color: var(--container-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+#private-memo-button.active {
+    background-color: var(--accent-color-dark);
+    color: white;
+}
+
+.private-memo-bar {
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    background-color: #111;
+}
+
+.private-recipient-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.private-recipient-button {
+    background-color: #0b8f6a;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.private-recipient-button.active {
+    outline: 2px solid #fff;
+    filter: brightness(1.1);
+}
+
+.private-target-label {
+    margin: 0 0 6px 0;
+    color: #aaa;
+    font-size: 14px;
+}
+
+.private-target-prefix,
+.private-target-colon {
+    color: #888;
+}
+
+.private-target-name {
+    color: #ccc;
+    font-weight: bold;
+}
+.private-memo-log {
+    color: #cfcfcf;
+    opacity: 0.95;
 }
 
 /* --- サイドバー --- */
