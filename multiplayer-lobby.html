@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>言霊のプロトコル | マルチプレイロビー</title>
+  <link rel="stylesheet" href="src/main.css" />
+  <style>
+    .lobby-wrapper {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 20px 60px;
+      box-sizing: border-box;
+    }
+
+    .lobby-hero {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .lobby-title {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      margin-bottom: 12px;
+      color: var(--accent-color);
+    }
+
+    .lobby-description {
+      color: var(--subtle-text-color);
+      line-height: 1.8;
+      margin: 0 auto;
+      max-width: 680px;
+    }
+
+    .lobby-notice {
+      margin: 20px auto 0;
+      max-width: 680px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: var(--subtle-text-color);
+      font-size: 0.95rem;
+      line-height: 1.7;
+      text-align: left;
+    }
+
+    .lobby-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+
+    .lobby-card {
+      background: var(--container-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 24px;
+    }
+
+    .lobby-card h2 {
+      margin: 0 0 18px;
+      font-size: 1.3rem;
+      color: var(--text-color);
+    }
+
+    .lobby-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .lobby-form label {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.95rem;
+      color: var(--subtle-text-color);
+    }
+
+    .lobby-form input,
+    .lobby-form select {
+      background: #333;
+      color: var(--text-color);
+      border: 1px solid #555;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    .lobby-form input:focus,
+    .lobby-form select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+
+    .lobby-button {
+      border: none;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .lobby-button.primary {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .lobby-button.primary:hover {
+      background: var(--accent-color-dark);
+    }
+
+    .lobby-button.secondary {
+      background: var(--border-color);
+      color: var(--text-color);
+    }
+
+    .lobby-button.secondary:hover {
+      filter: brightness(1.1);
+    }
+
+    .lobby-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .lobby-status {
+      margin-top: 12px;
+      min-height: 1.5em;
+      color: var(--ai-text);
+      font-size: 0.95rem;
+    }
+
+    .back-link-area {
+      margin-top: 28px;
+      text-align: center;
+    }
+
+    .back-link {
+      display: inline-block;
+      color: var(--subtle-text-color);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: 0.2s ease;
+    }
+
+    .back-link:hover {
+      color: var(--text-color);
+      border-bottom-color: var(--text-color);
+    }
+
+    @media (max-width: 800px) {
+      .lobby-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>言霊のプロトコル</h1>
+  </header>
+
+  <main class="lobby-wrapper">
+    <section class="lobby-hero">
+      <h1 class="lobby-title">【テスト版】2〜4人までの冒険</h1>
+      <p class="lobby-description">
+        複数人で同じシナリオに参加するためのロビーです。<br />
+        まずは部屋を作るか、既存の部屋に参加してください。
+      </p>
+
+      <div class="lobby-notice">
+        ・テスト版のため、仕様や挙動は今後変更される可能性があります。<br />
+        ・部屋作成時に選んだシナリオが、その部屋の冒険内容になります。<br />
+        ・ゲーム本編は、参加者全員が Ready になるまで開始されません。
+      </div>
+    </section>
+
+    <section class="lobby-grid">
+      <div class="lobby-card">
+        <h2>部屋を作る</h2>
+        <form class="lobby-form" id="create-room-form">
+          <label>
+            シナリオ
+            <select id="scenario-type" required>
+              <option value="testS">お手軽ゲーム</option>
+              <option value="guildKURAGE">ギルドで依頼を受けてみる</option>
+              <option value="fantasy">剣と魔法の世界</option>
+              <option value="sf">AIが管理する未来的な世界</option>
+            </select>
+          </label>
+
+          <label>
+            参加人数
+            <select id="max-players" required>
+              <option value="2">2人</option>
+              <option value="3">3人</option>
+              <option value="4" selected>4人</option>
+            </select>
+          </label>
+
+          <label>
+            部屋パスワード
+            <input
+              id="room-password"
+              type="password"
+              placeholder="部屋に入るための合言葉"
+              required
+            />
+          </label>
+
+          <div class="lobby-actions">
+            <button type="submit" class="lobby-button primary">部屋を作成する</button>
+          </div>
+
+          <p class="lobby-status" id="create-room-status"></p>
+        </form>
+      </div>
+
+      <div class="lobby-card">
+        <h2>部屋に入る</h2>
+        <form class="lobby-form" id="join-room-form">
+          <label>
+            表示名
+           <input
+              id="join-display-name"
+              type="text"
+              placeholder="表示名を入力"
+              required
+            />
+          </label>
+          <label>
+            ルームID
+            <input
+              id="join-room-id"
+              type="text"
+              placeholder="例: ROOM-AB12CD"
+              required
+            />
+          </label>
+
+          <label>
+            部屋パスワード
+            <input
+              id="join-room-password"
+              type="password"
+              placeholder="作成者から共有されたパスワード"
+              required
+            />
+          </label>
+
+          <div class="lobby-actions">
+            <button type="submit" class="lobby-button primary">部屋に入る</button>
+          </div>
+
+          <p class="lobby-status" id="join-room-status"></p>
+        </form>
+      </div>
+    </section>
+
+    <div class="back-link-area">
+      <a href="index.html" class="back-link">← ソロ用トップへ戻る</a>
+    </div>
+  </main>
+
+  <footer>
+    <p class="copyright">&copy; 2025~2026 言霊のプロトコル</p>
+  </footer>
+
+  <script type="module">
+  import { handleCreateRoom, handleJoinRoom } from './src/room_states.js';
+
+  const createRoomForm = document.getElementById('create-room-form');
+  const joinRoomForm = document.getElementById('join-room-form');
+  const createRoomStatus = document.getElementById('create-room-status');
+  const joinRoomStatus = document.getElementById('join-room-status');
+
+  createRoomForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const scenarioType = document.getElementById('scenario-type').value;
+    const maxPlayers = Number(document.getElementById('max-players').value);
+    const roomPassword = document.getElementById('room-password').value;
+
+    createRoomStatus.textContent = '部屋を作成しています…';
+
+    try {
+      const result = await handleCreateRoom({
+        scenarioType,
+        maxPlayers,
+        password: roomPassword
+      });
+
+      createRoomStatus.textContent = `部屋を作成しました: ${result.room.id}`;
+
+      window.location.href =
+        `index.html?room=${encodeURIComponent(result.room.id)}&player=${encodeURIComponent(result.player.id)}`;
+    } catch (error) {
+      console.error(error);
+      createRoomStatus.textContent = `部屋作成失敗: ${error.message}`;
+    }
+  });
+
+  joinRoomForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const roomId = document.getElementById('join-room-id').value.trim();
+    const roomPassword = document.getElementById('join-room-password').value;
+    const displayName = document.getElementById('join-display-name').value.trim();
+
+    joinRoomStatus.textContent = '部屋に参加しています…';
+
+    try {
+      const result = await handleJoinRoom({
+        roomId,
+        password: roomPassword,
+        displayName
+      });
+
+      joinRoomStatus.textContent = `部屋に参加しました: ${result.room.id}`;
+
+      window.location.href =
+        `index.html?room=${encodeURIComponent(result.room.id)}&player=${encodeURIComponent(result.player.id)}`;
+    } catch (error) {
+      console.error(error);
+      joinRoomStatus.textContent = `部屋参加失敗: ${error.message}`;
+    }
+  });
+</script>
+</body>
+</html>

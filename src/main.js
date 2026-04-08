@@ -14,6 +14,38 @@ import { sendPrivateNote } from './services/supabase.js';
 let currentRoom = null;
 let currentPlayer = null;
 
+//　readybuttonのイベントリスナーを追加
+import { handleUpdateReady } from './room_states.js';
+
+const readyButton = document.getElementById('ready-button');
+
+if (readyButton) {
+  readyButton.addEventListener('click', async () => {
+    const params = new URLSearchParams(window.location.search);
+    const playerId = params.get('player');
+
+    if (!playerId) {
+      console.error('player_id がURLにありません');
+      return;
+    }
+
+    try {
+      const result = await handleUpdateReady({
+        playerId,
+        isReady: true
+      });
+
+      console.log('Ready更新成功', result);
+
+      if (result.all_ready) {
+        console.log('全員Ready！ゲーム開始！');
+      }
+    } catch (error) {
+      console.error('Ready更新失敗', error);
+    }
+  });
+}
+
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', () => {
     ui.initializeUI();
@@ -42,6 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const importButton = document.getElementById('import-button');
     const importFileInput = document.getElementById('import-file-input');
     const privateMemoToggleButton = document.getElementById('private-memo-button');
+    const startMultiplayerButton = document.getElementById('start-multiplayer-button');
     
     // --- ゲームロジック ---
 
@@ -114,6 +147,8 @@ if (privateMemoToggleButton) {
         }
     });
 }
+
+
 
 //デバイス（PC/スマホ）を判定して、適切なバナー広告表示関数を呼び出す司令塔
 function showBannerAdForDevice() {
@@ -210,10 +245,16 @@ function showBannerAdForDevice() {
 
     /** 新しいゲームを開始する */
     function startNewGame(scenarioType) {
+        if (startMultiplayerButton) {
+        startMultiplayerButton.addEventListener('click', () => {
+        window.location.href = 'multiplayer-lobby.html';
+         });
+        }
         if (state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS) {
             ui.showTemporaryMessage(`セーブスロットは${state.MAX_SAVE_SLOTS}つまでです。`);
             return;
         }
+        
         // ▼▼▼ ここからが修正箇所です ▼▼▼
             let rulebook;
             if (scenarioType === 'sf') {

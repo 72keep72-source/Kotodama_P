@@ -125,7 +125,22 @@ main#landing-page {
     background-color: var(--accent-color-dark);
     transform: scale(1.05);
 }
+#start-multiplayer-button{
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 15px 40px;
+    font-size: 1.2em;
+    font-weight: bold;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
 
+#start-multiplayer-button:hover {
+    background-color: var(--accent-color-dark);
+    transform: scale(1.05);
+}
 /* ★★★ 追加コンテンツのスタイル ★★★ */
 .content-section {
     padding: 40px 20px;
