@@ -17,34 +17,7 @@ let currentPlayer = null;
 //　readybuttonのイベントリスナーを追加
 import { handleUpdateReady } from './room_states.js';
 
-const readyButton = document.getElementById('ready-button');
 
-if (readyButton) {
-  readyButton.addEventListener('click', async () => {
-    const params = new URLSearchParams(window.location.search);
-    const playerId = params.get('player');
-
-    if (!playerId) {
-      console.error('player_id がURLにありません');
-      return;
-    }
-
-    try {
-      const result = await handleUpdateReady({
-        playerId,
-        isReady: true
-      });
-
-      console.log('Ready更新成功', result);
-
-      if (result.all_ready) {
-        console.log('全員Ready！ゲーム開始！');
-      }
-    } catch (error) {
-      console.error('Ready更新失敗', error);
-    }
-  });
-}
 
 // --- 初期化処理 ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -75,10 +48,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const importFileInput = document.getElementById('import-file-input');
     const privateMemoToggleButton = document.getElementById('private-memo-button');
     const startMultiplayerButton = document.getElementById('start-multiplayer-button');
+
+    //Ready?ボタンの追加
+    const readyButton = document.getElementById('ready-button');
+
+            if (readyButton) {
+            readyButton.addEventListener('click', async () => {
+            const params = new URLSearchParams(window.location.search);
+            const playerId = params.get('player');
+
+                    if (!playerId) {
+                    console.error('player_id がURLにありません');
+                    return;
+                }
+
+                try {
+                    const result = await handleUpdateReady({
+                        playerId,
+                        isReady: true
+                    });
+
+                    console.log('Ready更新成功', result);
+
+                    if (result.all_ready) {
+                        console.log('全員Ready！ゲーム開始！');
+                    }
+                } catch (error) {
+                    console.error('Ready更新失敗', error);
+                }
+        });
+    }
     
+
+
+    //Ready？と秘密メモ宛先を隠す
+    const isMultiplayer = !!(currentRoom?.id && currentPlayer?.id);
+
+        if (!isMultiplayer) {
+        if (readyButton) readyButton.classList.add('hidden');
+        if (privateMemoToggleButton) privateMemoToggleButton.classList.add('hidden');
+    } else {
+        if (readyButton) readyButton.classList.remove('hidden');
+        if (privateMemoToggleButton) privateMemoToggleButton.classList.remove('hidden');
+    }
+
     // --- ゲームロジック ---
 
-    
     /** AIとの対話処理をまとめた関数 */
     async function processAIturn() {
     ui.addLog('考え中...', 'ai-response');
@@ -242,14 +257,17 @@ function showBannerAdForDevice() {
         await processAIturn();
         maybeReloadBannerAd();
     }
+    
+    // ★ランディングページの「2〜4人までの冒険」ボタンのイベントリスナーを追加
+    if (startMultiplayerButton) {
+        startMultiplayerButton.addEventListener('click', () => {
+        window.location.href = 'multiplayer-lobby.html';
+        });
+    }
+
 
     /** 新しいゲームを開始する */
     function startNewGame(scenarioType) {
-        if (startMultiplayerButton) {
-        startMultiplayerButton.addEventListener('click', () => {
-        window.location.href = 'multiplayer-lobby.html';
-         });
-        }
         if (state.getGameState().gameSlots.length >= state.MAX_SAVE_SLOTS) {
             ui.showTemporaryMessage(`セーブスロットは${state.MAX_SAVE_SLOTS}つまでです。`);
             return;
