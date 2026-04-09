@@ -1,5 +1,5 @@
 // キャッシュのバージョン
-const CACHE_VERSION = 'v3.4';
+const CACHE_VERSION = 'v3.5';
 const CACHE_NAME = `kotodama-protocol-cache-${CACHE_VERSION}`;
 
 // 事前キャッシュするファイル
